@@ -67,10 +67,10 @@
   "extra": {
     "patches": {
       "doctrine/dbal": {
-        "Fix Index::spansColumns() to also check the number of columns": "../composer-patches/doctrine/dbal/fix-index-spans-columns.patch"
+        "Fix Index::spansColumns() to also check the number of columns": "../dev-scripts/lib/patches/doctrine/dbal/fix-index-spans-columns.patch"
       },
       "symfony/string": {
-        "Add AsciiSlugger::transliterate($string, $locale), transliterate only": "../composer-patches/symfony/string/enhance-ascii-slugger.patch"
+        "Add AsciiSlugger::transliterate($string, $locale), transliterate only": "../dev-scripts/lib/patches/symfony/string/enhance-ascii-slugger.patch"
       }
     }
   }

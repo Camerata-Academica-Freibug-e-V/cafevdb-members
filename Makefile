@@ -113,14 +113,14 @@ $(PHP_SCOPER): composer.lock
 composer-wrapped.lock: composer-wrapped.json $(MAKEFILE_DEP)
 	mkdir -p $(BUILDDIR)
 	ln -fs ../vendor $(BUILDDIR)
-	ln -sf ../composer-patches $(BUILDDIR)
+	ln -sfn ../dev-scripts/lib/patches $(BUILDDIR)/composer-patches
 	env COMPOSER="$(ABSSRCDIR)/composer-wrapped.json" $(COMPOSER) -d$(BUILDDIR) update $(COMPOSER_OPTIONS)
 	test -f "$@" && touch "$@"
 
 $(BUILDDIR)/vendor-wrapped/autoload.php: composer-wrapped.lock
 	mkdir -p $(BUILDDIR)
 	ln -fs ../vendor $(BUILDDIR)
-	ln -sf ../composer-patches $(BUILDDIR)
+	ln -sfn ../dev-scripts/lib/patches $(BUILDDIR)/composer-patches
 	env COMPOSER="$(ABSSRCDIR)/composer-wrapped.json" $(COMPOSER) -d$(BUILDDIR) install $(COMPOSER_OPTIONS)
 	test -f "$@" && touch "$@"
 

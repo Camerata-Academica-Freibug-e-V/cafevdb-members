@@ -56,10 +56,12 @@ build inputs, not runtime files. `make distclean` removes both vendor trees.
 `vendor-bin/php-to-typescript/` environment. Toolkit modules are generated
 under `build/ts-types/php-modules/Wrapped/OCA/RotDrop/Toolkit/`.
 
-Run `make toolkit-l10n` before updating POT files and commit changes to
-`l10n-sources/toolkit-strings.php`. This never-executed catalogue exposes the
-Composer toolkit's strings to the translation tool, which cannot scan vendor
-trees. It is not included in release archives.
+Run `make l10n-sources` before updating POT files and commit the generated
+catalogues in `l10n-sources/`. `toolkit-strings.php` exposes the Composer
+toolkit's strings to the translation tool, which cannot scan vendor trees.
+`vue-components-strings.js` exposes the installed Vue components package's
+strings. Neither catalogue is executed, and `l10n-sources/` is excluded from
+release archives.
 
 The tests run inside a Nextcloud server checkout, see
 `.github/workflows/ci.yml` for the exact setup.

@@ -103,6 +103,7 @@ $(PHING) $(PHPUNIT): composer.lock
 
 include $(DEV_LIB_DIR)/makefile/namespace-wrapper.mk
 
+APP_TOOLKIT_DIR = $(ABSBUILDDIR)/vendor-wrapped/rotdrop/nextcloud-app-toolkit
 include $(DEV_LIB_DIR)/makefile/l10n.mk
 toolkit-l10n: $(BUILDDIR)/vendor-wrapped/autoload.php
 vue-components-l10n: package-lock.json

@@ -104,12 +104,14 @@ $(PHING) $(PHPUNIT): composer.lock
 include $(DEV_LIB_DIR)/makefile/namespace-wrapper.mk
 
 include $(DEV_LIB_DIR)/makefile/l10n.mk
+toolkit-l10n: $(BUILDDIR)/vendor-wrapped/autoload.php
+vue-components-l10n: package-lock.json
 
 include $(DEV_LIB_DIR)/makefile/ts-app-config.mk
 include $(DEV_LIB_DIR)/makefile/ts-types-files.mk
 
 JS_FILES = $(shell find $(ABSSRCDIR)/src -name "*.js" -o -name "*.vue" -o -name "*.ts")\
-  $(shell find $(ABSSRCDIR)/3rdparty/rotdrop-nextcloud-vue-components -name "*.js" -o -name "*.vue" -o -name "*.ts")
+  $(shell if [ -d "$(ABSSRCDIR)/node_modules/@rotdrop/nextcloud-vue-components" ]; then find $(ABSSRCDIR)/node_modules/@rotdrop/nextcloud-vue-components -name "*.js" -o -name "*.vue" -o -name "*.ts"; fi)
 
 NPM_INIT_DEPS =\
  package-lock.json package.json $(BUNDLER_CONFIG) eslint.config.mjs $(MAKEFILE_DEP)

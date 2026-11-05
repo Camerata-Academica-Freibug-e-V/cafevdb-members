@@ -111,6 +111,10 @@ realclean: distclean
 	rm -f package-lock.json
 	rm -f *.html
 	rm -f stats.json
+	rm -f stamp.*
+	rm -f .php_cs.cache .phpunit.result.cache
+	rm -rf js
+	rm -rf lib/Database/ORM/Proxies/*
 .PHONY: realclean
 
 clean-dev:

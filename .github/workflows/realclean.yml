@@ -1,0 +1,48 @@
+name: Make realclean
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - stable*
+
+jobs:
+  realclean:
+    runs-on: ubuntu-latest
+    name: make realclean
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Realclean on bare checkout
+        run: make realclean
+
+      - name: Realclean on bare checkout is idempotent
+        run: |
+          make realclean
+          [ -z "$(git status --porcelain --ignored)" ] || { git status --porcelain --ignored; exit 1; }
+
+      - name: Set up node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Full build
+        run: make composer npm-init build-js-production
+
+      - name: Realclean after full build
+        run: |
+          make realclean
+          [ -z "$(git status --porcelain --ignored)" ] || { git status --porcelain --ignored; exit 1; }
+
+      - name: Realclean after full build is idempotent
+        run: |
+          make realclean
+          [ -z "$(git status --porcelain --ignored)" ] || { git status --porcelain --ignored; exit 1; }
+
+      - name: Show changes on failure
+        if: failure()
+        run: |
+          git status --ignored
+          git --no-pager diff

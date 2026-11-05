@@ -216,13 +216,13 @@ mostlyclean: webpack-clean distclean
 	rm -f package-lock.json
 	rm -f *.html
 	rm -f stats.json
+
+#@@ Really delete everything but the bare source files
+realclean: mostlyclean downloadsclean
 	rm -f stamp.*
 	rm -f .php_cs.cache .phpunit.result.cache
 	rm -rf js
 	rm -rf lib/Database/ORM/Proxies/*
-
-#@@ Really delete everything but the bare source files
-realclean: mostlyclean downloadsclean
 .PHONY: realclean
 
 #@@ Remove non-npm non-composer downloads

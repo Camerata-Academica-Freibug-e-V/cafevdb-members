@@ -158,6 +158,43 @@ class ToolkitBuildTest extends TestCase
     );
   }
 
+  /**
+   * Entity types must build without bootstrapping Nextcloud or connecting to a database.
+   *
+   * @return void
+   */
+  public function testDatabaseFreeEntityTypes(): void
+  {
+    if (!is_file($this->appDir . '/../../lib/composer/autoload.php')
+        || !is_file($this->appDir . '/../../3rdparty/autoload.php')) {
+      self::markTestSkipped('Entity type generation requires the Nextcloud PHP autoloaders.');
+    }
+    $this->temporaryDir = sys_get_temp_dir() . '/cafevdbmembers-toolkit-' . bin2hex(random_bytes(8));
+    mkdir($this->temporaryDir);
+    $arguments = [
+      PHP_BINARY,
+      $this->appDir . '/dev-scripts/php-to-typescript.php',
+      '--source-dir=' . $this->appDir . '/lib',
+      '--output-prefix=' . $this->temporaryDir,
+      '--ns-prefix=OCA\\CAFeVDBMembers',
+      '--scoped-ns-prefix=Wrapped',
+      '--as-modules',
+      '--quiet',
+    ];
+    exec(implode(' ', array_map('escapeshellarg', $arguments)) . ' 2>&1', $output, $status);
+    self::assertSame(0, $status, implode(PHP_EOL, $output));
+    self::assertFileExists($this->temporaryDir . '/php-types.d.ts');
+    self::assertFileExists($this->temporaryDir . '/php-modules/ROOT.ts');
+    $metadata = $this->temporaryDir . '/php-modules/Wrapped/OCA/RotDrop/Toolkit/Doctrine/ORM/EntityMetadata/MusicianMetadata.ts';
+    self::assertFileExists($metadata);
+    self::assertStringContainsString("export const ENTITY_NAME = 'Musician'", file_get_contents($metadata));
+    self::assertStringContainsString("mapping: 'to-many'", file_get_contents($metadata));
+    $translationMetadata = dirname($metadata) . '/TableFieldTranslationMetadata.ts';
+    self::assertFileExists($translationMetadata);
+    self::assertStringContainsString("fieldName: 'locale'", file_get_contents($translationMetadata));
+    self::assertStringContainsString("fieldName: 'foreignKey'", file_get_contents($translationMetadata));
+  }
+
   /** {@inheritdoc} */
   protected function tearDown(): void
   {

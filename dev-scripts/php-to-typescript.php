@@ -26,11 +26,13 @@
 ini_set('display_errors', 'stderr');
 
 $appDir = realpath(__DIR__) . '/..';
-define('ROT_DROP_DEV_SCRIPTS_APP_DIR', $appDir);
 
 try {
-  require_once(__DIR__ . '/lib/scripts/console-setup.php');
-  require_once($appDir . '/vendor/autoload.php');
+  require_once($appDir . '/../../3rdparty/autoload.php');
+  require_once($appDir . '/../../lib/composer/autoload.php');
+  $appAutoloader = require_once($appDir . '/vendor/autoload.php');
+  $appAutoloader->setClassMapAuthoritative(false);
+  $appAutoloader->addPsr4('OCA\\CAFeVDBMembers\\', $appDir . '/lib');
   require_once($appDir . '/vendor-wrapped/autoload.php');
   $autoloader = require_once($appDir . '/vendor-bin/php-to-typescript/vendor/autoload.php');
 } catch (\Throwable $t) {
@@ -38,7 +40,13 @@ try {
   exit(1);
 }
 
-use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Console\ConsoleOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\DriverManager;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\EntityManager;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\ORMSetup;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Persistence\Mapping\Driver\MappingDriverChain;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo;
 use OCA\RotDrop\DevScripts\PhpToTypeScript;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\DTO\AbstractDTO;
 use Spatie\TypeScriptTransformer\Collectors\EnumCollector;
@@ -68,7 +76,20 @@ $phpToTypeScript = new PhpToTypeScript\PhpToTypeScript(
     DatabaseEntityCollector::class,
   ],
   metaDataForwarderFolder: 'Wrapped/OCA/RotDrop/Toolkit/Doctrine/ORM',
-  entityManagerFactory: fn() => \OCP\Server::get(\OCA\CAFeVDBMembers\Database\ORM\EntityManager::class),
+  entityManagerFactory: function() use ($appDir) {
+    $config = ORMSetup::createAttributeMetadataConfiguration([$appDir . '/lib/Database/ORM/Entities']);
+    $driverChain = new MappingDriverChain;
+    Gedmo\DoctrineExtensions::registerAbstractMappingIntoDriverChainORM($driverChain);
+    $driverChain->addDriver($config->getMetadataDriverImpl(), 'OCA\\CAFeVDBMembers\\Database\\ORM\\Entities');
+    $config->setMetadataDriverImpl($driverChain);
+    $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER));
+    // Pin the platform so reading metadata never connects to discover the server version.
+    $connection = DriverManager::getConnection([
+      'driver' => 'pdo_mysql',
+      'serverVersion' => '12.0.0-MariaDB',
+    ]);
+    return new EntityManager($connection, $config);
+  },
   devScriptsFolder: __DIR__,
   excludes: $excludes,
   scopedNamespaces: $scopedNamespaces,
@@ -77,9 +98,9 @@ $phpToTypeScript = new PhpToTypeScript\PhpToTypeScript(
 try {
   $phpToTypeScript->run(
     input: new \Symfony\Component\Console\Input\ArgvInput,
-    output: \OCP\Server::get(ConsoleOutput::class),
+    output: new ConsoleOutput,
   );
 } catch (Throwable $t) {
-  fwrite(STDERR, 'Dependency injection not set up: ' . $t->getMessage() . PHP_EOL . print_r($t->getTrace(), true) . PHP_EOL);
+  fwrite(STDERR, 'Type generation failed: ' . $t->getMessage() . PHP_EOL . print_r($t->getTrace(), true) . PHP_EOL);
   exit(1);
 }

@@ -2,15 +2,21 @@
   "platform": {
     "php": "8.5"
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/rotdrop/nextcloud-app-phpunit"
+    }
+  ],
   "sort-packages": true,
   "require-dev": {
-    "phpunit/phpunit": "^13.0.5"
+    "phpunit/phpunit": "^13.0.5",
+    "rotdrop/nextcloud-app-phpunit": "dev-main"
   },
   "autoload-dev": {
     "psr-4": {
       "OCA\\CAFeVDBMembers\\": "../../lib/",
-      "OCA\\CAFeVDBMembers\\Tests\\": "../../tests/phpunit/",
-      "OCA\\RotDrop\\Tests\\": "../../tests/phpunit/lib/"
+      "OCA\\CAFeVDBMembers\\Tests\\": "../../tests/phpunit/"
     }
   }
 }

@@ -18,6 +18,7 @@
     "build": "vite --mode production build",
     "dev": "vite --mode development build",
     "test": "vitest run",
+    "test:member-data": "node --experimental-test-module-mocks --test tests/frontend/member-data.test.mjs",
     "watch": "vitest watch"
   },
   "prettier": {

@@ -56,6 +56,17 @@ build inputs, not runtime files. `make distclean` removes both vendor trees.
 `vendor-bin/php-to-typescript/` environment. Toolkit modules are generated
 under `build/ts-types/php-modules/Wrapped/OCA/RotDrop/Toolkit/`.
 
+Member views load entities through the OCS `v1/entities/{entityName}/{depth}`
+API and the toolkit's entity repository client. `src/services/member-data.ts`
+adapts the entity associations to the member/registration store, expanding
+only the required branches rather than fetching binary file contents.
+The API requires a row-access token; database views continue to restrict
+results to the logged-in member. Supporting documents are downloaded separately
+through `/download/member/{optionKey}`.
+After generating the TypeScript modules and installing npm dependencies,
+`npm run test:member-data` exercises the OCS response hydration and member view
+models with Node's built-in test runner.
+
 Run `make l10n-sources` before updating POT files and commit the generated
 catalogues in `l10n-sources/`. `toolkit-strings.php` exposes the Composer
 toolkit's strings to the translation tool, which cannot scan vendor trees.

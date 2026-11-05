@@ -46,6 +46,8 @@ use Spatie\TypeScriptTransformer\Transformers\DtoTransformer;
 use Spatie\TypeScriptTransformer\TypeReflectors\ClassTypeReflector;
 use OCA\RotDrop\DevScripts\PhpToTypeScript\Collectors\DatabaseEntityCollector;
 use OCA\RotDrop\DevScripts\PhpToTypeScript\Collectors\DTOCollector;
+use OCA\CAFeVDBMembers\AppInfo\Application;
+use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 
 // store output of different transformers in different files
 
@@ -68,7 +70,12 @@ $phpToTypeScript = new PhpToTypeScript\PhpToTypeScript(
     DatabaseEntityCollector::class,
   ],
   metaDataForwarderFolder: 'Wrapped/OCA/RotDrop/Toolkit/Doctrine/ORM',
-  entityManagerFactory: fn() => \OCP\Server::get(\OCA\CAFeVDBMembers\Database\ORM\EntityManager::class),
+  entityManagerFactory: function() {
+    \OCP\Server::get(Application::class);
+    $appContainer = \OC::$server->getRegisteredAppContainer(Application::getAppName());
+    $appContainer->registerParameter('databaseServerVersion', '11.7.0-MariaDB');
+    return $appContainer->get(EntityManager::class);
+  },
   devScriptsFolder: __DIR__,
   excludes: $excludes,
   scopedNamespaces: $scopedNamespaces,

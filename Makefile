@@ -98,15 +98,20 @@ dev-setup-php: composer.lock
 
 include $(DEV_LIB_DIR)/makefile/composer.mk
 
-$(PHING) $(PHPUNIT): composer.lock
-	if ! [ -x $@ ]; then $(COMPOSER) bin phpunit install; else touch $@; fi
+vendor-bin/phpunit/composer.lock: vendor-bin/phpunit/composer.json
+	$(COMPOSER) bin phpunit update
+
+$(PHING) $(PHPUNIT): composer.lock vendor-bin/phpunit/composer.lock
+	$(COMPOSER) bin phpunit install
 
 include $(DEV_LIB_DIR)/makefile/namespace-wrapper.mk
 
 APP_TOOLKIT_DIR = $(ABSBUILDDIR)/vendor-wrapped/rotdrop/nextcloud-app-toolkit
+L10N_VITE_CONFIG = vite.l10n.config.ts
 include $(DEV_LIB_DIR)/makefile/l10n.mk
 toolkit-l10n: $(BUILDDIR)/vendor-wrapped/autoload.php
 vue-components-l10n: package-lock.json
+vue-components-l10n-ignore: package-lock.json vite.l10n.config.ts $(BUNDLER_CONFIG) ts-app-config ts-types-files
 
 include $(DEV_LIB_DIR)/makefile/ts-app-config.mk
 include $(DEV_LIB_DIR)/makefile/ts-types-files.mk
@@ -201,7 +206,7 @@ clean: ## Tidy up local environment
 distclean: clean ## Clean even more, calls clean
 	rm -rf vendor
 	rm -rf vendor-wrapped
-	rm -rf vendor-bin/**/vendor
+	rm -rf vendor-bin/*/vendor
 	rm -rf node_modules
 .PHONY: distclean
 
@@ -209,11 +214,12 @@ distclean: clean ## Clean even more, calls clean
 mostlyclean: webpack-clean distclean
 	rm -f composer*.lock
 	rm -f composer.json
-	rm -f vendor-bin/**/composer.lock
+	rm -f vendor-bin/*/composer.lock
 	rm -f stamp.composer-core-versions
-	rm -f package-lock.json
 	rm -f *.html
 	rm -f stats.json
+	rm -f build-flavour wrapper-build-hash
+	rm -rf .vite
 
 #@@ Really delete everything but the bare source files
 realclean: mostlyclean downloadsclean

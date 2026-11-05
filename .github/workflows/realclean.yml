@@ -40,6 +40,8 @@ jobs:
           node-version: 'lts/*'
 
       - name: Full build
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ github.token }}"}}'
         run: make composer npm-init build-js-production
 
       - name: Realclean after full build

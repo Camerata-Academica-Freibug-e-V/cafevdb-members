@@ -60,8 +60,8 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/mariadb.list
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends mariadb-server mariadb-client
-          # PHPUnit uses a private server; keep the system server for app type generation.
-          sudo systemctl enable --now mariadb
+          # PHPUnit starts its own private server; type generation needs no MariaDB.
+          sudo systemctl stop mariadb
           for b in mariadb-install-db mariadbd-safe mariadb mariadb-dump; do
             command -v "$b" || { echo "missing $b"; exit 1; }
           done
@@ -91,6 +91,15 @@ jobs:
       - name: Enable app
         working-directory: server
         run: php occ app:enable ${{ env.APP_NAME }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Build frontend assets
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: make build
 
       - name: Run PHPUnit standalone suite
         working-directory: server/apps/${{ env.APP_NAME }}

@@ -69,7 +69,9 @@ strings. Neither catalogue is executed, and `l10n-sources/` is excluded from
 release archives.
 
 The tests run inside a Nextcloud server checkout, see
-`.github/workflows/ci.yml` for the exact setup.
+`.github/workflows/ci.yml` for the exact setup. CI also runs `make build` with
+Node.js 24 to generate the PHP-derived TypeScript modules and build production
+frontend assets with Vite before running the test suites.
 
 The build regressions can also run without Nextcloud after `make dev-setup-php`
 (PHP's `intl` extension is required):

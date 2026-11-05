@@ -21,6 +21,7 @@ jobs:
     name: make realclean
     env:
       PHP_VERSION: '8.5'
+      MARIADB_MAJOR: '12'
     steps:
       - name: Use https for submodules
         run: git config --global url."https://github.com/".insteadOf "git@github.com:"
@@ -52,17 +53,45 @@ jobs:
           make realclean
           [ -z "$(git status --porcelain --ignored)" ] || { git status --porcelain --ignored; exit 1; }
 
+      - name: Install latest MariaDB ${{ env.MARIADB_MAJOR }}.x server and client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends curl ca-certificates apt-transport-https
+          sudo install -d /etc/apt/keyrings
+          sudo curl -fsSL https://mariadb.org/mariadb_release_signing_key.pgp \
+            | sudo gpg --dearmor --yes --output /etc/apt/keyrings/mariadb-keyring.gpg
+          # Match ci.yml: newest stable or RC series of the pinned major.
+          MARIADB_VERSION="$(curl -fsSL https://downloads.mariadb.org/rest-api/mariadb/ \
+            | jq -r --arg m "${MARIADB_MAJOR}." \
+              '[.major_releases[] | select(.release_id | startswith($m)) | select(.release_status | IN("Stable","RC"))][0].release_id')"
+          [ -n "$MARIADB_VERSION" ] && [ "$MARIADB_VERSION" != null ] || { echo "no MariaDB ${MARIADB_MAJOR}.x series found"; exit 1; }
+          echo "Using MariaDB series ${MARIADB_VERSION}"
+          codename="$(lsb_release -cs)"
+          echo "deb [signed-by=/etc/apt/keyrings/mariadb-keyring.gpg] https://archive.mariadb.org/mariadb-${MARIADB_VERSION}/repo/ubuntu ${codename} main" \
+            | sudo tee /etc/apt/sources.list.d/mariadb.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mariadb-server mariadb-client
+          # DatabaseProvider starts a private, socket-only server for each generator.
+          sudo systemctl stop mariadb
+          for b in mariadb-install-db mariadbd-safe mariadb mariadb-dump; do
+            command -v "$b" || { echo "missing $b"; exit 1; }
+          done
+          mariadb --version
+
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: ctype, curl, dom, gd, iconv, intl, json, mbstring, openssl, pdo_sqlite, posix, sqlite3, xml, zip, apcu, bcmath, gmp, imagick, fileinfo
+          extensions: ctype, curl, dom, gd, iconv, intl, json, mbstring, openssl, pdo_mysql, pdo_sqlite, posix, sqlite3, xml, zip, apcu, bcmath, gmp, imagick, fileinfo
           tools: composer:v2
           ini-values: apc.enable_cli=1, memory_limit=1G
 
-      - name: Install Nextcloud PHP dependencies
+      - name: Install Nextcloud (sqlite)
         working-directory: server
         run: |
           composer install --no-interaction --no-progress
+          php occ maintenance:install --database=sqlite \
+            --admin-user=admin --admin-pass=admin --no-interaction
+          php occ config:system:set debug --value=true --type=boolean
 
       - name: Install app PHP dependencies
         working-directory: server/apps/${{ env.APP_NAME }}
@@ -73,14 +102,30 @@ jobs:
         with:
           node-version: 24
 
+      - name: Prepare app and wrap namespaces
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: make dev-setup
+
+      - name: Enable app
+        working-directory: server
+        run: |
+          php occ app:enable ${{ env.APP_NAME }}
+          mkdir -p "apps/${{ env.APP_NAME }}/build/artifacts/tests/phpunit/tmp"
+          php occ config:system:set tempdirectory \
+            --value="$PWD/apps/${{ env.APP_NAME }}/build/artifacts/tests/phpunit/tmp"
+
       - name: Full build
         working-directory: server/apps/${{ env.APP_NAME }}
-        run: make dev-setup npm-build
+        env:
+          PHP_TO_TYPESCRIPT_PHPUNIT: '1'
+        run: make npm-build
 
       - name: Remove temporary caches
         if: always()
         working-directory: server/apps/${{ env.APP_NAME }}
-        run: rm -f .phpunit.result.cache .phpunit.cache
+        run: |
+          rm -f .phpunit.result.cache
+          rm -rf .phpunit.cache
 
       - name: Realclean after full build
         working-directory: server/apps/${{ env.APP_NAME }}

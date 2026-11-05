@@ -55,9 +55,16 @@ build inputs, not runtime files. `make distclean` removes both vendor trees.
 `make ts-types-files` uses `rotdrop/php-to-typescript` from its isolated
 `vendor-bin/php-to-typescript/` environment. Toolkit modules are generated
 under `build/ts-types/php-modules/Wrapped/OCA/RotDrop/Toolkit/`.
-Type generation requires a Nextcloud source checkout with its Composer
-dependencies, but not an installed Nextcloud instance, database, or app user.
-Entity mappings are read using a disconnected, metadata-only entity manager.
+Normal type generation uses the app's console bootstrap and production entity
+manager, requiring an installed Nextcloud instance and working app database and
+authentication. For CI, `PHP_TO_TYPESCRIPT_PHPUNIT=1 make npm-build` explicitly
+runs the same generator in a PHPUnit integration test. This reuses the server
+suite's private MariaDB server, SQL fixtures, mock services and entity manager
+setup; the private server is stopped when the generator's PHPUnit process exits,
+before `make realclean` removes dependencies. Install Nextcloud (sqlite is
+sufficient), MariaDB 12.x and the app dependencies, then run `make dev-setup`
+to wrap namespaces **before** enabling the app or starting the server tests.
+See `.github/workflows/realclean.yml` for the complete setup.
 
 Run `make l10n-sources` before updating POT files and commit the generated
 catalogues in `l10n-sources/`. `toolkit-strings.php` exposes the Composer
@@ -76,5 +83,5 @@ The build regressions can also run without Nextcloud after `make dev-setup-php`
 vendor-bin/phpunit/vendor/bin/phpunit --no-configuration --no-coverage tests/phpunit/Unit/Build/ToolkitBuildTest.php
 ```
 
-The entity type generation regression is skipped when the Nextcloud PHP
-autoloaders are unavailable.
+The entity type generation regression belongs to `phpunit.server.xml`, not the
+standalone toolkit suite.

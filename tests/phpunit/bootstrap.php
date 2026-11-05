@@ -58,6 +58,13 @@ foreach ($wantedApps as $app) {
 
 $databaseProvider = \OCP\Server::get(\OCA\CAFeVDBMembers\Tests\DatabaseProvider::class);
 
+// Register cleanup before fixture loading, which can fail after the server starts.
+register_shutdown_function(function() use ($databaseProvider) {
+  echo 'Stopping database server ...';
+  $databaseProvider->stopServer();
+  echo ' ... OK' . PHP_EOL;
+});
+
 echo 'Starting database server ...';
 $databaseProvider->startServer();
 echo ' ... OK' . PHP_EOL;
@@ -72,13 +79,6 @@ $databaseProvider->loadSql(
   __DIR__ . '/data/cloud_connector.sql',
 );
 echo ' ... OK' . PHP_EOL;
-
-// stop and cleanup potentially running db-servers
-register_shutdown_function(function() use ($databaseProvider) {
-  echo 'Stopping database server ...';
-  $databaseProvider->stopServer();
-  echo ' ... OK' . PHP_EOL;
-});
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);

@@ -25,14 +25,28 @@
 
 ini_set('display_errors', 'stderr');
 
-$appDir = realpath(__DIR__) . '/..';
+$appDir = dirname(__DIR__);
+define('ROT_DROP_DEV_SCRIPTS_APP_DIR', $appDir);
+
+// CI runs the generator inside a real PHPUnit test so mock services have a TestCase.
+if (getenv('PHP_TO_TYPESCRIPT_PHPUNIT') === '1' && !defined('ROT_DROP_TYPESCRIPT_TEST_BOOTSTRAPPED')) {
+  putenv('PHP_TO_TYPESCRIPT_ARGUMENTS=' . json_encode($argv, JSON_THROW_ON_ERROR));
+  $command = [
+    PHP_BINARY,
+    $appDir . '/vendor-bin/phpunit/vendor/bin/phpunit',
+    '-c', $appDir . '/phpunit.server.xml',
+    '--no-coverage',
+    $appDir . '/tests/phpunit/Unit/Database/ORM/EntityTypeGenerationTest.php',
+  ];
+  passthru(implode(' ', array_map('escapeshellarg', $command)), $status);
+  exit($status);
+}
 
 try {
-  require_once($appDir . '/../../3rdparty/autoload.php');
-  require_once($appDir . '/../../lib/composer/autoload.php');
-  $appAutoloader = require_once($appDir . '/vendor/autoload.php');
-  $appAutoloader->setClassMapAuthoritative(false);
-  $appAutoloader->addPsr4('OCA\\CAFeVDBMembers\\', $appDir . '/lib');
+  if (!defined('ROT_DROP_TYPESCRIPT_TEST_BOOTSTRAPPED')) {
+    require_once(__DIR__ . '/lib/scripts/console-setup.php');
+  }
+  require_once($appDir . '/vendor/autoload.php');
   require_once($appDir . '/vendor-wrapped/autoload.php');
   $autoloader = require_once($appDir . '/vendor-bin/php-to-typescript/vendor/autoload.php');
 } catch (\Throwable $t) {
@@ -40,13 +54,7 @@ try {
   exit(1);
 }
 
-use Symfony\Component\Console\Output\ConsoleOutput;
-use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\DriverManager;
-use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\EntityManager;
-use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
-use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\ORMSetup;
-use OCA\CAFeVDBMembers\Wrapped\Doctrine\Persistence\Mapping\Driver\MappingDriverChain;
-use OCA\CAFeVDBMembers\Wrapped\Gedmo;
+use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Console\ConsoleOutput;
 use OCA\RotDrop\DevScripts\PhpToTypeScript;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\DTO\AbstractDTO;
 use Spatie\TypeScriptTransformer\Collectors\EnumCollector;
@@ -76,30 +84,21 @@ $phpToTypeScript = new PhpToTypeScript\PhpToTypeScript(
     DatabaseEntityCollector::class,
   ],
   metaDataForwarderFolder: 'Wrapped/OCA/RotDrop/Toolkit/Doctrine/ORM',
-  entityManagerFactory: function() use ($appDir) {
-    $config = ORMSetup::createAttributeMetadataConfiguration([$appDir . '/lib/Database/ORM/Entities']);
-    $driverChain = new MappingDriverChain;
-    Gedmo\DoctrineExtensions::registerAbstractMappingIntoDriverChainORM($driverChain);
-    $driverChain->addDriver($config->getMetadataDriverImpl(), 'OCA\\CAFeVDBMembers\\Database\\ORM\\Entities');
-    $config->setMetadataDriverImpl($driverChain);
-    $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER));
-    // Pin the platform so reading metadata never connects to discover the server version.
-    $connection = DriverManager::getConnection([
-      'driver' => 'pdo_mysql',
-      'serverVersion' => '12.0.0-MariaDB',
-    ]);
-    return new EntityManager($connection, $config);
-  },
+  entityManagerFactory: fn() => \OCP\Server::get(\OCA\CAFeVDBMembers\Database\ORM\EntityManager::class),
   devScriptsFolder: __DIR__,
   excludes: $excludes,
   scopedNamespaces: $scopedNamespaces,
 );
 
 try {
-  $phpToTypeScript->run(
-    input: new \Symfony\Component\Console\Input\ArgvInput,
-    output: new ConsoleOutput,
+  $status = $phpToTypeScript->run(
+    input: $input = new \Symfony\Component\Console\Input\ArgvInput($argv),
+    output: \OCP\Server::get(ConsoleOutput::class),
   );
+  if (defined('ROT_DROP_TYPESCRIPT_TEST_BOOTSTRAPPED')) {
+    return $status;
+  }
+  exit($status);
 } catch (Throwable $t) {
   fwrite(STDERR, 'Type generation failed: ' . $t->getMessage() . PHP_EOL . print_r($t->getTrace(), true) . PHP_EOL);
   exit(1);

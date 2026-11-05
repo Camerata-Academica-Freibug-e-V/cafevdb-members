@@ -98,8 +98,11 @@ dev-setup-php: composer.lock
 
 include $(DEV_LIB_DIR)/makefile/composer.mk
 
-$(PHING) $(PHPUNIT): composer.lock
-	if ! [ -x $@ ]; then $(COMPOSER) bin phpunit install; else touch $@; fi
+vendor-bin/phpunit/composer.lock: vendor-bin/phpunit/composer.json
+	$(COMPOSER) bin phpunit update
+
+$(PHING) $(PHPUNIT): composer.lock vendor-bin/phpunit/composer.lock
+	$(COMPOSER) bin phpunit install
 
 include $(DEV_LIB_DIR)/makefile/namespace-wrapper.mk
 

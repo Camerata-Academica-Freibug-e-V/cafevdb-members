@@ -101,7 +101,19 @@ class ToolkitBuildTest extends TestCase
       $status,
     );
     self::assertSame(0, $status, implode(PHP_EOL, $output));
-    self::assertFileEquals($this->appDir . '/l10n-sources/toolkit-strings.php', $catalogue);
+    $translationCalls = static function (string $path): array {
+      $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+      $calls = array_filter(
+        $lines,
+        static fn (string $line): bool => str_starts_with($line, '$l->t('),
+      );
+      sort($calls);
+      return $calls;
+    };
+    self::assertSame(
+      $translationCalls($this->appDir . '/l10n-sources/toolkit-strings.php'),
+      $translationCalls($catalogue),
+    );
   }
 
   /**

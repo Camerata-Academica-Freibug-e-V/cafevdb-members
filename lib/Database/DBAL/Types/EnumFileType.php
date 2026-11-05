@@ -1,11 +1,11 @@
 <?php
 /**
- * Member's data base connector for CAFEVDB orchetra management app.
+ * Orchestra member, musician and project management application.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * CAFEVDB -- Camerata Academica Freiburg e.V. DataBase.
  *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright 2011-2022, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,25 +20,18 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\DBAL\Types;
 
-use MyCLabs\Enum\Enum as EnumType;
-
 /**
- * Enum for data transformations.
- *
- * @method static EnumFileType GENERIC()
- * @method static EnumFileType IMAGE()
- * @method static EnumFileType ENCRYPTED()
- *
- * @todo This should rather be specified per project.
+ * Enum for file types, used as discriminator column.
  */
-class EnumFileType extends EnumType
+enum EnumFileType: string
 {
-  public const GENERIC = 'generic';
-  public const IMAGE = 'image';
-  public const ENCRYPTED = 'encrypted';
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\TranslatableEnumTrait;
+
+  case GENERIC = 'generic';
+  case IMAGE = 'image';
+  case ENCRYPTED = 'encrypted';
 }

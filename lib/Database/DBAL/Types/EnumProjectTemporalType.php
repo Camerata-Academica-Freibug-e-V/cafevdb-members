@@ -1,11 +1,11 @@
 <?php
 /**
- * Member's data base connector for CAFEVDB orchetra management app.
+ * Orchestra member, musician and project management application.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * CAFEVDB -- Camerata Academica Freiburg e.V. DataBase.
  *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright 2011-2022, 2024-2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,23 +20,29 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\DBAL\Types;
 
-use MyCLabs\Enum\Enum as EnumType;
-
 /**
  * Type of projects.
  *
- * @method static EnumProjectTemporalType TEMPORARY()
- * @method static EnumProjectTemporalType PERMANENT()
- * @method static EnumProjectTemporalType TEMPLATE()
  */
-class EnumProjectTemporalType extends EnumType
+enum EnumProjectTemporalType: string
 {
-  public const TEMPORARY = 'temporary';
-  public const PERMANENT = 'permanent';
-  public const TEMPLATE = 'template';
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\TranslatableEnumTrait;
+
+  /**
+   * The standard type for ordinary transient projects.
+   */
+  case TEMPORARY = 'temporary';
+  /**
+   * Permanent projects model club-member and the executive board.
+   */
+  case PERMANENT = 'permanent';
+  /**
+   * Template projects can be used to pre-configure some well-known scenarious
+   * and instrumentations.
+   */
+  case TEMPLATE = 'template';
 }

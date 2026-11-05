@@ -1,99 +1,32 @@
 <?php
 
+use OCA\CAFeVDBMembers\Constants;
+
 return [
-  // 'resources' => [
-  //   'note' => [
-  //     'url' => '/notes',
-  //   ],
-  //   'note_api' => [
-  //     'url' => '/api/0.1/notes',
-  //   ],
-  // ],
   'routes' => [
+    // Cannot be moved to attributes as the AuthPublicShareController implements this as "final".
     [
-      'name' => 'page#index',
-      'url' => '/',
-      'verb' => 'GET',
-    ],
-    [
-      'name' => 'page#index',
-      'url' => '/f/{path}',
-      'verb' => 'GET',
-      'requirements' => [ 'path' => '.+' ],
-      'postfix' => 'front',
-    ],
-    // [
-    //   'name' => 'note_api#preflighted_cors',
-    //   'url' => '/api/0.1/{path}',
-    //   'verb' => 'OPTIONS',
-    //   'requirements' => ['path' => '.+'],
-    // ],
-    [
-      'name' => 'settings#set_admin',
-      'url' => '/settings/admin/{setting}',
+      'name' => 'ProjectRegistration#authenticate',
+      'url' => '/registration/{token}/authenticate/{redirect}',
       'verb' => 'POST',
-    ],
-    [
-      'name' => 'settings#get_admin',
-      'url' => '/settings/admin/{setting}',
-      'verb' => 'GET',
-    ],
-    [
-      'name' => 'settings#get_app',
-      'url' => '/settings/app/{setting}',
-      'verb' => 'GET',
-    ],
-    [
-      'name' => 'settings#set_personal',
-      'url' => '/settings/personal/{setting}',
-      'verb' => 'POST',
-    ],
-    [
-      'name' => 'settings#get_personal',
-      'url' => '/settings/personal/{setting}',
-      'verb' => 'GET',
-    ],
-    [
-      'name' => 'member_data#get',
-      'url' => '/member',
-      'verb' => 'GET',
-    ],
-    [
-      'name' => 'member_data#download',
-      'url' => '/download/member/{optionKey}',
-      'verb' => 'GET',
-    ],
-    /**
-     * Attempt a catch all ...
-     */
-    [
-      'name' => 'catch_all#post',
-      'postfix' => 'post',
-      'url' => '/{a}/{b}/{c}/{d}/{e}/{f}/{g}',
-      'verb' => 'POST',
-      'defaults' => [
-        'a' => '',
-        'b' => '',
-        'c' => '',
-        'd' => '',
-        'e' => '',
-        'f' => '',
-        'g' => '',
+      'requirements' => [
+        'token' => (
+          '^'
+          . Constants::TEMPORARY_PROJECT_NAME_REGEXP
+          . '/'
+          . Constants::PROJECT_APPLICATION_TOKEN_REGEXP
+          . '$'
+        ),
       ],
     ],
+    // keep this for simplicity, otherwise we would have to copy the parent class method.
     [
-      'name' => 'catch_all#get',
-      'postfix' => 'get',
-      'url' => '/{a}/{b}/{c}/{d}/{e}/{f}/{g}',
-      'verb' => 'GET',
-      'defaults' => [
-        'a' => '',
-        'b' => '',
-        'c' => '',
-        'd' => '',
-        'e' => '',
-        'f' => '',
-        'g' => '',
+      'name' => 'project_events_api#preflighted_cors',
+      'url' => '/api/{apiVersion}/{path}',
+      'verb' => 'OPTIONS',
+      'requirements' => [
+        'apiVersion' => '0.1',
+        'path' => '.+',
       ],
     ],
   ],

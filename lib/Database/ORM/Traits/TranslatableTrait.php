@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,25 +18,25 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Traits;
 
-use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation as Gedmo;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
 
+/** Helper for Gedmo translatable entities. */
 trait TranslatableTrait
 {
-  /**
-   * @Gedmo\Locale
-   * Used locale to override Translation listener`s locale
-   * this is not a mapped field of entity metadata, just a simple property
-   */
+  #[Gedmo\Locale] // Used locale to override Translation listener`s locale
   private $locale;
 
   /**
-   * Set the "local" per-entity override locale for table field translations.
+   * Set the "locale" per-entity override locale for table field translations.
+   *
+   * @param null|string $locale
+   *
+   * @return mixed
    */
   public function setLocale(?string $locale):self
   {
@@ -48,6 +46,8 @@ trait TranslatableTrait
 
   /**
    * Get the "locate" per-entity override locale for table field translations.
+   *
+   * @return null|string
    */
   public function getLocale():?string
   {

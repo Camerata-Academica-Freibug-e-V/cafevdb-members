@@ -18,10 +18,13 @@
       "/vendor/**/[Ee]xamples/**/*.php",
       "/vendor/composer/*.php",
       "/vendor/*.php",
+      "/vendor-bin/cs-fixer/**",
+      "/vendor-bin/phpcs/**",
+      "/vendor-bin/phpmd/**",
       "# not need php_codesniffer",
-      "/vendor/squizlabs/php_codesniffer/**/*.php",
       "/build/**",
       "/3rdparty/**",
+      "/dev-scripts/playground/**",
       "#  -- end -- "
     ]
   }

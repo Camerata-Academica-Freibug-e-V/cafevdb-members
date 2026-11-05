@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,79 +18,41 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
 
-/**
- * @ORM\Entity
- */
+/** Model for a file with encrypted data. */
+#[ORM\Entity]
 class EncryptedFile extends File
 {
   /**
    * @var Collection
-   *
-   * As ORM still does not support lazy one-to-one associations from the
-   * inverse side we just use one-directional from both sides here. This
-   * works, as the join column is just the key of both sides. So we have no
-   * "mappedBy" and "inversedBy".
-   *
-   * Not that it is not possible to override the targetEntity annotation from
-   * the base-class, so it must go here to the leaf-class.
-   *
-   * @ORM\OneToOne(targetEntity="EncryptedFileData", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumns(
-   *   @ORM\JoinColumn(name="id", referencedColumnName="file_id", nullable=false),
-   * )
    */
-  protected $fileData;
+  #[ORM\ManyToMany(targetEntity: Musician::class, mappedBy: 'encryptedFiles', indexBy: 'id', fetch: 'EXTRA_LAZY')] // The list of owners which in addition to the members of the management
+  private Collection $owners;
 
   /**
    * @var Collection
-   *
-   * @ORM\ManyToMany(targetEntity="Musician", mappedBy="encryptedFiles", indexBy="id", fetch="EXTRA_LAZY")
-   *
-   * The list of owners which in addition to the members of the management
-   * group may have access to this file. This is in particular important for
-   * encrypted files where the list of owners determines the encryption keys
-   * which are used to seal the data.
    */
-  private $owners;
+  #[ORM\OneToMany(targetEntity: DatabaseStorageFile::class, mappedBy: 'file', cascade: ['persist'])]
+  private Collection $databaseStorageDirEntries;
 
-  public function __construct($fileName = null, $data = null, $mimeType = null, ?Musician $owner = null) {
-    parent::__construct($fileName, null, $mimeType);
-    $this->owners = new ArrayCollection;
-    $data = $data ?? '';
-    $fileData = new EncryptedFileData;
-    $fileData->setData($data);
-    $this->setFileData($fileData)
-      ->setSize(strlen($data));
-    if (!empty($owner)) {
-      $this->addOwner($owner);
-    }
-  }
-
-  /**
-   * Set Owners.
-   *
-   * @param Collection $owners
-   *
-   * @return EncryptedFile
-   */
-  public function setOwners(Collection $owners):EncryptedFile
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
   {
-    $this->owners = $owners;
-
-    return $this;
+    parent::__construct();
+    $this->owners = new ArrayCollection;
+    $this->databaseStorageDirEntries = new ArrayCollection;
   }
+  // phpcs:enable
 
   /**
    * Get Owners.
@@ -105,30 +65,12 @@ class EncryptedFile extends File
   }
 
   /**
-   * Add the given musician to the list of owners.
+   * Get databaseStorageDirEntries.
    *
-   * @param Musician $musician
-   *
-   * @return EncryptedFile
+   * @return Collection
    */
-  public function addOwner(Musician $musician):EncryptedFile
+  public function getDatabaseStorageDirEntries():Collection
   {
-    $musicianId = $musician->getId();
-    if (!$this->owners->containsKey($musicianId)) {
-      $this->owners->set($musicianId, $musician);
-    }
-    return $this;
-  }
-
-  /**
-   * Remove the given musician from the list of owners
-   *
-   * @param Musician $musician
-   *
-   * @return EncryptedFile
-   */
-  public function removeOwner(Musician $musician):EncryptedFile
-  {
-    $this->owners->remove($musician->getId());
+    return $this->databaseStorageDirEntries;
   }
 }

@@ -1,0 +1,46 @@
+<?php
+/**
+ * Orchestra member, musician and project management application.
+ *
+ * CAFEVDB -- Camerata Academica Freiburg e.V. DataBase.
+ *
+ * @author Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @copyright 2011-2022, 2024-2026 Claus-Justus Heine
+ * @license AGPL-3.0-or-later
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+namespace OCA\CAFeVDBMembers\Database\DBAL\Types;
+
+use OCA\RotDrop\DevScripts\PhpToTypeScript;
+
+use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\TranslatableEnumTrait;
+
+/**
+ * Display context of ProjectParticipantFields. Some may only be relevant to
+ * real participants, other fields may only be relevant for business contacts
+ * / associated (legal) persons.
+ *
+ * @todo This should rather be specified per project.
+ */
+#[PhpToTypeScript\Attributes\TypeScript(options: ['nativeEnums' => true])]
+enum EnumParticipationContext: string
+{
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\TranslatableEnumTrait;
+
+  case ASSOCIATES = 'associates';
+  case PARTICIPANTS = 'participants';
+  case UNRESTRICTED = 'unrestricted';
+}

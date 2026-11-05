@@ -1,9 +1,7 @@
 <?php
 /**
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022-2024 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +16,6 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Settings;
@@ -27,68 +24,39 @@ use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;
 
+/** Implementation of admin settings section. */
 class AdminSection implements IIconSection
 {
-  /** @var string */
-  private $appName;
-
-  /** @var IL10N */
-  private $l;
-
-  /** @var IURLGenerator */
-  private $urlGenerator;
-
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
   public function __construct(
-    string $appName
-    , IL10N $l10n
-    , IURLGenerator $urlGenerator
+    private string $appName,
+    private IL10N $l,
+    private IURLGenerator $urlGenerator,
   ) {
-    $this->appName = $appName;
-    $this->l = $l10n;
-    $this->urlGenerator = $urlGenerator;
   }
+  // phpcs:enable
 
-  /**
-   * returns the ID of the section. It is supposed to be a lower case string
-   *
-   * @returns string
-   */
+  /** {@inheritdoc} */
   public function getID()
   {
     return $this->appName;
   }
 
-  /**
-   * returns the translated name as it should be displayed, e.g. 'LDAP / AD
-   * integration'. Use the L10N service to translate it.
-   *
-   * @return string
-   */
+  /** {@inheritdoc} */
   public function getName()
   {
     return $this->l->t('Camerata DB Members');
   }
 
-  /**
-   * @return int whether the form should be rather on the top or bottom of
-   * the settings navigation. The sections are arranged in ascending order of
-   * the priority values. It is required to return a value between 0 and 99.
-   */
+  /** {@inheritdoc} */
   public function getPriority()
   {
     return 50;
   }
 
-  /**
-   * @return The relative path to a an icon describing the section
-   */
+  /** {@inheritdoc} */
   public function getIcon()
   {
     return $this->urlGenerator->imagePath($this->appName, $this->appName . '.svg');
   }
 }
-
-// Local Variables: ***
-// c-basic-offset: 2 ***
-// indent-tabs-mode: nil ***
-// End: ***

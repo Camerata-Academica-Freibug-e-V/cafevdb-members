@@ -10,46 +10,63 @@
     }
   ],
   "require": {
-    "acelaya/doctrine-enum-type": "^2.5",
-    "doctrine/orm": "^2.10.0",
-    "gedmo/doctrine-extensions": "3.6.x-dev",
-    "mediamonks/doctrine-extensions": "0.1.x-dev",
-    "myclabs/php-enum": "^1.8",
+    "markrogoyski/math-php": "2.*",
     "nesbot/carbon": "^2.46",
     "ramsey/uuid-doctrine": "^1.6",
-    "ramsey/uuid": "^4",
-    "symfony/cache": "*"
+    "ramsey/uuid": "^4"
   },
   "require-dev": {
-    "phpunit/phpunit": "*",
-    "nextcloud/coding-standard": "^0.5.0"
+    "bamarni/composer-bin-plugin": "^1.8.2"
+  },
+  "provide": {
+    "brick/math": "*",
+    "doctrine/dbal": "^3.10.4",
+    "doctrine/deprecations": "*",
+    "doctrine/event-manager": "*",
+    "doctrine/lexer": "*",
+    "psr/cache": "*",
+    "psr/clock": "*",
+    "psr/container": "*",
+    "psr/log": "*",
+    "symfony/console": "*",
+    "symfony/deprecation-contracts": "*",
+    "symfony/event-dispatcher": "*",
+    "symfony/polyfill-php80": "*",
+    "symfony/polyfill-php84": "*",
+    "symfony/process": "*",
+    "symfony/service-contracts": "*",
+    "symfony/translation": "*"
   },
   "config": {
     "optimize-autoloader": true,
     "classmap-authoritative": true,
     "platform": {
-      "php": "8.0"
+      "php": "8.1.0"
+    },
+    "allow-plugins": {
+      "bamarni/composer-bin-plugin": true
     }
   },
   "repositories": [
     {
-      "type": "path",
-      "url": "3rdparty/gedmo-doctrine-extensions",
-      "options": {
-        "symlink": false
-      }
+      "type": "vcs",
+      "url": "https://github.com/rotdrop/DoctrineExtensions.git"
     },
     {
-      "type": "path",
-      "url": "3rdparty/mediamonks-doctrine-extensions",
-      "options": {
-        "symlink": false
-      }
+      "type": "vcs",
+      "url": "https://github.com/rotdrop/mediamonks-doctrine-extensions.git"
     }
   ],
   "scripts": {
     "lint": "find . -name \\*.php -not -path './vendor/*' -not -path './build/*' -print0 | xargs -0 -n1 php -l",
     "cs:check": "php-cs-fixer fix --dry-run --diff",
     "cs:fix": "php-cs-fixer fix"
+  },
+  "extra": {
+    "bamarni-bin": {
+      "bin-links": false,
+      "target-directory": "vendor-bin",
+      "forward-command": true
+    }
   }
 }

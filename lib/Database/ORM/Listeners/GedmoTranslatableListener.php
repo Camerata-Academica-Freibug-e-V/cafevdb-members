@@ -4,8 +4,8 @@
  *
  * CAFEVDB -- Camerata Academica Freiburg e.V. DataBase.
  *
- * @author Claus-Justus Heine
- * @copyright 2020, 2021, 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @author Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @copyright 2020-2024, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,33 +24,29 @@
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Listeners;
 
-use Doctrine\Persistence\ObjectManager;
-use Gedmo\Translatable\Mapping\Event\TranslatableAdapter;
-
-use OCA\CAFEVDB\Database\Doctrine\ORM\Entities as TranslatedEntities;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Persistence\ObjectManager;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Translatable\Mapping\Event\TranslatableAdapter;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Translatable\TranslatableListener;
 use OCA\CAFeVDBMembers\Database\ORM\Entities;
-
-use OCA\CAFEVDB\Service\L10N\BiDirectionalL10N;
+use OCA\CAFeVDBMembers\L10N\IBidirectionalTranslator;
 
 /**
  * Override the default listener to use a modified event subscriber
  * which also queries other sources of translations if a concrete
  * translations has not been persisted yet.
  */
-class GedmoTranslatableListener extends \Gedmo\Translatable\TranslatableListener
+class GedmoTranslatableListener extends TranslatableListener
 {
   private const USE_OBJECT_CLASS = 'useObjectClass';
-  private const TRANSLATED_ENTITIES = TranslatedEntities::class;
+  private const TRANSLATED_ENTITIES = 'OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities';
   private const OWN_ENTITIES = Entities::class;
 
-  /** @var BiDirectionalL10N */
-  private $musicL10n;
-
-  public function __construct(BiDirectionalL10N $musicL10n)
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+  public function __construct(private IBidirectionalTranslator $musicL10n)
   {
     parent::__construct();
-    $this->musicL10n = $musicL10n;
   }
+  // phpcs:enable
 
   /**
    * {@inheritdoc}
@@ -89,9 +85,9 @@ class GedmoTranslatableListener extends \Gedmo\Translatable\TranslatableListener
   /**
    * {@inheritdoc}
    */
-  public function getTranslationClass(TranslatableAdapter $ea, $class)
+  public function getTranslationClass(TranslatableAdapter $eventAdapter, $class)
   {
     $class = str_replace(self::TRANSLATED_ENTITIES, self::OWN_ENTITIES, $class);
-    return parent::getTranslationClass($ea, $class);
+    return parent::getTranslationClass($eventAdapter, $class);
   }
 }

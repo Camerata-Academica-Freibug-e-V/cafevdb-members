@@ -1,0 +1,54 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": [
+    "./src/toolkit/types/custom.d.ts",
+    "./build/ts-types/**.ts",
+    "./build/ts-types/app-config.ts",
+    "./node_modules/@nextcloud/**.ts",
+    "./node_modules/@types/**.ts",
+    "./node_modules/axios/**.ts",
+    "./node_modules/moment/**.ts",
+    "./node_modules/pinia/**.ts",
+    "./node_modules/vue-router/**.ts",
+    "./node_modules/vue/**.ts",
+    "./node_modules/vite/**/*.ts",
+    "./src/**/*.ts",
+    "./src/**/*.vue",
+    "./src/*-shim.d.ts",
+    "./src/*.ts",
+    "./src/*.vue"
+  ],
+  "compilerOptions": {
+    "types": ["jest", "node", "vue", "vue-router", "moment"],
+    "lib": [ "ESNext", "DOM", "DOM.Iterable" ],
+    "rootDir": "./",
+    "outDir": "./dist/",
+    "paths": {
+      "~/*": ["./*"]
+    },
+    "target": "ESNext",
+    "module": "esnext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": false,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "strict": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": false
+  },
+  "vueCompilerOptions": {
+    "target": "^3.5.0"
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "moduleResolution": "node",
+      "module": "commonjs",
+      "verbatimModuleSyntax": false
+    }
+  }
+}

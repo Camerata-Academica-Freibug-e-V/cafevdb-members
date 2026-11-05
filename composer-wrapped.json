@@ -1,0 +1,77 @@
+{
+  "name": "rotdrop/cafevdbmembers",
+  "description": "CAFeV DB Member's Connector",
+  "type": "project",
+  "license": "AGPL",
+  "authors": [
+    {
+      "name": "Claus-Justus Heine",
+      "email": "himself@claus-justus-heine.de"
+    }
+  ],
+  "config": {
+    "vendor-dir": "vendor-wrapped",
+    "allow-plugins": {
+      "cweagans/composer-patches": true
+    }
+  },
+  "require": {
+    "beberlei/doctrineextensions": "^1.2.0",
+    "bytestream/horde-imap-client": "*",
+    "firehed/dbal-logger": "^2.0.0",
+    "doctrine/annotations": "*",
+    "doctrine/dbal": "^4.0",
+    "doctrine/migrations": "*",
+    "doctrine/orm": "dev-production/3.7.x/cafevdb",
+    "gedmo/doctrine-extensions": "3.7.x-dev",
+    "maennchen/zipstream-php": "^3.0.0",
+    "mediamonks/doctrine-extensions": "dev-feature/transform-context-field",
+    "nesbot/carbon": "^2.46",
+    "ramsey/uuid": "^4",
+    "ramsey/uuid-doctrine": "^2.0",
+    "rotdrop/nextcloud-app-toolkit": "dev-main",
+    "symfony/cache": "^6",
+    "symfony/string": "*"
+  },
+  "require-dev": {
+    "cweagans/composer-patches": "^1.7",
+    "doctrine/sql-formatter": "*"
+  },
+  "provide": {
+    "phpunit/phpunit": "*",
+    "psr/clock": "*",
+    "psr/log": "^3.0.0",
+    "symfony/console": "^6.0.0",
+    "symfony/polyfill-php86": "*"
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/rotdrop/nextcloud-app-toolkit"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/rotdrop/DoctrineExtensions.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/rotdrop/orm.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/rotdrop/mediamonks-doctrine-extensions.git"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "extra": {
+    "patches": {
+      "doctrine/dbal": {
+        "Fix Index::spansColumns() to also check the number of columns": "../dev-scripts/lib/patches/doctrine/dbal/fix-index-spans-columns.patch"
+      },
+      "symfony/string": {
+        "Add AsciiSlugger::transliterate($string, $locale), transliterate only": "../dev-scripts/lib/patches/symfony/string/enhance-ascii-slugger.patch"
+      }
+    }
+  }
+}

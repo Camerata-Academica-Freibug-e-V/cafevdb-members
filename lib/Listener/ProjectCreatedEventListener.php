@@ -1,7 +1,7 @@
 <?php
 /**
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @copyright Copyright (c) 2022-2024 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 namespace OCA\CAFeVDBMembers\Listener;
 
-use OCP\AppFramework\IAppContainer;
+use Psr\Container\ContainerInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -28,21 +28,22 @@ use OCA\CAFEVDB\Events\ProjectCreatedEvent as HandledEvent;
 
 use OCA\CAFeVDBMembers\Service\ProjectGroupService;
 
+/** Ensure the group-shared folders for the new group exist. */
 class ProjectCreatedEventListener implements IEventListener
 {
   const EVENT = HandledEvent::class;
 
-  /** @var IAppContainer */
-  private $appContainer;
-
-  public function __construct(IAppContainer $appContainer)
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct(private ContainerInterface $appContainer)
   {
-    $this->appContainer = $appContainer;
   }
+  // phpcs:enable
 
-  public function handle(Event $event): void {
+  /** {@inheritdoc} */
+  public function handle(Event $event):void
+  {
     /** @var HandledEvent $event */
-    if (!($event instanceOf HandledEvent)) {
+    if (!($event instanceof HandledEvent)) {
       return;
     }
     /** @var ProjectGroupService $service */
@@ -50,8 +51,3 @@ class ProjectCreatedEventListener implements IEventListener
     $service->handleProjectCreatedEvent($event);
   }
 }
-
-// Local Variables: ***
-// c-basic-offset: 2 ***
-// indent-tabs-mode: nil ***
-// End: ***

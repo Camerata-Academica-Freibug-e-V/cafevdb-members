@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,26 +18,24 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation as Gedmo;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
 
 /**
  * Instruments
- *
- * @ORM\Table(name="PersonalizedInstrumentFamiliesView")
- * @ORM\Entity
- * @Gedmo\TranslationEntity(class="TableFieldTranslation")
  */
+#[ORM\Table(name: 'PersonalizedInstrumentFamiliesView')]
+#[ORM\Entity]
+#[Gedmo\TranslationEntity(class: 'TableFieldTranslation')]
 class InstrumentFamily implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
@@ -48,30 +44,34 @@ class InstrumentFamily implements \ArrayAccess
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
-   * @ORM\Id
-   * @ORM\GeneratedValue(strategy="IDENTITY")
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
+  #[ORM\Id]
+  #[ORM\GeneratedValue(strategy: 'NONE')]
   private ?int $id = null;
 
   /**
    * @var string
-   *
-   * @Gedmo\Translatable
-   * @ORM\Column(type="string", length=255, nullable=false, unique=true)
    */
+  #[Gedmo\Translatable(untranslated: 'untranslatedFamily')]
+  #[ORM\Column(type: 'string', length: 255, nullable: false, unique: true)]
   private string $family;
 
   /**
-   * @ORM\ManyToMany(targetEntity="Instrument", mappedBy="families")
+   * @var string
    */
+  private string $untranslatedFamily;
+
+  #[ORM\ManyToMany(targetEntity: Instrument::class, mappedBy: 'families')]
   private $instruments;
 
-  public function __construct() {
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
     $this->instruments = new ArrayCollection();
   }
+  // phpcs:enable
 
   /**
    * Get id.
@@ -81,20 +81,6 @@ class InstrumentFamily implements \ArrayAccess
   public function getId()
   {
     return $this->id;
-  }
-
-  /**
-   * Set family.
-   *
-   * @param string $family
-   *
-   * @return InstrumentFamily
-   */
-  public function setFamily(string $family):InstrumentFamily
-  {
-    $this->family = $family;
-
-    return $this;
   }
 
   /**
@@ -108,17 +94,13 @@ class InstrumentFamily implements \ArrayAccess
   }
 
   /**
-   * Set instruments.
+   * Get untranslated family.
    *
-   * @param bool $instruments
-   *
-   * @return InstrumentFamily
+   * @return string
    */
-  public function setInstruments($instruments):InstrumentFamily
+  public function getUntranslatedFamily():string
   {
-    $this->instruments = $instruments;
-
-    return $this;
+    return $this->untranslatedFamily;
   }
 
   /**
@@ -134,6 +116,8 @@ class InstrumentFamily implements \ArrayAccess
   /**
    * Get the usage count, i.e. the number of instruments which belong
    * to this family.
+   *
+   * @return int
    */
   public function usage():int
   {

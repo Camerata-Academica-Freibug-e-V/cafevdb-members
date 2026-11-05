@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,24 +18,26 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\ArrayCollection;
+use DateTimeImmutable;
+use DateTimeInterface;
 
-use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumParticipationContext as ParticipationContext;
+use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Types\Types as DBALTypes;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 /**
  * Projects
- *
- * @ORM\Table(name="PersonalizedProjectsView")
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedProjectsView')]
+#[ORM\Entity(repositoryClass: \OCA\CAFeVDBMembers\Database\ORM\Repositories\ProjectsRepository::class)]
 class Project implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
@@ -46,94 +46,106 @@ class Project implements \ArrayAccess
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
-   * @ORM\Id
-   * @ORM\GeneratedValue(strategy="IDENTITY")
    */
-  private $id;
+  #[ORM\Column(type: 'integer', nullable: false)]
+  #[ORM\Id]
+  #[ORM\GeneratedValue(strategy: 'NONE')]
+  private int $id;
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false, options={"unsigned"=true})
    */
-  private $year;
+  #[ORM\Column(type: 'integer', nullable: false, options: ['unsigned' => true])]
+  private int $year;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=64, nullable=false)
    */
-  private $name;
+  #[ORM\Column(type: 'string', length: 64, nullable: false)]
+  private string $name;
+
+  #[ORM\Column(type: DBALTypes::ENUM, nullable: false)]
+  private Types\EnumProjectTemporalType $type;
 
   /**
-   * @var Types\EnumProjectTemporalType
+   * @var \DateTimeImmutable
    *
-   * @ORM\Column(type="EnumProjectTemporalType", nullable=false)
+   * Optional registration start date. If not set then the online registration
+   * is NOT available.
    */
-  private $type = 'temporary';
+  #[ORM\Column(type: 'date_immutable', nullable: true)]
+  private ?DateTimeImmutable $registrationStartDate = null;
+
+  /**
+   * @var DateTimeImmutable
+   *
+   * Optional registration deadline. If null then the date one day before the
+   * first rehearsal is used, if set. Otherwise no registration dead-line is
+   * imposed.
+   */
+  #[ORM\Column(type: 'date_immutable', nullable: true)]
+  private ?DateTimeImmutable $registrationDeadline = null;
+
+  #[ORM\OneToMany(targetEntity: ProjectInstrumentationNumber::class, mappedBy: 'project', fetch: 'EXTRA_LAZY')]
+  private Collection $instrumentationNumbers;
 
   /**
    * @var bool
-   *
-   * @ORM\Column(type="boolean")
    */
-  private $clubMembers;
+  #[ORM\Column(type: 'boolean')]
+  private bool $clubMembers;
 
   /**
    * @var bool
-   *
-   * @ORM\Column(type="boolean")
    */
-  private $executiveBoard;
+  #[ORM\Column(type: 'boolean')]
+  private bool $executiveBoard;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectParticipant", mappedBy="project")
-   */
-  private $participants;
+  #[ORM\OneToMany(targetEntity: ProjectInstrument::class, mappedBy: 'project')]
+  private Collection $participantInstruments;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectParticipantField", mappedBy="project", indexBy="id", fetch="EXTRA_LAZY")
-   * @ORM\OrderBy({"displayOrder" = "DESC"})
-   */
-  private $participantFields;
+  #[ORM\OneToMany(targetEntity: ProjectEvent::class, mappedBy: 'project')]
+  private Collection $calendarEvents;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectParticipantFieldDatum", mappedBy="project", fetch="EXTRA_LAZY")
-   */
-  private $participantFieldsData;
+  #[ORM\OneToMany(targetEntity: ProjectParticipant::class, mappedBy: 'project')]
+  private Collection $participants;
 
-  /**
-   * @ORM\OneToMany(targetEntity="SepaDebitMandate", mappedBy="project")
-   */
-  private $sepaDebitMandates;
+  #[ORM\OneToMany(targetEntity: ProjectApplication::class, mappedBy: 'project', indexBy: 'id')]
+  private Collection $applications;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectPayment", mappedBy="project")
-   */
-  private $payments;
+  #[ORM\OneToMany(targetEntity: ProjectParticipantField::class, mappedBy: 'project', indexBy: 'id', fetch: 'EXTRA_LAZY')]
+  #[ORM\OrderBy(['displayOrder' => 'DESC'])]
+  private Collection $participantFields;
 
-  public function __construct() {
+  #[ORM\OneToMany(targetEntity: ProjectParticipantFieldDatum::class, mappedBy: 'project', fetch: 'EXTRA_LAZY')]
+  private Collection $participantFieldsData;
+
+  #[ORM\OneToMany(targetEntity: SepaDebitMandate::class, mappedBy: 'project')]
+  private Collection $sepaDebitMandates;
+
+  #[ORM\OneToMany(targetEntity: ProjectPayment::class, mappedBy: 'project')]
+  private Collection $payments;
+
+  #[ORM\OneToMany(targetEntity: ProjectWebPage::class, mappedBy: 'project', cascade: ['persist'], fetch: 'EXTRA_LAZY')]
+  private Collection $webPages;
+
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
-    $this->participants = new ArrayCollection();
+    $this->applications = new ArrayCollection();
+    $this->calendarEvents = new ArrayCollection();
+    $this->instrumentationNumbers = new ArrayCollection();
     $this->participantFields = new ArrayCollection();
     $this->participantFieldsData = new ArrayCollection();
-    $this->sepaDebitMandates = new ArrayCollection();
+    $this->participantInstruments = new ArrayCollection();
+    $this->participants = new ArrayCollection();
     $this->payments = new ArrayCollection();
+    $this->sepaDebitMandates = new ArrayCollection();
+    $this->type = Types\EnumProjectTemporalType::TEMPORARY;
+    $this->webPages = new ArrayCollection();
   }
-
-  /**
-   * Set id.
-   *
-   * @return Project
-   */
-  public function setId(int $id):Project
-  {
-    $this->id = $id;
-
-    return $this;
-  }
+  // phpcs:enable
 
   /**
    * Get id.
@@ -143,20 +155,6 @@ class Project implements \ArrayAccess
   public function getId()
   {
     return $this->id;
-  }
-
-  /**
-   * Set year.
-   *
-   * @param int $year
-   *
-   * @return Project
-   */
-  public function setYear($year)
-  {
-    $this->year = $year;
-
-    return $this;
   }
 
   /**
@@ -170,20 +168,6 @@ class Project implements \ArrayAccess
   }
 
   /**
-   * Set name.
-   *
-   * @param string $name
-   *
-   * @return Project
-   */
-  public function setName($name)
-  {
-    $this->name = $name;
-
-    return $this;
-  }
-
-  /**
    * Get name.
    *
    * @return string
@@ -194,41 +178,23 @@ class Project implements \ArrayAccess
   }
 
   /**
-   * Set type.
-   *
-   * @param EnumProjectTemporalType|string $type
-   *
-   * @return Project
-   */
-  public function setType($type):Project
-  {
-    $this->type = new Types\EnumProjectTemporalType($type);
-
-    return $this;
-  }
-
-  /**
    * Get type.
    *
    * @return EnumProjectTemporalType
    */
-  public function getType():Types\EnumProjectTemporalType
+  public function getType(): Types\EnumProjectTemporalType
   {
     return $this->type;
   }
 
   /**
-   * Set participants.
+   * Get applications.
    *
-   * @param ArrayCollection $participants
-   *
-   * @return Project
+   * @return Collection
    */
-  public function setParticipants($participants):Project
+  public function getApplications():Collection
   {
-    $this->participants = $participants;
-
-    return $this;
+    return $this->applications;
   }
 
   /**
@@ -242,20 +208,6 @@ class Project implements \ArrayAccess
   }
 
   /**
-   * Set participantFields.
-   *
-   * @param ArrayCollection $participantFields
-   *
-   * @return Project
-   */
-  public function setParticipantFields($participantFields):Project
-  {
-    $this->participantFields = $participantFields;
-
-    return $this;
-  }
-
-  /**
    * Get participantFields.
    *
    * @return Collection
@@ -263,20 +215,6 @@ class Project implements \ArrayAccess
   public function getParticipantFields():Collection
   {
     return $this->participantFields;
-  }
-
-  /**
-   * Set participantFieldsData.
-   *
-   * @param ArrayCollection $participantFieldsData
-   *
-   * @return Project
-   */
-  public function setParticipantFieldsData($participantFieldsData):Project
-  {
-    $this->participantFieldsData = $participantFieldsData;
-
-    return $this;
   }
 
   /**
@@ -290,20 +228,6 @@ class Project implements \ArrayAccess
   }
 
   /**
-   * Set payments.
-   *
-   * @param ArrayCollection $payments
-   *
-   * @return Project
-   */
-  public function setPayments(Collection $payments):Project
-  {
-    $this->payments = $payments;
-
-    return $this;
-  }
-
-  /**
    * Get payments.
    *
    * @return ArrayCollection
@@ -311,20 +235,6 @@ class Project implements \ArrayAccess
   public function getPayments():Collection
   {
     return $this->payments;
-  }
-
-  /**
-   * Set sepaDebitMandates.
-   *
-   * @param ArrayCollection $sepaDebitMandates
-   *
-   * @return Project
-   */
-  public function setSepaDebitMandates($sepaDebitMandates):Project
-  {
-    $this->sepaDebitMandates = $sepaDebitMandates;
-
-    return $this;
   }
 
   /**
@@ -338,17 +248,68 @@ class Project implements \ArrayAccess
   }
 
   /**
-   * Set clubMembers.
+   * Returns registrationStartDate.
    *
-   * @param bool $clubMembers
-   *
-   * @return Project
+   * @return DateTimeImmutable
    */
-  public function setClubMembers(bool $clubMembers):Project
+  public function getRegistrationStartDate():?DateTimeInterface
   {
-    $this->clubMembers = $clubMembers;
+    return $this->registrationStartDate;
+  }
 
-    return $this;
+  /**
+   * Returns registrationDeadline.
+   *
+   * @return DateTimeImmutable
+   */
+  public function getRegistrationDeadline():?DateTimeInterface
+  {
+    return $this->registrationDeadline;
+  }
+
+  /**
+   * Get calendarEvents.
+   *
+   * @param bool $includeDeleted
+   *
+   * @return Collection
+   */
+  public function getCalendarEvents(bool $includeDeleted = false):Collection
+  {
+    if ($includeDeleted) {
+      return $this->calendarEvents;
+    }
+    return $this->calendarEvents->filter(fn(ProjectEvent $event) => $event->getDeleted() === null);
+  }
+
+  /**
+   * Get instrumentationNumbers.
+   *
+   * @return Collection
+   */
+  public function getInstrumentationNumbers()
+  {
+    return $this->instrumentationNumbers;
+  }
+
+  /**
+   * Get participantInstruments.
+   *
+   * @return Collection
+   */
+  public function getParticipantInstruments():Collection
+  {
+    return $this->participantInstruments;
+  }
+
+  /**
+   * Get webPages.
+   *
+   * @return Collection
+   */
+  public function getWebPages()
+  {
+    return $this->webPages;
   }
 
   /**
@@ -359,20 +320,6 @@ class Project implements \ArrayAccess
   public function getClubMembers():bool
   {
     return $this->clubMembers;
-  }
-
-  /**
-   * Set executiveBoard.
-   *
-   * @param bool $executiveBoard
-   *
-   * @return Project
-   */
-  public function setExecutiveBoard(bool $executiveBoard):Project
-  {
-    $this->executiveBoard = $executiveBoard;
-
-    return $this;
   }
 
   /**

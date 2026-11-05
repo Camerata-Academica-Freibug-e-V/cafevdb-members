@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,43 +18,24 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Traits;
 
-use Gedmo\Mapping\Annotation as Gedmo;
+use DateTimeInterface;
 
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
+
+/** Helper for Gedmo time-stampable entities. */
 trait CreatedAtEntity
 {
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use CreatedAt;
 
   /**
    * @var \DateTimeImmutable
-   * @ORM\Column(type="datetime_immutable", nullable=true)
    */
-  private $created;
-
-  /**
-   * Sets created.
-   *
-   * @param string|int|\DateTimeInterface $created
-   *
-   * @return self
-   */
-  public function setCreated($created)
-  {
-    $this->created = self::convertToDateTime($created);
-    return $this;
-  }
-
-  /**
-   * Returns created.
-   *
-   * @return \DateTimeImmutable
-   */
-  public function getCreated()
-  {
-    return $this->created;
-  }
+  #[Gedmo\Timestampable(on: 'update')]
+  #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+  protected ?DateTimeInterface $created;
 }

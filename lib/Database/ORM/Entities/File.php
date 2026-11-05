@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,29 +18,33 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use DateTimeInterface;
 
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumFileType;
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
-use OCA\CAFeVDBMembers\Database\DBAL\Types;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Types\Types as DBALTypes;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 /**
  * An entity which modesl a file-system file. While it is not always
  * advisable to store file-system data in a data-base, we do so
  * nevertheless for selected small files.
- *
- * @ORM\Table(name="PersonalizedFilesView")
- * @ORM\InheritanceType("SINGLE_TABLE")
- * @ORM\DiscriminatorColumn(name="type", type="EnumFileType")
- * @ORM\DiscriminatorMap({"generic"="File","encrypted"="EncryptedFile","image"="Image"})
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedFilesView')]
+#[ORM\InheritanceType('SINGLE_TABLE')]
+#[ORM\DiscriminatorColumn(name: 'type', type: DBALTypes::ENUM, enumType: EnumFileType::class)]
+#[ORM\DiscriminatorMap([
+  EnumFileType::GENERIC->value => 'File',
+  EnumFileType::ENCRYPTED->value => 'EncryptedFile',
+  EnumFileType::IMAGE->value => 'Image',
+])]
+#[ORM\Entity]
 class File implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
@@ -52,78 +54,55 @@ class File implements \ArrayAccess
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
-   * @ORM\Id
-   * @ORM\GeneratedValue(strategy="IDENTITY")
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
+  #[ORM\Id]
+  #[ORM\GeneratedValue(strategy: 'NONE')]
   private $id;
 
   /**
    * @var string|null
-   *
-   * @ORM\Column(type="string", length=512, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 512, nullable: true)]
   private $fileName;
 
   /**
    * @var string|null
-   *
-   * @ORM\Column(type="string", length=128, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: false)]
   private $mimeType;
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false, options={"default"=-1})
    */
+  #[ORM\Column(type: 'integer', nullable: false, options: ['default' => -1])]
   private $size = -1;
 
   /**
-   * @var FileData
-   *
-   * As ORM still does not support lazy one-to-one associations from the
-   * inverse side we just use one-directional from both sides here. This
-   * works, as the join column is just the key of both sides. So we have no
-   * "mappedBy" and "inversedBy".
-   *
-   * Note that it is not possible to override the targetEntity in a
-   * child class. OTOH, lazy-loading is only possible with leaf-classes. So
-   * the OneToOne annotation must go to the leaf-classes. Hence, the
-   * File-entity can only be used through its base-classes.
-   *
-   * _AT_ORM\OneToOne(targetEntity="FileData", fetch="EXTRA_LAZY")
-   * _AT_ORM\JoinColumns(
-   *   _AT_ORM\JoinColumn(name="id", referencedColumnName="file_id", nullable=false),
-   * )
-   *
+   * @var Collection
    */
-  // protected $fileData;
+  #[ORM\OneToMany(targetEntity: FileData::class, mappedBy: 'file', fetch: 'EXTRA_LAZY')]
+  protected $fileData;
 
   /**
    * @var string|null
-   *
-   * @ORM\Column(type="string", length=32, nullable=true, options={"fixed"=true})
    */
-  private $dataHash;
+  #[ORM\Column(type: 'string', length: 32, nullable: true, options: ['fixed' => true])]
+  protected $dataHash;
 
   /**
    * @var \DateTimeImmutable
-   * @ORM\Column(type="datetime_immutable", nullable=true)
    */
-  private $updated;
+  #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+  protected ?DateTimeInterface $updated;
 
-  public function __construct($fileName = null, $data = null, $mimeType = null) {
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
+    $this->fileData = new ArrayCollection;
     $this->arrayCTOR();
-    $this->setFileName($fileName);
-    $this->setMimeType($mimeType);
-    $data = $data ?? '';
-    $fileData = new FileData;
-    $fileData->setData($data);
-    $this->setFileData($fileData)
-      ->setSize(strlen($data));
   }
+  // phpcs:enable
 
   /**
    * Get id.
@@ -133,20 +112,6 @@ class File implements \ArrayAccess
   public function getId()
   {
     return $this->id;
-  }
-
-  /**
-   * Set mimeType.
-   *
-   * @param string|null $mimeType
-   *
-   * @return File
-   */
-  public function setMimeType($mimeType = null):File
-  {
-    $this->mimeType = $mimeType;
-
-    return $this;
   }
 
   /**
@@ -160,20 +125,6 @@ class File implements \ArrayAccess
   }
 
   /**
-   * Set fileName.
-   *
-   * @param string|null $fileName
-   *
-   * @return File
-   */
-  public function setFileName($fileName = null):File
-  {
-    $this->fileName = $fileName;
-
-    return $this;
-  }
-
-  /**
    * Get fileName.
    *
    * @return string|null
@@ -184,16 +135,9 @@ class File implements \ArrayAccess
   }
 
   /**
-   * Set only the dir-name
-   */
-  public function setDirName(string $dirName):File
-  {
-    $this->fileName = trim($dirName, self::PATH_SEPARATOR) . self::PATH_SEPARATOR . ($this->getBaseName()??'');
-    return $this;
-  }
-
-  /**
    * Get the dir-part of the file-name
+   *
+   * @return null|string
    */
   public function getDirName():?string
   {
@@ -201,34 +145,15 @@ class File implements \ArrayAccess
   }
 
   /**
-   * Set only the base-name
-   */
-  public function setBaseName(string $baseName):File
-  {
-    $this->fileName = ($this->getDirName()??'') . self::PATH_SEPARATOR . trim($baseName, self::PATH_SEPARATOR);
-    return $this;
-  }
-
-  /**
-   * Get the dir-part of the file-name
+   * Get the dir-part of the file-name.
+   *
+   * @param null|string $extension
+   *
+   * @return null|string
    */
   public function getBaseName(?string $extension = null):?string
   {
     return is_string($this->fileName) ? basename($this->fileName, $extension) : null;
-  }
-
-  /**
-   * Set dataHash.
-   *
-   * @param string|null $dataHash
-   *
-   * @return File
-   */
-  public function setDataHash($dataHash = null):File
-  {
-    $this->dataHash = $dataHash;
-
-    return $this;
   }
 
   /**
@@ -242,20 +167,6 @@ class File implements \ArrayAccess
   }
 
   /**
-   * Set $size.
-   *
-   * @param int $fileData
-   *
-   * @return File
-   */
-  public function setSize(int $size= -1):File
-  {
-    $this->size = $size;
-
-    return $this;
-  }
-
-  /**
    * Get $size.
    *
    * @return int
@@ -266,27 +177,12 @@ class File implements \ArrayAccess
   }
 
   /**
-   * Set FileData.
-   *
-   * @param FileData $data
-   *
-   * @return File
-   */
-  public function setFileData(FileData $fileData):File
-  {
-    $this->fileData = $fileData;
-    $fileData->setFile($this);
-
-    return $this;
-  }
-
-  /**
    * Get FileData.
    *
    * @return FileData
    */
   public function getFileData():FileData
   {
-    return $this->fileData;
+    return $this->fileData->first();
   }
 }

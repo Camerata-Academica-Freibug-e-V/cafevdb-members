@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,58 +18,55 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation as Gedmo;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\ArrayCollection;
-
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumParticipantFieldDataType as FieldDataType;
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumParticipantFieldMultiplicity as FieldMultiplicity;
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumParticipationContext as ParticipationContext;
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Utils\Uuid;
-use OCA\CAFeVDBMembers\Database\DBAL\Types;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Types\Types as DBALTypes;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
 
 /**
  * ProjectParticipantFields
- *
- * @ORM\Table(name="PersonalizedProjectParticipantFieldsView")
- * @ORM\Entity
- * @Gedmo\TranslationEntity(class="TableFieldTranslation")
  */
+#[ORM\Table(name: 'PersonalizedProjectParticipantFieldsView')]
+#[ORM\Entity]
+#[Gedmo\TranslationEntity(class: 'TableFieldTranslation')]
 class ProjectParticipantField implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
   use CAFEVDB\Traits\SoftDeleteableEntity;
   use CAFEVDB\Traits\GetByUuidTrait;
   use CAFEVDB\Traits\TranslatableTrait;
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer")
-   * @ORM\Id
-   * @ORM\GeneratedValue
    */
+  #[ORM\Column(type: 'integer')]
+  #[ORM\Id]
+  #[ORM\GeneratedValue]
   private $id;
 
   /**
    * @var Project
-   *
-   * @ORM\ManyToOne(targetEntity="Project", inversedBy="participantFields", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumn(nullable=false)
    */
+  #[ORM\JoinColumn(nullable: false)]
+  #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'participantFields', fetch: 'EXTRA_LAZY')]
   private $project;
 
   /**
    * @var string
-   *
-   * @Gedmo\Translatable(untranslated="untranslatedName")
-   * @ORM\Column(type="string", length=128, nullable=false)
    */
+  #[Gedmo\Translatable(untranslated: 'untranslatedName')]
+  #[ORM\Column(type: 'string', length: 128, nullable: false)]
   private $name;
 
   /**
@@ -82,67 +77,51 @@ class ProjectParticipantField implements \ArrayAccess
    */
   private $untranslatedName;
 
-  /**
-   * @var Types\EnumParticipantFieldMultiplicity
-   *
-   * @ORM\Column(type="EnumParticipantFieldMultiplicity", nullable=false)
-   */
-  private $multiplicity;
+  #[ORM\Column(type: DBALTypes::ENUM, nullable: false)]
+  private FieldMultiplicity $multiplicity;
 
-  /**
-   * @var EnumParticipantFieldDataType
-   *
-   * @ORM\Column(type="EnumParticipantFieldDataType", nullable=false, options={"default"="text"})
-   */
-  private $dataType = 'text';
+  #[ORM\Column(type: DBALTypes::ENUM, nullable: false)]
+  private FieldDataType $dataType;
 
   /**
    * @var Collection
-   *
-   * @ORM\OneToMany(targetEntity="ProjectParticipantFieldDataOption", mappedBy="field", indexBy="key")
-   * @ORM\OrderBy({"label" = "ASC", "key" = "ASC"})
    */
+  #[ORM\OneToMany(targetEntity: ProjectParticipantFieldDataOption::class, mappedBy: 'field', indexBy: 'key')]
+  #[ORM\OrderBy(['label' => 'ASC', 'key' => 'ASC'])]
   private $dataOptions;
 
   /**
    * @var \DateTimeImmutable
-   *
-   * @ORM\Column(type="date_immutable", nullable=true, options={"comment"="Due-date for financial fields."})
    */
+  #[ORM\Column(type: 'date_immutable', nullable: true, options: ['comment' => 'Due-date for financial fields.'])]
   private $dueDate = null;
 
   /**
    * @var \DateTimeImmutable
-   *
-   * @ORM\Column(type="date_immutable", nullable=true, options={"comment"="Due-date of deposit for financial fields."})
    */
+  #[ORM\Column(type: 'date_immutable', nullable: true, options: ['comment' => 'Due-date of deposit for financial fields.'])]
   private $depositDueDate = null;
 
   /**
    * @var null|ProjectParticipantFieldDataOption
-   *
-   * @ORM\OneToOne(targetEntity="ProjectParticipantFieldDataOption")
-   * @ORM\JoinColumns(
-   *   @ORM\JoinColumn(name="id", referencedColumnName="field_id"),
-   *   @ORM\JoinColumn(name="default_value", referencedColumnName="key", nullable=true)
-   * )
    */
+  #[ORM\OneToOne(targetEntity: ProjectParticipantFieldDataOption::class)]
+  #[ORM\JoinColumn(name: 'id', referencedColumnName: 'field_id')]
+  #[ORM\JoinColumn(name: 'default_value', referencedColumnName: 'key', nullable: true)]
   private $defaultValue = null;
 
   /**
    * @var string
-   *
-   * @Gedmo\Translatable
-   * @ORM\Column(type="string", length=4096, nullable=true)
    */
+  #[Gedmo\Translatable]
+  #[ORM\Column(type: 'string', length: 4096, nullable: true)]
   private $tooltip = null;
 
   /**
    * @var string
-   *
-   * @Gedmo\Translatable(untranslated="untranslatedTab")
-   * @ORM\Column(type="string", length=256, nullable=true, options={"comment"="Tab to display the field in. If empty, then the project tab is used."})
    */
+  #[Gedmo\Translatable(untranslated: 'untranslatedTab')]
+  #[ORM\Column(type: 'string', length: 256, nullable: true, options: ['comment' => 'Tab to display the field in. If empty, then the project tab is used.'])]
   private $tab = null;
 
   /**
@@ -155,37 +134,29 @@ class ProjectParticipantField implements \ArrayAccess
 
   /**
    * @var int|null
-   *
-   * @ORM\Column(type="integer", nullable=true)
    */
+  #[ORM\Column(type: 'integer', nullable: true)]
   private $displayOrder = null;
 
   /**
    * @var bool|null
-   *
-   * @ORM\Column(type="boolean", nullable=true, options={"default"="0"})
    */
+  #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => '0'])]
   private $encrypted = false;
 
   /**
-   * @var string|null
-   *
-   * @ORM\Column(type="string", length=1024, nullable=true, options={"comment"="If non-empty restrict the visbility to this comma separated list of user-groups."})
+   * @var Collection
    */
-  private $readers = null;
-
-  /**
-   * @var string|null
-   *
-   * @ORM\Column(type="string", length=1024, nullable=true, options={"comment"="Empty or comma separated list of groups allowed to change the field."})
-   */
-  private $writers = null;
-
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectParticipantFieldDatum", mappedBy="field", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: ProjectParticipantFieldDatum::class, mappedBy: 'field', fetch: 'EXTRA_LAZY')]
   private $fieldData;
 
+  /**
+   * @var null|ProjectEvent
+   */
+  #[ORM\OneToOne(targetEntity: ProjectEvent::class, mappedBy: 'absenceField')]
+  private $projectEvent;
+
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
   public function __construct()
   {
     $this->__wakeup();
@@ -195,25 +166,9 @@ class ProjectParticipantField implements \ArrayAccess
     $this->fieldData = new ArrayCollection();
     $this->dataOptions = new ArrayCollection();
   }
+  // phpcs:enable
 
-  public function __clone()
-  {
-    if (!$this->id) {
-      return;
-    }
-    $oldDataOptions = $this->dataOptions;
-    $oldDefaultValue = $this->defaultValue;
-    $this->__construct();
-    foreach ($oldDataOptions as $oldDataOption) {
-      $dataOption = clone $oldDataOption;
-      $dataOption->setField($this);
-      $this->dataOptions->add($dataOption);
-      if ($oldDataOption == $oldDefaultValue) {
-        $this->defaultValue = $dataOption;
-      }
-    }
-  }
-
+  /** {@inheritdoc} */
   public function __wakeup()
   {
     $this->arrayCTOR();
@@ -230,34 +185,6 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set id.
-   *
-   * @param int $id
-   *
-   * @return ProjectParticipantField
-   */
-  public function setId(int $id):ProjectParticipantField
-  {
-    $this->id = $id;
-
-    return $this;
-  }
-
-  /**
-   * Set project.
-   *
-   * @param Project $project
-   *
-   * @return ProjectParticipantField
-   */
-  public function setProject($project):ProjectParticipantField
-  {
-    $this->project = $project;
-
-    return $this;
-  }
-
-  /**
    * Get project.
    *
    * @return Project
@@ -265,20 +192,6 @@ class ProjectParticipantField implements \ArrayAccess
   public function getProject():Project
   {
     return $this->project;
-  }
-
-  /**
-   * Set dataOption.
-   *
-   * @param Collection $dataOptions
-   *
-   * @return ProjectParticipantField
-   */
-  public function setDataOptions($dataOptions):ProjectParticipantField
-  {
-    $this->dataOptions = $dataOptions;
-
-    return $this;
   }
 
   /**
@@ -298,7 +211,7 @@ class ProjectParticipantField implements \ArrayAccess
    *
    * @return Collection
    */
-  public function getSelectableOptions($includeDeleted = false):Collection
+  public function getSelectableOptions(bool $includeDeleted = false):Collection
   {
     // this unfortunately just does not work.
     // return $this->dataOptions->matching(DBUtil::criteriaWhere([ '!key' => Uuid::NIL, 'deleted' => null, ]));
@@ -327,23 +240,9 @@ class ProjectParticipantField implements \ArrayAccess
    *
    * @return null|ProjectParticipantFieldDataOption
    */
-  public function getDataOption($key):?ProjectParticipantFieldDataOption
+  public function getDataOption(mixed $key):?ProjectParticipantFieldDataOption
   {
     return $this->getByUuid($this->dataOptions, $key, 'key');
-  }
-
-  /**
-   * Set fieldData.
-   *
-   * @param Collection $fieldData
-   *
-   * @return ProjectParticipantField
-   */
-  public function setFieldData($fieldData):ProjectParticipantField
-  {
-    $this->fieldData = $fieldData;
-
-    return $this;
   }
 
   /**
@@ -367,20 +266,6 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set displayOrder.
-   *
-   * @param int|null $displayOrder
-   *
-   * @return ProjectParticipantField
-   */
-  public function setDisplayOrder($displayOrder):ProjectParticipantField
-  {
-    $this->displayOrder = $displayOrder;
-
-    return $this;
-  }
-
-  /**
    * Get displayOrder.
    *
    * @return int|null
@@ -388,22 +273,6 @@ class ProjectParticipantField implements \ArrayAccess
   public function getDisplayOrder()
   {
     return $this->displayOrder;
-  }
-
-  /**
-   * Set name.
-   *
-   * @param string $name
-   *
-   * @return ProjectParticipantField
-   */
-  public function setName($name):ProjectParticipantField
-  {
-    $this->name = $name;
-    if ($this->getLocale() == ConfigService::DEFAULT_LOCALE) {
-      $this->untranslatedName = $this->name;
-    }
-    return $this;
   }
 
   /**
@@ -417,19 +286,6 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set untranslatedName.
-   *
-   * @param string $untranslatedName
-   *
-   * @return ProjectParticipantField
-   */
-  public function setUntranslatedName($untranslatedName):ProjectParticipantField
-  {
-    throw new Exceptions\DatabaseReadonlyException('The property "untranslatedName" cannot be set, it is read-only.');
-    return $this;
-  }
-
-  /**
    * Get untranslatedName.
    *
    * @return string
@@ -440,40 +296,13 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set multiplicity.
-   *
-   * @param EnumParticipantFieldMultiplicity|string $multiplicity
-   *
-   * @return ProjectParticipantField
-   */
-  public function setMultiplicity($multiplicity):ProjectParticipantField
-  {
-    $this->multiplicity = new Types\EnumParticipantFieldMultiplicity($multiplicity);
-
-    return $this;
-  }
-
-  /**
    * Get multiplicity.
    *
    * @return EnumParticipantFieldMultiplicity
    */
-  public function getMultiplicity():Types\EnumParticipantFieldMultiplicity
+  public function getMultiplicity(): FieldMultiplicity
   {
     return $this->multiplicity;
-  }
-
-  /**
-   * Set dataType.
-   *
-   * @param EnumParticipantFieldDataType|string $dataType
-   *
-   * @return ProjectParticipantField
-   */
-  public function setDataType($dataType):ProjectParticipantField
-  {
-    $this->dataType = new Types\EnumParticipantFieldDataType($dataType);
-    return $this;
   }
 
   /**
@@ -481,22 +310,9 @@ class ProjectParticipantField implements \ArrayAccess
    *
    * @return EnumParticipantFieldDataType
    */
-  public function getDataType():Types\EnumParticipantFieldDataType
+  public function getDataType(): FieldDataType
   {
     return $this->dataType;
-  }
-
-  /**
-   * Set dueDate.
-   *
-   * @param string|null|\DateTimeInterface $dueDate
-   *
-   * @return ProjectParticipantField
-   */
-  public function setDueDate($dueDate):ProjectParticipantField
-  {
-    $this->dueDate = self::convertToDateTime($dueDate);
-    return $this;
   }
 
   /**
@@ -510,19 +326,6 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set depositDueDate.
-   *
-   * @param string|null|\DateTimeInterface $depositDueDate
-   *
-   * @return ProjectParticipantField
-   */
-  public function setDepositDueDate($depositDueDate):ProjectParticipantField
-  {
-    $this->depositDueDate = self::convertToDateTime($depositDueDate);
-    return $this;
-  }
-
-  /**
    * Get depositDueDate.
    *
    * @return \DateTimeImmutable|null
@@ -530,20 +333,6 @@ class ProjectParticipantField implements \ArrayAccess
   public function getDepositDueDate():?\DateTimeImmutable
   {
     return $this->depositDueDate;
-  }
-
-  /**
-   * Set defaultValue.
-   *
-   * @param null|ProjectParticipantFieldDataOption $defaultValue
-   *
-   * @return ProjectParticipantField
-   */
-  public function setDefaultValue($defaultValue):ProjectParticipantField
-  {
-    $this->defaultValue = $defaultValue;
-
-    return $this;
   }
 
   /**
@@ -557,20 +346,6 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set tooltip.
-   *
-   * @param string $tooltip
-   *
-   * @return ProjectParticipantField
-   */
-  public function setTooltip($tooltip):ProjectParticipantField
-  {
-    $this->tooltip = $tooltip;
-
-    return $this;
-  }
-
-  /**
    * Get tooltip.
    *
    * @return string
@@ -578,20 +353,6 @@ class ProjectParticipantField implements \ArrayAccess
   public function getTooltip()
   {
     return $this->tooltip;
-  }
-
-  /**
-   * Set tab.
-   *
-   * @param string $tab
-   *
-   * @return ProjectParticipantField
-   */
-  public function setTab($tab):ProjectParticipantField
-  {
-    $this->tab = $tab;
-
-    return $this;
   }
 
   /**
@@ -605,19 +366,6 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set untranslatedTab.
-   *
-   * @param string $untranslatedTab
-   *
-   * @return ProjectParticipantField
-   */
-  public function setUntranslatedTab($untranslatedTab):ProjectParticipantField
-  {
-    throw new Exceptions\DatabaseReadonlyException('The property "untranslatedTab" cannot be set, it is read-only.');
-    return $this;
-  }
-
-  /**
    * Get untranslatedTab.
    *
    * @return string
@@ -625,20 +373,6 @@ class ProjectParticipantField implements \ArrayAccess
   public function getUntranslatedTab()
   {
     return $this->untranslatedTab;
-  }
-
-  /**
-   * Set encrypted.
-   *
-   * @param bool|null $encrypted
-   *
-   * @return ProjectParticipantField
-   */
-  public function setEncrypted($encrypted):ProjectParticipantField
-  {
-    $this->encrypted = $encrypted;
-
-    return $this;
   }
 
   /**
@@ -652,51 +386,12 @@ class ProjectParticipantField implements \ArrayAccess
   }
 
   /**
-   * Set readers.
+   * Get projectEvent.
    *
-   * @param string|null $readers
-   *
-   * @return ProjectParticipantField
+   * @return null|ProjectEvent
    */
-  public function setReaders($readers):ProjectParticipantField
+  public function getProjectEvent():?ProjectEvent
   {
-    $this->readers = $readers;
-
-    return $this;
+    return $this->projectEvent;
   }
-
-  /**
-   * Get readers.
-   *
-   * @return string|null
-   */
-  public function getReaders()
-  {
-    return $this->readers;
-  }
-
-  /**
-   * Set writers.
-   *
-   * @param string|null $writers
-   *
-   * @return ProjectParticipantField
-   */
-  public function setWriters($writers):ProjectParticipantField
-  {
-    $this->writers = $writers;
-
-    return $this;
-  }
-
-  /**
-   * Get writers.
-   *
-   * @return string|null
-   */
-  public function getWriters()
-  {
-    return $this->writers;
-  }
-
 }

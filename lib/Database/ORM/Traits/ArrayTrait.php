@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright 2020-2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,31 +18,49 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Traits;
 
-use Doctrine\ORM\Mapping as ORM;
+use ReflectionAttribute;
+use ReflectionClass;
+use ReflectionProperty;
+use Exception;
 
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+
+/** Generic \ArrayAccess implementation for entities. */
 trait ArrayTrait
 {
   private $keys;
 
   /**
    * Use reflection inspection to export all of the private keys;
-   * automatically called on post-load.
+   * automatically called on post-load if the entity used lifecycle-callbacks.
    *
-   * @ORM\PostLoad
+   * @return void
    */
-  protected function arrayCTOR() {
-    $this->keys = (new \ReflectionClass(__CLASS__))
-                ->getProperties(\ReflectionProperty::IS_PRIVATE|\ReflectionProperty::IS_PROTECTED);
+  #[ORM\PostLoad]
+  protected function arrayCTOR():void
+  {
+    $this->keys = (new ReflectionClass(__CLASS__))
+      ->getProperties(ReflectionProperty::IS_PRIVATE|ReflectionProperty::IS_PROTECTED);
 
-    $this->keys = array_map(function($property) {
-      $doc = $property->getDocComment();
+    $this->keys = array_map(function(ReflectionProperty $property) {
       $name = $property->getName();
+      $attributes = implode('', array_map(
+        fn(ReflectionAttribute $attribute)  => $attribute->getName(),
+        $property->getAttributes()
+      ));
+      if (preg_match('/ORM\\\\Mapping\\\\(Column|(Many|One)To(Many|One))/i', $attributes)) {
+        return $name;
+      }
+      $doc = $property->getDocComment();
       if (preg_match('/@ORM\\\\(Column|(Many|One)To(Many|One))/i', $doc)) {
+        return $name;
+      }
+      // also include the untranslated variants of fields
+      if (str_starts_with($name, 'untranslated')) {
         return $name;
       }
       return false;
@@ -54,13 +70,18 @@ trait ArrayTrait
     $this->keys = array_filter($this->keys);
   }
 
+  /** {@inheritdoc} */
   public function __wakeup()
   {
     $this->arrayCTOR();
   }
 
-  public function toArray()
+  /** @return array */
+  public function toArray():array
   {
+    if (empty($this->keys)) {
+      $this->arrayCTOR();
+    }
     $result = [];
     foreach ($this->keys as $key) {
       $result[$key] = $this->offsetGet($key);
@@ -68,46 +89,65 @@ trait ArrayTrait
     return $result;
   }
 
-  public function offsetExists($offset):bool {
+  /** {@inheritdoc} */
+  public function offsetExists(mixed $offset):bool
+  {
     if (empty($this->keys)) {
       $this->arrayCTOR();
     }
     return is_array($this->keys) && in_array(self::offsetNormalize($offset), $this->keys);
   }
 
-  public function offsetGet($offset) {
+  /** {@inheritdoc} */
+  public function offsetGet(mixed $offset):mixed
+  {
     if (!$this->offsetExists($offset)) {
-      throw new \Exception('Offset '.self::offsetNormalize($offset).' does not exist in '.__CLASS__.', keys '.print_r($this->keys, true));
+      throw new Exception('Offset '.self::offsetNormalize($offset).' does not exist in '.__CLASS__.', keys '.print_r($this->keys, true));
     }
     $method = self::methodName('get', $offset);
     if (!method_exists($this, $method)) {
-      throw new \Exception('Method '.$method.' does not exist in '.__CLASS__.', please implement it.');
+      throw new Exception('Method '.$method.' does not exist in '.__CLASS__.', please implement it.');
     }
     return $this->$method();
   }
 
-  public function offsetSet($offset, $value):void
+  /** {@inheritdoc} */
+  public function offsetSet(mixed $offset, mixed $value):void
   {
     if (!$this->offsetExists($offset)) {
-      throw new \Exception('Offset '.self::offsetNormalize($offset).' does not exist in '.__CLASS__.', keys '.print_r($this->keys, true));
+      throw new Exception('Offset '.self::offsetNormalize($offset).' does not exist in '.__CLASS__.', keys '.print_r($this->keys, true));
     }
     $method = self::methodName('set', $offset);
     if (!method_exists($this, $method)) {
-      throw new \Exception('Method '.$method.' does not exist in '.__CLASS__.', please implement it.');
+      throw new Exception('Method '.$method.' does not exist in '.__CLASS__.', please implement it.');
     }
     $this->$method($value);
   }
 
-  public function offsetUnset($offset):void
+  /** {@inheritdoc} */
+  public function offsetUnset(mixed $offset):void
   {
     $this->offsetSet($offset, null);
   }
 
-  private static function methodName($prefix, $offset) {
+  /**
+   * @param string $prefix
+   *
+   * @param string $offset
+   *
+   * @return string
+   */
+  private static function methodName(string $prefix, string $offset):string
+  {
     return $prefix . ucfirst(self::offsetNormalize($offset));
   }
 
-  private static function offsetNormalize($offset)
+  /**
+   * @param string $offset
+   *
+   * @return string
+   */
+  private static function offsetNormalize(string $offset):string
   {
     $words = explode('_', $offset);
     if ($words[0] == strtoupper($words[0])) {

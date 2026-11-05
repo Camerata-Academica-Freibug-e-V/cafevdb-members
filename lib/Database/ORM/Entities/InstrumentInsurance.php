@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,131 +18,111 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumGeographicalScope;
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 /**
  * InstrumentInsurance
- *
- * @ORM\Table(name="PersonalizedInstrumentInsurancesView")
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedInstrumentInsurancesView')]
+#[ORM\Entity]
 class InstrumentInsurance implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
   use CAFEVDB\Traits\TimestampableEntity;
   use CAFEVDB\Traits\SoftDeleteableEntity;
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
-   * @ORM\Id
-   * @ORM\GeneratedValue(strategy="IDENTITY")
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
+  #[ORM\Id]
+  #[ORM\GeneratedValue(strategy: 'NONE')]
   private $id;
 
   /**
    * @var Musician
-   *
-   * @ORM\ManyToOne(targetEntity="Musician", inversedBy="instrumentInsurances", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumn(nullable=false)
    */
+  #[ORM\JoinColumn(nullable: false)]
+  #[ORM\ManyToOne(targetEntity: Musician::class, inversedBy: 'instrumentInsurances', fetch: 'EXTRA_LAZY')]
   private $musician;
 
   /**
    * @var bool
-   *
-   * @ORM\Column(type="boolean", nullable=false)
    */
+  #[ORM\Column(type: 'boolean', nullable: false)]
   private $isDebitor;
 
   /**
    * @var bool
-   *
-   * @ORM\Column(type="boolean", nullable=false)
    */
+  #[ORM\Column(type: 'boolean', nullable: false)]
   private $isHolder;
 
   /**
-   * @var InsuranceRate
-   *
-   * @ORM\ManyToOne(targetEntity="InsuranceRate", inversedBy="instrumentInsurances", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumns(
-   *   @ORM\JoinColumn(name="broker_id", referencedColumnName="broker_id", nullable=false),
-   *   @ORM\JoinColumn(name="geographical_scope", referencedColumnName="geographical_scope", nullable=false)
-   * )
+   * @var bool
    */
+  #[ORM\Column(type: 'boolean', nullable: false)]
+  private $isOwner;
+
+  /**
+   * @var InsuranceRate
+   */
+  #[ORM\ManyToOne(targetEntity: InsuranceRate::class, inversedBy: 'instrumentInsurances', fetch: 'EXTRA_LAZY')]
+  #[ORM\JoinColumn(name: 'broker_id', referencedColumnName: 'broker_id', nullable: false)]
+  #[ORM\JoinColumn(name: 'geographical_scope', referencedColumnName: 'geographical_scope', nullable: false)]
   private $insuranceRate;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: false)]
   private $object;
 
   /**
    * @var array
-   *
-   * @ORM\Column(type="boolean", nullable=true, options={"default"=false})
    */
+  #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => false])]
   private $accessory = false;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: false)]
   private $manufacturer;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=64, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 64, nullable: false)]
   private $yearOfConstruction;
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
   private $insuranceAmount;
 
   /**
    * @var \DateTime
-   *
-   * @ORM\Column(type="date_immutable", nullable=false)
    */
+  #[ORM\Column(type: 'date_immutable', nullable: false)]
   private $startOfInsurance;
 
-  public function __construct() {
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
   }
-
-  /**
-   * Set id.
-   *
-   * @param int $id
-   *
-   * @return InstrumentInsurance
-   */
-  public function setId($id):InstrumentInsurance
-  {
-    $this->id = $id;
-
-    return $this;
-  }
+  // phpcs:enable
 
   /**
    * Get id.
@@ -154,30 +132,6 @@ class InstrumentInsurance implements \ArrayAccess
   public function getId():int
   {
     return $this->id;
-  }
-
-  /**
-   * Set instrumentHolder.
-   *
-   * @param int $instrumentHolder
-   *
-   * @return InstrumentInsurance
-   */
-  public function setInstrumentHolder($instrumentHolder):InstrumentInsurance
-  {
-    $this->instrumentHolder = $instrumentHolder;
-
-    return $this;
-  }
-
-  /**
-   * Get instrumentHolder.
-   *
-   * @return Musician
-   */
-  public function getInstrumentHolder():Musician
-  {
-    return $this->instrumentHolder;
   }
 
   /**
@@ -193,25 +147,11 @@ class InstrumentInsurance implements \ArrayAccess
   /**
    * Get geographicalScope.
    *
-   * @return Types\EnumGeographicalScope
+   * @return EnumGeographicalScope
    */
-  public function getGeographicalScope():Types\EnumGeographicalScope
+  public function getGeographicalScope(): EnumGeographicalScope
   {
     return $this->insuranceRate->getGeographicalScope();
-  }
-
-  /**
-   * Set object.
-   *
-   * @param string $object
-   *
-   * @return InstrumentInsurance
-   */
-  public function setObject($object):InstrumentInsurance
-  {
-    $this->object = $object;
-
-    return $this;
   }
 
   /**
@@ -225,41 +165,13 @@ class InstrumentInsurance implements \ArrayAccess
   }
 
   /**
-   * Set accessory.
-   *
-   * @param bool $accessory
-   *
-   * @return InstrumentInsurance
-   */
-  public function setAccessory($accessory):InstrumentInsurance
-  {
-    $this->accessory = $accessory;
-
-    return $this;
-  }
-
-  /**
    * Get accessory.
    *
    * @return bool
    */
   public function getAccessory():bool
   {
-    return $this->accessory;
-  }
-
-  /**
-   * Set manufacturer.
-   *
-   * @param string $manufacturer
-   *
-   * @return InstrumentInsurance
-   */
-  public function setManufacturer($manufacturer):InstrumentInsurance
-  {
-    $this->manufacturer = $manufacturer;
-
-    return $this;
+    return !empty($this->accessory);
   }
 
   /**
@@ -273,20 +185,6 @@ class InstrumentInsurance implements \ArrayAccess
   }
 
   /**
-   * Set yearOfConstruction.
-   *
-   * @param string $yearOfConstruction
-   *
-   * @return InstrumentInsurance
-   */
-  public function setYearOfConstruction($yearOfConstruction):InstrumentInsurance
-  {
-    $this->yearOfConstruction = $yearOfConstruction;
-
-    return $this;
-  }
-
-  /**
    * Get yearOfConstruction.
    *
    * @return string
@@ -294,20 +192,6 @@ class InstrumentInsurance implements \ArrayAccess
   public function getYearOfConstruction()
   {
     return $this->yearOfConstruction;
-  }
-
-  /**
-   * Set insuranceAmount.
-   *
-   * @param int $insuranceAmount
-   *
-   * @return InstrumentInsurance
-   */
-  public function setInsuranceAmount($insuranceAmount):InstrumentInsurance
-  {
-    $this->insuranceAmount = $insuranceAmount;
-
-    return $this;
   }
 
   /**
@@ -321,20 +205,6 @@ class InstrumentInsurance implements \ArrayAccess
   }
 
   /**
-   * Set musician.
-   *
-   * @param int $musician
-   *
-   * @return InstrumentInsurance
-   */
-  public function setMusician($musician):InstrumentInsurance
-  {
-    $this->musician = $musician;
-
-    return $this;
-  }
-
-  /**
    * Get musician.
    *
    * @return Musician
@@ -342,20 +212,6 @@ class InstrumentInsurance implements \ArrayAccess
   public function getMusician():Musician
   {
     return $this->musician;
-  }
-
-  /**
-   * Set startOfInsurance.
-   *
-   * @param string|\DateTimeInterface $submitDate
-   *
-   * @return InstrumentInsurance
-   */
-  public function setStartOfInsurance($startOfInsurance):InstrumentInsurance
-  {
-    $this->startOfInsurance = self::convertToDateTime($startOfInsurance);
-
-    return $this;
   }
 
   /**
@@ -369,19 +225,6 @@ class InstrumentInsurance implements \ArrayAccess
   }
 
   /**
-   * Set insuranceRate.
-   *
-   * @param int $insuranceRate
-   *
-   * @return InstrumentInsurance
-   */
-  public function setInsuranceRate(InsuranceRate $insuranceRate):InstrumentInsurance
-  {
-    $this->insuranceRate = $insuranceRate;
-    return $this;
-  }
-
-  /**
    * Get insuranceRate.
    *
    * @return InsuranceRate
@@ -389,19 +232,6 @@ class InstrumentInsurance implements \ArrayAccess
   public function getInsuranceRate():InsuranceRate
   {
     return $this->insuranceRate;
-  }
-
-  /**
-   * Set isDebitor.
-   *
-   * @param int $isDebitor
-   *
-   * @return InstrumentInsurance
-   */
-  public function setIsDebitor(IsDebitor $isDebitor):InstrumentInsurance
-  {
-    $this->isDebitor = $isDebitor;
-    return $this;
   }
 
   /**
@@ -415,19 +245,6 @@ class InstrumentInsurance implements \ArrayAccess
   }
 
   /**
-   * Set isHolder.
-   *
-   * @param int $isHolder
-   *
-   * @return InstrumentInsurance
-   */
-  public function setIsHolder(IsHolder $isHolder):InstrumentInsurance
-  {
-    $this->isHolder = $isHolder;
-    return $this;
-  }
-
-  /**
    * Get isHolder.
    *
    * @return bool
@@ -435,5 +252,15 @@ class InstrumentInsurance implements \ArrayAccess
   public function getIsHolder():bool
   {
     return $this->isHolder;
+  }
+
+  /**
+   * Get isOwner.
+   *
+   * @return bool
+   */
+  public function getIsOwner():bool
+  {
+    return $this->isOwner;
   }
 }

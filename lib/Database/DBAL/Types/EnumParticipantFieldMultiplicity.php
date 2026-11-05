@@ -1,11 +1,11 @@
 <?php
 /**
- * Member's data base connector for CAFEVDB orchetra management app.
+ * Orchestra member, musician and project management application.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * CAFEVDB -- Camerata Academica Freiburg e.V. DataBase.
  *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright 2011-2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,32 +20,22 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\DBAL\Types;
 
-use MyCLabs\Enum\Enum as EnumType;
-
 /**
  * Enum for "participant-field" multiplicity.
- *
- * @method static EnumParticipantFieldMultiplicity SIMPLE()
- * @method static EnumParticipantFieldMultiplicity SINGLE()
- * @method static EnumParticipantFieldMultiplicity MULTIPLE()
- * @method static EnumParticipantFieldMultiplicity PARALLEL()
- * @method static EnumParticipantFieldMultiplicity RECURRING()
- * @method static EnumParticipantFieldMultiplicity GROUPOFPEOPLE()
- * @method static EnumParticipantFieldMultiplicity GROUPSOFPEOPLE()
- *
  */
-class EnumParticipantFieldMultiplicity extends EnumType
+enum EnumParticipantFieldMultiplicity: string
 {
-  public const SIMPLE = 'simple';
-  public const SINGLE = 'single';
-  public const MULTIPLE = 'multiple';
-  public const PARALLEL = 'parallel';
-  public const RECURRING = 'recurring';
-  public const GROUPOFPEOPLE = 'groupofpeople';
-  public const GROUPSOFPEOPLE = 'groupsofpeople';
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\TranslatableEnumTrait;
+
+  case SIMPLE = 'simple';
+  case SINGLE = 'single';
+  case MULTIPLE = 'multiple';
+  case PARALLEL = 'parallel';
+  case RECURRING = 'recurring';
+  case GROUPOFPEOPLE = 'groupofpeople';
+  case GROUPSOFPEOPLE = 'groupsofpeople';
 }

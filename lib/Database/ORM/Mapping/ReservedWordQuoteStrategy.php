@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable
 /*
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -19,9 +20,10 @@
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Mapping;
 
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\QuoteStrategy;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping\ClassMetadata;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping\QuoteStrategy;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Platforms\AbstractPlatform;
 
 /**
  * A set of rules for determining the physical column, alias and table quotes
@@ -31,171 +33,171 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
  */
 class ReservedWordQuoteStrategy implements QuoteStrategy
 {
-   /**
-     * @param AbstractPlatform $platform
-     * @param string $name
-     * @param bool $force
-     *
-     * @return string
-     * @throws \Doctrine\DBAL\DBALException
-     */
-    private function getQuotedName(AbstractPlatform $platform, $name, $force = false)
-    {
-        $keywords = $platform->getReservedKeywordsList();
-        $parts = explode('.', $name);
-        foreach ($parts as $k => $v) {
-            if ($force || $keywords->isKeyword($v)) {
-                $parts[$k] = $platform->quoteIdentifier($v);
-            }
-        }
-
-        return implode('.', $parts);
+  /**
+   * @param AbstractPlatform $platform
+   * @param string $name
+   * @param bool $force
+   *
+   * @return string
+   * @throws \Doctrine\DBAL\DBALException
+   */
+  private function getQuotedName(AbstractPlatform $platform, $name, $force = false)
+  {
+    $keywords = $platform->getReservedKeywordsList();
+    $parts = explode('.', $name);
+    foreach ($parts as $k => $v) {
+      if ($force || $keywords->isKeyword($v)) {
+        $parts[$k] = $platform->quoteIdentifier($v);
+      }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnName($fieldName, ClassMetadata $class, AbstractPlatform $platform)
-    {
-        return $this->getQuotedName(
-            $platform,
-            $class->fieldMappings[$fieldName]['columnName'],
-            isset($class->fieldMappings[$fieldName]['quoted'])
-        );
+    return implode('.', $parts);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getColumnName(string $fieldName, ClassMetadata $class, AbstractPlatform $platform): string
+  {
+    return $this->getQuotedName(
+      $platform,
+      $class->fieldMappings[$fieldName]['columnName'],
+      isset($class->fieldMappings[$fieldName]['quoted'])
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo Table names should be computed in DBAL depending on the platform
+   */
+  public function getTableName(ClassMetadata $class, AbstractPlatform $platform): string
+  {
+    $tableName = $class->table['name'];
+
+    if ( ! empty($class->table['schema'])) {
+      $tableName = $class->table['schema'] . '.' . $class->table['name'];
+
+      if ( ! $platform->supportsSchemas() && $platform->canEmulateSchemas()) {
+        $tableName = $class->table['schema'] . '__' . $class->table['name'];
+      }
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @todo Table names should be computed in DBAL depending on the platform
-     */
-    public function getTableName(ClassMetadata $class, AbstractPlatform $platform)
-    {
-        $tableName = $class->table['name'];
+    return $this->getQuotedName(
+      $platform,
+      $tableName,
+      isset($class->table['quoted'])
+    );
+  }
 
-        if ( ! empty($class->table['schema'])) {
-            $tableName = $class->table['schema'] . '.' . $class->table['name'];
+  /**
+   * {@inheritdoc}
+   */
+  public function getSequenceName(array $definition, ClassMetadata $class, AbstractPlatform $platform): string
+  {
+    return $this->getQuotedName(
+      $platform,
+      $definition['sequenceName'],
+      isset($definition['quoted'])
+    );
+  }
 
-            if ( ! $platform->supportsSchemas() && $platform->canEmulateSchemas()) {
-                $tableName = $class->table['schema'] . '__' . $class->table['name'];
-            }
-        }
+  /**
+   * {@inheritdoc}
+   */
+  public function getJoinColumnName(ORM\JoinColumnMapping $joinColumn, ClassMetadata $class, AbstractPlatform $platform): string
+  {
+    return $this->getQuotedName(
+      $platform,
+      $joinColumn['name'],
+      isset($joinColumn['quoted'])
+    );
+  }
 
-        return $this->getQuotedName(
-            $platform,
-            $tableName,
-            isset($class->table['quoted'])
-        );
+  /**
+   * {@inheritdoc}
+   */
+  public function getReferencedJoinColumnName(ORM\JoinColumnMapping $joinColumn, ClassMetadata $class, AbstractPlatform $platform): string
+  {
+    return $this->getQuotedName(
+      $platform,
+      $joinColumn['referencedColumnName'],
+      isset($joinColumn['quoted'])
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getJoinTableName(ORM\ManyToManyOwningSideMapping $association, ClassMetadata $class, AbstractPlatform $platform): string
+  {
+    $schema = '';
+
+    if (isset($association['joinTable']['schema'])) {
+      $schema = $association['joinTable']['schema'] . '.';
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getSequenceName(array $definition, ClassMetadata $class, AbstractPlatform $platform)
-    {
-        return $this->getQuotedName(
-            $platform,
-            $definition['sequenceName'],
-            isset($definition['quoted'])
-        );
-    }
+    $tableName = $association['joinTable']['name'];
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getJoinColumnName(array $joinColumn, ClassMetadata $class, AbstractPlatform $platform)
-    {
-        return $this->getQuotedName(
+    $tableName = $this->getQuotedName(
+      $platform,
+      $tableName,
+      isset($association['joinTable']['quoted'])
+    );
+
+    return $schema . $tableName;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getIdentifierColumnNames(ClassMetadata $class, AbstractPlatform $platform): array
+  {
+    $quotedColumnNames = array();
+
+    foreach ($class->identifier as $fieldName) {
+      if (isset($class->fieldMappings[$fieldName])) {
+        $quotedColumnNames[] = $this->getColumnName($fieldName, $class, $platform);
+
+        continue;
+      }
+
+      // Association defined as Id field
+      $self                   = $this;
+      $joinColumns            = $class->associationMappings[$fieldName]['joinColumns'];
+      $assocQuotedColumnNames = array_map(
+        function ($joinColumn) use ($platform, $self)
+        {
+          return $self->getQuotedName(
             $platform,
             $joinColumn['name'],
             isset($joinColumn['quoted'])
-        );
+          );
+        },
+        $joinColumns
+      );
+
+      $quotedColumnNames = array_merge($quotedColumnNames, $assocQuotedColumnNames);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getReferencedJoinColumnName(array $joinColumn, ClassMetadata $class, AbstractPlatform $platform)
-    {
-        return $this->getQuotedName(
-            $platform,
-            $joinColumn['referencedColumnName'],
-            isset($joinColumn['quoted'])
-        );
-    }
+    return $quotedColumnNames;
+  }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getJoinTableName(array $association, ClassMetadata $class, AbstractPlatform $platform)
-    {
-        $schema = '';
+  /**
+   * {@inheritdoc}
+   */
+  public function getColumnAlias(string $columnName, $counter, AbstractPlatform $platform, ?ClassMetadata $class = null): string
+  {
+    // 1 ) Concatenate column name and counter
+    // 2 ) Trim the column alias to the maximum identifier length of the platform.
+    //     If the alias is to long, characters are cut off from the beginning.
+    // 3 ) Strip non alphanumeric characters
+    // 4 ) Prefix with "_" if the result its numeric
+    $columnName = $columnName . '_' . $counter;
+    $columnName = substr($columnName, -$platform->getMaxIdentifierLength());
+    $columnName = preg_replace('/[^A-Za-z0-9_]/', '', $columnName);
+    $columnName = is_numeric($columnName) ? '_' . $columnName : $columnName;
 
-        if (isset($association['joinTable']['schema'])) {
-            $schema = $association['joinTable']['schema'] . '.';
-        }
-
-        $tableName = $association['joinTable']['name'];
-
-        $tableName = $this->getQuotedName(
-            $platform,
-            $tableName,
-            isset($association['joinTable']['quoted'])
-        );
-
-        return $schema . $tableName;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getIdentifierColumnNames(ClassMetadata $class, AbstractPlatform $platform)
-    {
-        $quotedColumnNames = array();
-
-        foreach ($class->identifier as $fieldName) {
-            if (isset($class->fieldMappings[$fieldName])) {
-                $quotedColumnNames[] = $this->getColumnName($fieldName, $class, $platform);
-
-                continue;
-            }
-
-            // Association defined as Id field
-            $self                   = $this;
-            $joinColumns            = $class->associationMappings[$fieldName]['joinColumns'];
-            $assocQuotedColumnNames = array_map(
-                function ($joinColumn) use ($platform, $self)
-                {
-                    return $self->getQuotedName(
-                        $platform,
-                        $joinColumn['name'],
-                        isset($joinColumn['quoted'])
-                    );
-                },
-                $joinColumns
-            );
-
-            $quotedColumnNames = array_merge($quotedColumnNames, $assocQuotedColumnNames);
-        }
-
-        return $quotedColumnNames;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnAlias($columnName, $counter, AbstractPlatform $platform, ClassMetadata $class = null)
-    {
-        // 1 ) Concatenate column name and counter
-        // 2 ) Trim the column alias to the maximum identifier length of the platform.
-        //     If the alias is to long, characters are cut off from the beginning.
-        // 3 ) Strip non alphanumeric characters
-        // 4 ) Prefix with "_" if the result its numeric
-        $columnName = $columnName . '_' . $counter;
-        $columnName = substr($columnName, -$platform->getMaxIdentifierLength());
-        $columnName = preg_replace('/[^A-Za-z0-9_]/', '', $columnName);
-        $columnName = is_numeric($columnName) ? '_' . $columnName : $columnName;
-
-        return $platform->getSQLResultCasing($columnName);
-    }
+    return $platform->getSQLResultCasing($columnName);
+  }
 }

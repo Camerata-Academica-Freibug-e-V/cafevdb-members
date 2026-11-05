@@ -1,7 +1,9 @@
 <?php
 /**
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * Member's data base connector for CAFEVDB orchetra management app.
+ *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @copyright Copyright (c) 2022, 2023, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,10 +20,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// phpcs:disable PSR1.Files.SideEffects
+
 namespace OCA\CAFeVDBMembers\AppInfo;
 
+use NumberFormatter;
+use Exception;
+
 use OCP\AppFramework\App;
-use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Services\IInitialState;
@@ -29,86 +35,86 @@ use OCP\IConfig;
 
 use Psr\Container\ContainerInterface;
 
+use OCA\CAFeVDBMembers\Constants;
+use OCA\CAFeVDBMembers\Crypto\IEncryptionService;
+use OCA\CAFeVDBMembers\Crypto\OrchestraEncryptionService;
+use OCA\CAFeVDBMembers\L10N\IBidirectionalTranslator;
+use OCA\CAFeVDBMembers\L10N\OrchestraTranslator;
+use OCA\CAFeVDBMembers\Database\Registration as DatabaseRegistration;
 use OCA\CAFeVDBMembers\Listener\Registration as ListenerRegistration;
+use OCA\CAFeVDBMembers\Settings\ConfigConstants;
+use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\AppInfo\AbstractApplication;
 
-class Application extends App implements IBootstrap
+// phpcs:disable PSR1.Files.SideEffects
+// The app-toolkit lives in the wrapped vendor tree and must be autoloadable
+// before the base class can be resolved.
+include_once __DIR__ . '/../../vendor/autoload.php';
+include_once __DIR__ . '/../../vendor-wrapped/autoload.php';
+// phpcs:enable PSR1.Files.SideEffects
+
+/** Cloud application entry point. */
+class Application extends AbstractApplication
 {
-  const CAFEVDB_APP = 'cafevdb';
-
   const DEFAULT_LOCALE_KEY = 'DefaultLocale';
   const DEFAULT_LOCALE = 'en_US';
 
-  /** @var string */
-  protected $appName;
+  protected static string $orchestraAppName = Constants::ORCHESTRA_APP_NAME;
 
-  public function __construct()
+  /**
+   * The app-name of the orchestra app which owns the database. It is a plain
+   * constant in order not to depend on the orchestra app being installed.
+   *
+   * @return string
+   */
+  public static function getOrchestraAppName(): string
   {
-    $infoXml = new \SimpleXMLElement(file_get_contents(__DIR__ . '/../../appinfo/info.xml'));
-    $this->appName = (string)$infoXml->id;
-    parent::__construct($this->appName);
+    return self::$orchestraAppName;
   }
 
-  // Called later than "register".
-  public function boot(IBootContext $context): void
+  /** {@inheritdoc} */
+  public function boot(IBootContext $context):void
   {
     $context->injectFn(function(IInitialState $initialState, IConfig $config) {
-      $initialState->provideInitialState('testValue', '*** INITIAL STATE OF TEST VALUE ***');
-
-      $orchestraLocale = $config->getAppValue(self::CAFEVDB_APP, 'orchestraLocale', self::DEFAULT_LOCALE);
-      $fmt = new \NumberFormatter($orchestraLocale, \NumberFormatter::CURRENCY);
-      $currencySymbol = $fmt->getSymbol(\NumberFormatter::CURRENCY_SYMBOL);
-      $currencyCode = $fmt->getTextAttribute(\NumberFormatter::CURRENCY_CODE);
+      self::getOrchestraAppName();
+      $orchestraLocale = $config->getAppValue(self::$orchestraAppName, ConfigConstants::ORCHESTRA_LOCALE_KEY, self::DEFAULT_LOCALE);
+      $fmt = new NumberFormatter($orchestraLocale, NumberFormatter::CURRENCY);
+      $currencySymbol = $fmt->getSymbol(NumberFormatter::CURRENCY_SYMBOL);
+      $currencyCode = $fmt->getTextAttribute(NumberFormatter::CURRENCY_CODE);
+      self::getOrchestraAppName();
       $initialState->provideInitialState('config', [
-        'orchestraName' => $config->getAppValue(self::CAFEVDB_APP, 'orchestra'),
+        'orchstraAppName' => self::$orchestraAppName,
+        'orchestraName' => $config->getAppValue(self::$orchestraAppName, ConfigConstants::ORCHESTRA_NAME_KEY),
         'orchestraLocale' => $orchestraLocale,
         'currencySymbol' => $currencySymbol,
         'currencyCode' => $currencyCode,
       ]);
     });
-
-    // The following would restrict the settings to the sub-admins of the
-    // orechstra group only. Another approach would be to put the sub-admins
-    // into a separate group and use the ordinary admin-delegation to handle
-    // the restriction.
-    //
-    // $context->injectFn(function(
-    //   string $appManagementGroup
-    //   , \OCP\IUserSession $userSession
-    //   , \OCP\IGroupManager $groupManager
-    //   , \OCP\Group\ISubAdmin $groupSubAdmin
-    //   , \OCP\Settings\IManager $settingsManager
-    // ) {
-    //   /** @var \OCP\IUser $user */
-    //   $user = $userSession->getUser();
-
-    //   if (empty($user)
-    //       || empty($appManagementGroup)
-    //       || !$groupManager->isInGroup($user->getUID(), $appManagementGroup)
-    //       || !$groupSubAdmin->isSubAdminOfGroup($user, $groupManager->get($appManagementGroup))
-    //   ) {
-    //     return;
-    //   }
-    //   $settingsManager->registerSection('admin', \OCA\CAFeVDBMembers\Settings\AdminSection::class);
-    //   $settingsManager->registerSetting('admin', \OCA\CAFeVDBMembers\Settings\Admin::class);
-    // });
   }
 
-  // Called earlier than boot, so anything initialized in the
-  // "boot()" method must not be used here.
-  public function register(IRegistrationContext $context): void
+  /**
+   * {@inheritdoc}
+   *
+   * Called earlier than boot, so anything initialized in the "boot()" method
+   * must not be used here.
+   */
+  public function register(IRegistrationContext $context):void
   {
-    if ((@include_once __DIR__ . '/../../vendor/autoload.php') === false) {
-      throw new \Exception('Cannot include autoload. Did you run install dependencies using composer?');
-    }
+    parent::register($context);
+
+    $context->registerServiceAlias(IEncryptionService::class, OrchestraEncryptionService::class);
+    $context->registerServiceAlias(IBidirectionalTranslator::class, OrchestraTranslator::class);
+    $context->registerService('orchestraAppName', fn($c) => self::getOrchestraAppName());
     $context->registerService('appManagementGroup', function($c) {
+      self::getOrchestraAppName();
       /** @var \OCP\IConfig $config */
       $config = $c->get(\OCP\IConfig::class);
-      return $config->getAppValue(self::CAFEVDB_APP, 'usergroup');
+      return $config->getAppValue(self::$orchestraAppName, ConfigConstants::USER_GROUP_KEY);
     });
-    $context->registerService('memberRootFolder', function($c) {
+    $context->registerService(ConfigConstants::MEMBER_ROOT_FOLDER_KEY, function($c) {
+      self::getAppName();
       /** @var \OCP\IConfig $config */
       $config = $c->get(\OCP\IConfig::class);
-      return $config->getAppValue($this->appName, 'memberRootFolder');
+      return $config->getAppValue(self::$appName, ConfigConstants::MEMBER_ROOT_FOLDER_KEY);
     });
 
     $context->registerService(ucfirst(self::DEFAULT_LOCALE_KEY), function(ContainerInterface $container) {
@@ -116,7 +122,7 @@ class Application extends App implements IBootstrap
     });
     $context->registerServiceAlias(lcfirst(self::DEFAULT_LOCALE), ucfirst(self::DEFAULT_LOCALE));
 
-    // Register listeners
+    DatabaseRegistration::register($context);
     ListenerRegistration::register($context);
   }
 }

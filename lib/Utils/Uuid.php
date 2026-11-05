@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,12 +18,12 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Utils;
 
 use Ramsey\Uuid\UuidInterface;
+use Ramsey\Uuid\Provider\Node\RandomNodeProvider;
 
 /**
  * Customize with some defaults, like a random node.
@@ -60,9 +58,11 @@ class Uuid extends \Ramsey\Uuid\Uuid
   /**
    * Convert "anything" to a UuidInterface
    *
+   * @param mixed $data
+   *
    * @return null|UuitInterface
    */
-  public static function asUuid($data):?UuidInterface
+  public static function asUuid(mixed $data):?UuidInterface
   {
     if ($data instanceof UuidInterface) {
       return $data;
@@ -78,6 +78,7 @@ class Uuid extends \Ramsey\Uuid\Uuid
     return null;
   }
 
+  /** @return UuidInterface Return the all-zeros UUID. */
   public static function nil():UuidInterface
   {
     return self::fromString(self::NIL);
@@ -86,9 +87,11 @@ class Uuid extends \Ramsey\Uuid\Uuid
   /**
    * Convert "anything" to a binary UUID representation.
    *
+   * @param mixed $data
+   *
    * @return null|string Binary string of length 16
    */
-  public static function uuidBytes($data):?string
+  public static function uuidBytes(mixed $data):?string
   {
     $uuid = self::asUuid($data);
     if (empty($uuid)) {
@@ -105,7 +108,7 @@ class Uuid extends \Ramsey\Uuid\Uuid
   private static function createNode()
   {
     if (empty(self::$nodeProvider)) {
-      self::$nodeProvider = new \Ramsey\Uuid\Provider\Node\RandomNodeProvider;
+      self::$nodeProvider = new RandomNodeProvider;
     }
     return self::$nodeProvider->getNode();
   }

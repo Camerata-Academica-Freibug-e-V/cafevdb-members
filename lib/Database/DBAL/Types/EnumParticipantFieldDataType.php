@@ -1,11 +1,11 @@
 <?php
 /**
- * Member's data base connector for CAFEVDB orchetra management app.
+ * Orchestra member, musician and project management application.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * CAFEVDB -- Camerata Academica Freiburg e.V. DataBase.
  *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright 2011-2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,62 +20,57 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\DBAL\Types;
 
-use MyCLabs\Enum\Enum as EnumType;
-
 /**
  * Enum for "participant-fields" data-types.
- *
- * @see \OCA\CAFEVDB\Database\Doctrine\ORM\Entities\ProjectParticipantField
- *
- * @method static EnumParticipantFieldDataType TEXT()
- *   Plain UTF-8 text field.
- * @method static EnumParticipantFieldDataType HTML()
- *   HTML text field.
- * @method static EnumParticipantFieldDataType BOOLEAN()
- *   Yes/no value.
- * @method static EnumParticipantFieldDataType INTEGER()
- *   Integral number.
- * @method static EnumParticipantFieldDataType FLOAT()
- *   Floating point number.
- * @method static EnumParticipantFieldDataType DATE()
- *   A date without time.
- * @method static EnumParticipantFieldDataType DATETIME()
- *   A date with time information.
- *
- * @method static EnumParticipantFieldDataType SERVICE_FEE()
- * A service-fee value with the convention that positive values denote
- * receivables and negative values denote liabilities (from the view
- * of the orchestra.
- *
- * @method static EnumParticipantFieldDataType CLOUD_FILE()
- * Single-file upload data which is stored in the storage of the
- * ambient cloud software.
- *
- * @method static EnumParticipantFieldDataType CLOUD_FOLDER()
- * Multi-file upload data which is stored in the storage of the
- * ambient cloud software under a folder with the configured name.
- *
- * @method static EnumParticipantFieldDataType DB_FILE()
- * Single-file upload data which is stored as blob in the
- * database. The total encoded size is limited by the used database
- * backend and its associated data-type.
  */
-class EnumParticipantFieldDataType extends EnumType
+enum EnumParticipantFieldDataType: string
 {
-  public const TEXT = 'text';
-  public const HTML = 'html';
-  public const BOOLEAN = 'boolean';
-  public const INTEGER = 'integer';
-  public const FLOAT = 'float';
-  public const DATE = 'date';
-  public const DATETIME = 'datetime';
-  public const SERVICE_FEE = 'service-fee';
-  public const CLOUD_FILE = 'cloud-file';
-  public const CLOUD_FOLDER = 'cloud-folder';
-  public const DB_FILE = 'db-file';
-};
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\TranslatableEnumTrait;
+
+  /** A yes/no value. */
+  case BOOLEAN = 'boolean';
+  /**
+   * Single-file upload data which is stored in the storage of the ambient
+   * cloud software.
+   */
+  case CLOUD_FILE = 'cloud-file';
+  /**
+   * Multi-file upload data which is stored in the storage of the ambient
+   * cloud software under a folder with the configured name.
+   */
+  case CLOUD_FOLDER = 'cloud-folder';
+  /** A date without time. */
+  case DATE = 'date';
+  /** A date including time information. */
+  case DATETIME = 'datetime';
+  /**
+   * Single-file upload data which is stored as blob in the database. The
+   * total encoded size is limited by the used database backend and its
+   * associated data-type.
+   */
+  case DB_FILE = 'db-file';
+  /** Floating point number. */
+  case FLOAT = 'float';
+  /** HTML text field. */
+  case HTML = 'html';
+  /** Integral number. */
+  case INTEGER = 'integer';
+  /**
+   * A monetary value with the convention that positive values denote
+   * liabilities and negative values denote receivables (from the view of the
+   * orchestra.
+   */
+  case LIABILITIES = 'liabilities';
+  /**
+   * A monetary value with the convention that positive values denote
+   * receivables and negative values denote liabilities (from the view of the
+   * orchestra.
+   */
+  case RECEIVABLES = 'receivables';
+  /** Plain UTF-8 text field. */
+  case TEXT  = 'text';
+}

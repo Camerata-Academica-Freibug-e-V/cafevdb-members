@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,35 +18,31 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
 
-/**
- * @ORM\Table(name="PersonalizedCompositePaymentsView")
- * @ORM\Entity
- */
+#[ORM\Table(name: 'PersonalizedCompositePaymentsView')]
+#[ORM\Entity]
 class CompositePayment implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
   use CAFEVDB\Traits\TimestampableEntity;
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
-   * @ORM\Id
-   * @ORM\GeneratedValue(strategy="IDENTITY")
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
+  #[ORM\Id]
+  #[ORM\GeneratedValue(strategy: 'NONE')]
   private $id;
 
   /**
@@ -59,95 +53,73 @@ class CompositePayment implements \ArrayAccess
    *
    * @todo If this is always the sum and thus can be computed, why then this
    * field?
-   *
-   * @ORM\Column(type="decimal", precision=7, scale=2, nullable=false, options={"default"="0.00"})
    */
+  #[ORM\Column(type: 'decimal', precision: 7, scale: 2, nullable: false, options: ['default' => '0.00'])]
   private $amount = '0.00';
 
   /**
    * @var \DateTimeImmutable|null
-   *
-   * @ORM\Column(type="date_immutable", nullable=true)
    */
+  #[ORM\Column(type: 'date_immutable', nullable: true)]
   private $dateOfReceipt;
 
   /**
-   * @var string
-   * Subject of the bank transaction.
-   *
-   *
-   * @ORM\Column(type="string", length=1024, nullable=false)
+   * @var string Subject of the bank transaction.
    */
+  #[ORM\Column(type: 'string', length: 1024, nullable: false)]
   private $subject;
 
   /**
    * @var Collection
-   *
-   * @ORM\OneToMany(targetEntity="ProjectPayment", mappedBy="compositePayment", fetch="EXTRA_LAZY")
    */
+  #[ORM\OneToMany(targetEntity: ProjectPayment::class, mappedBy: 'compositePayment', fetch: 'EXTRA_LAZY')]
   private $projectPayments;
 
-  // /**
-  //  * @var SepaBulkTransaction
-  //  *
-  //  * @ORM\ManyToOne(targetEntity="SepaBulkTransaction", inversedBy="payments", fetch="EXTRA_LAZY")
-  //  * @Gedmo\Timestampable(on={"update","create","delete"}, timestampField="sepaTransactionDataChanged")
-  //  */
-  // private $sepaTransaction = null;
-
-  /**
-   * @ORM\ManyToOne(targetEntity="SepaBankAccount", inversedBy="payments", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumns(
-   *   @ORM\JoinColumn(name="musician_id",referencedColumnName="musician_id", nullable=false),
-   *   @ORM\JoinColumn(name="bank_account_sequence", referencedColumnName="sequence", nullable=true)
-   * )
-   */
+  #[ORM\JoinColumn(name: 'musician_id', referencedColumnName: 'musician_id', nullable: false)]
+  #[ORM\JoinColumn(name: 'bank_account_sequence', referencedColumnName: 'sequence', nullable: true)]
+  #[ORM\ManyToOne(targetEntity: SepaBankAccount::class, inversedBy: 'payments', fetch: 'EXTRA_LAZY')]
   private $sepaBankAccount;
 
   /**
    * @var SepaDebitMandate
-   *
-   * @ORM\ManyToOne(targetEntity="SepaDebitMandate",
-   *                inversedBy="payments",
-   *                fetch="EXTRA_LAZY")
-   * @ORM\JoinColumns(
-   *   @ORM\JoinColumn(name="musician_id",referencedColumnName="musician_id", nullable=false),
-   *   @ORM\JoinColumn(name="debit_mandate_sequence", referencedColumnName="sequence", nullable=true)
-   * )
    */
+  #[ORM\ManyToOne(targetEntity: SepaDebitMandate::class, inversedBy: 'payments', fetch: 'EXTRA_LAZY')]
+  #[ORM\JoinColumn(name: 'musician_id', referencedColumnName: 'musician_id', nullable: false)]
+  #[ORM\JoinColumn(name: 'debit_mandate_sequence', referencedColumnName: 'sequence', nullable: true)]
   private $sepaDebitMandate;
 
   /**
    * @var string
    *
    * This is the unique message id from the email sent to the payees.
-   *
-   * @ORM\Column(type="string", length=512, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 512, nullable: true)]
   private $notificationMessageId;
 
   /**
    * @var Musician
-   *
-   * @ORM\ManyToOne(targetEntity="Musician", inversedBy="payments", fetch="EXTRA_LAZY")
    */
+  #[ORM\ManyToOne(targetEntity: Musician::class, inversedBy: 'payments', fetch: 'EXTRA_LAZY')]
   private $musician;
 
   /**
-   * @var EncryptedFile
+   * @var DatabaseStorageFile
    *
    * Optional. ATM only used for particular auto-generated monetary fields.
    *
-   * @ORM\OneToOne(targetEntity="EncryptedFile", fetch="EXTRA_LAZY")
    *
    * @todo Support more than one supporting document.
    */
+  #[ORM\OneToOne(targetEntity: DatabaseStorageFile::class, fetch: 'EXTRA_LAZY')]
   private $supportingDocument;
 
-  public function __construct() {
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
     $this->projectPayments = new ArrayCollection;
   }
+  // phpcs:enable
 
   /**
    * Get id.
@@ -160,20 +132,6 @@ class CompositePayment implements \ArrayAccess
   }
 
   /**
-   * Set projectPayments.
-   *
-   * @param Collection $projectPayments
-   *
-   * @return CompositePayment
-   */
-  public function setProjectPayments(Collection $projectPayments):CompositePayment
-  {
-    $this->projectPayments = $projectPayments;
-
-    return $this;
-  }
-
-  /**
    * Get projectPayments.
    *
    * @return Collection
@@ -181,20 +139,6 @@ class CompositePayment implements \ArrayAccess
   public function getProjectPayments():Collection
   {
     return $this->projectPayments;
-  }
-
-  /**
-   * Set amount.
-   *
-   * @param float|null $amount
-   *
-   * @return ProjectPayment
-   */
-  public function setAmount(?float $amount):CompositePayment
-  {
-    $this->amount = $amount;
-
-    return $this;
   }
 
   /**
@@ -210,6 +154,8 @@ class CompositePayment implements \ArrayAccess
   /**
    * Return the sum of the amounts of the individual payments, which
    * should sum up to $this->amount, of course.
+   *
+   * @return float
    */
   public function sumPaymentsAmount():float
   {
@@ -219,20 +165,6 @@ class CompositePayment implements \ArrayAccess
       $totalAmount += $payment->getAmount();
     }
     return $totalAmount;
-  }
-
-  /**
-   * Set musician.
-   *
-   * @param int $musician
-   *
-   * @return CompositePayment
-   */
-  public function setMusician($musician):CompositePayment
-  {
-    $this->musician = $musician;
-
-    return $this;
   }
 
   /**
@@ -246,20 +178,6 @@ class CompositePayment implements \ArrayAccess
   }
 
   /**
-   * Set dateOfReceipt.
-   *
-   * @param \DateTime|null $dateOfReceipt
-   *
-   * @return CompositePayment
-   */
-  public function setDateOfReceipt($dateOfReceipt = null):CompositePayment
-  {
-    $this->dateOfReceipt = self::convertToDateTime($dateOfReceipt);
-
-    return $this;
-  }
-
-  /**
    * Get dateOfReceipt.
    *
    * @return \DateTime|null
@@ -267,20 +185,6 @@ class CompositePayment implements \ArrayAccess
   public function getDateOfReceipt()
   {
     return $this->dateOfReceipt;
-  }
-
-  /**
-   * Set subject.
-   *
-   * @param string $subject
-   *
-   * @return CompositePayment
-   */
-  public function setSubject($subject):CompositePayment
-  {
-    $this->subject = $subject;
-
-    return $this;
   }
 
   /**
@@ -294,20 +198,6 @@ class CompositePayment implements \ArrayAccess
   }
 
   /**
-   * Set debitNote.
-   *
-   * @param SepaDebitNote|null $debitNote
-   *
-   * @return CompositePayment
-   */
-  public function setDebitNote($debitNote):CompositePayment
-  {
-    $this->debitNote = $debitNote;
-
-    return $this;
-  }
-
-  /**
    * Get debitNote.
    *
    * @return SepaDebitNote|null
@@ -315,20 +205,6 @@ class CompositePayment implements \ArrayAccess
   public function getDebitNote()
   {
     return $this->debitNote;
-  }
-
-  /**
-   * Set sepaBankAccount.
-   *
-   * @param string|null $sepaBankAccount
-   *
-   * @return CompositePayment
-   */
-  public function setSepaBankAccount(?SepaBankAccount $sepaBankAccount):CompositePayment
-  {
-    $this->sepaBankAccount = $sepaBankAccount;
-
-    return $this;
   }
 
   /**
@@ -342,20 +218,6 @@ class CompositePayment implements \ArrayAccess
   }
 
   /**
-   * Set sepaDebitMandate.
-   *
-   * @param string|null $sepaDebitMandate
-   *
-   * @return CompositePayment
-   */
-  public function setSepaDebitMandate(?SepaDebitMandate $sepaDebitMandate):CompositePayment
-  {
-    $this->sepaDebitMandate = $sepaDebitMandate;
-
-    return $this;
-  }
-
-  /**
    * Get sepaDebitMandate.
    *
    * @return SepaDebitMandate|null
@@ -363,44 +225,6 @@ class CompositePayment implements \ArrayAccess
   public function getSepaDebitMandate():?SepaDebitMandate
   {
     return $this->sepaDebitMandate;
-  }
-
-  // /**
-  //  * Set sepaTransaction.
-  //  *
-  //  * @param string|null $sepaTransaction
-  //  *
-  //  * @return CompositePayment
-  //  */
-  // public function setSepaTransaction(?SepaBulkTransaction $sepaTransaction):CompositePayment
-  // {
-  //   $this->sepaTransaction = $sepaTransaction;
-
-  //   return $this;
-  // }
-
-  // /**
-  //  * Get sepaTransaction.
-  //  *
-  //  * @return SepaTransaction|null
-  //  */
-  // public function getSepaTransaction():?SepaBulkTransaction
-  // {
-  //   return $this->sepaTransaction;
-  // }
-
-  /**
-   * Set notificationMessageId.
-   *
-   * @param string $notificationMessageId
-   *
-   * @return CompositePayment
-   */
-  public function setNotificationMessageId($notificationMessageId):CompositePayment
-  {
-    $this->notificationMessageId = $notificationMessageId;
-
-    return $this;
   }
 
   /**
@@ -414,30 +238,16 @@ class CompositePayment implements \ArrayAccess
   }
 
   /**
-   * Set supportingDocument.
-   *
-   * @param null|EncryptedFile $supportingDocument
-   *
-   * @return CompositePayment
-   */
-  public function setSupportingDocument(?EncryptedFile $supportingDocument):CompositePayment
-  {
-    $this->supportingDocument = $supportingDocument;
-
-    return $this;
-  }
-
-  /**
    * Get supportingDocument.
    *
-   * @return null|EncryptedFile
+   * @return null|DatabaseStorageFile
    */
-  public function getSupportingDocument():?EncryptedFile
+  public function getSupportingDocument():?DatabaseStorageFile
   {
     return $this->supportingDocument;
   }
 
-  /** \JsonSerializable interface */
+  /** {@inheritdoc} */
   public function jsonSerialize():array
   {
     return $this->toArray();

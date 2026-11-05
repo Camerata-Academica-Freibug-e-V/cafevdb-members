@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022-2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,81 +18,114 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Controller;
 
-use Psr\Log\LoggerInterface;
+use Throwable;
 
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute as CoreAttributes;
 use OCP\AppFramework\Http\DataResponse;
-use OCP\IRequest;
+use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
+use OCP\IRequest;
+use Psr\Log\LoggerInterface;
 
 use OCA\CAFeVDBMembers\AppInfo\Application;
-use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Database\ORM\Entities;
+use OCA\CAFeVDBMembers\Exceptions\EncryptionFailedException;
+use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
+use OCA\CAFeVDBMembers\Service\AuthenticationService;
 use OCA\CAFeVDBMembers\Service\MemberDataService;
+use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Exceptions\EnduserNotificationException;
 
+/**
+ * AJAX endpoints for dealing with the personal data of the logged in user.
+ */
 class MemberDataController extends Controller
 {
-  use \OCA\CAFeVDBMembers\Traits\LoggerTrait;
-  use \OCA\CAFeVDBMembers\Traits\ResponseTrait;
-  use \OCA\CAFeVDBMembers\Traits\UtilTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\UtilTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\ResponseTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\LoggerTrait;
 
-  /** @var string */
-  private $userId;
-
-  /** @var IL10N */
-  private $l;
-
-  /** @var MemberDataService */
-  private $dataService;
-
-  /** @var EntityManager */
-  private $entityManager;
-
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
   public function __construct(
-    string $appName
-    , IRequest $request
-    , $userId
-    , IL10N $l10n
-    , LoggerInterface $logger
-    // , MemberDataService $dataService
-    , EntityManager $entityManager
+    string $appName,
+    IRequest $request,
+    private ?string $userId,
+    protected IL10N $l,
+    protected LoggerInterface $logger,
+    private MemberDataService $dataService,
+    private AuthenticationService $authenticationService,
+    private EntityManager $entityManager,
   ) {
-    parent::__construct($this->appName, $request);
+    parent::__construct($appName, $request);
     $this->userId = $userId;
-    $this->l = $l10n;
-    $this->logger = $logger;
-    $this->dataService = new MemberDataService($entityManager, $logger, $l10n);
-    $this->entityManager = $entityManager;
   }
+  // phpcs:enable
 
   /**
-   * @NoAdminRequired
-   *
    * Get all the data of the given musician. This mess removes "circular"
    * associations as we are really only interested into the data for this
    * single person.
+   *
+   * @return DataResponse
    */
-  public function get()
+  #[CoreAttributes\NoAdminRequired]
+  #[CoreAttributes\FrontpageRoute(
+    url: '/member',
+    verb: 'GET',
+  )]
+  public function get(): DataResponse
   {
+    $authOk = $this->checkAccess();
+    if ($authOk !== true) {
+      return $authOk;
+    }
     $musicians = $this->entityManager->getRepository(Entities\Musician::class)->findAll();
     $this->logInfo('NUMBER OF MUSICIANS ' . count($musicians));
     if (count($musicians) == 0) {
-      return self::grumble($this->l->t('No member-data found for user-id "%s".', $this->userId));
-    } else if (count($musicians) > 1) {
-      return self::grumble($this->l->t('More than one musician found for user-id "%s".', $this->userId));
+      throw new EnduserNotificationException($this->l->t('No member-data found for user-id "%s".', $this->userId));
+    } elseif (count($musicians) > 1) {
+      throw new EnduserNotificationException($this->l->t('More than one musician found for user-id "%s".', $this->userId));
     }
     /** @var Entities\Musician $musician */
     $musician = $musicians[0];
 
+    try {
+      $musicianData = $this->generateMusicianData($musician);
+    } catch (EncryptionFailedException $e) {
+      throw new EnduserNotificationException($this->l->t('Unable to decrypt sensitive data for "%s".', $this->userId), 0, $e);
+    } catch (Throwable $t) {
+      throw new EnduserNotificationException($this->l->t('Unable to retrieve all data for "%s".', $this->userId), 0, $t);
+    }
+
+    return new DataResponse($musicianData);
+  }
+
+  /**
+   * @param Entities\Musician $musician
+   *
+   * @return array
+   */
+  private function generateMusicianData(Entities\Musician $musician): array
+  {
     $this->logInfo('NAME ' . $musician->getPublicName() . ' #Instruments ' . $musician->getInstruments()->count());
     $musicianData = $musician->toArray();
 
     $musicianData['personalPublicName'] = $musician->getPublicName(firstNameFirst: true);
+
+    $musicianData['emailAddresses'] = [];
+
+    /** @var Entities\MusicianEmailAddress $emailAddress */
+    foreach ($musician->getEmailAddresses() as $emailAddress) {
+      $flatEmailAddress = $emailAddress->toArray();
+      $flatEmailAddress['primary'] = $emailAddress->isPrimaryAddress();
+      unset($flatEmailAddress['musician']);
+      $musicianData['emailAddresses'][] = $flatEmailAddress;
+    }
+
     $musicianData['instruments'] = [];
     /** @var Entities\Instrument $instrument */
     /** @var Entities\MusicianInstrument $musicianInstrument */
@@ -171,7 +202,7 @@ class MemberDataController extends Controller
         unset($flatProjectField['dataOptions']);
         $defaultValue = $projectField->getDefaultValue();
         if (!empty($defaultValue)) {
-          $flatDefaultValue = array_filter($defaultValue->toArray());
+          $flatDefaultValue = array_filter($defaultValue->toArray(), fn($x) => $x !== null);
           foreach (['field', 'fieldData', 'payments'] as $key) {
             unset($flatDefaultValue[$key]);
           }
@@ -189,7 +220,7 @@ class MemberDataController extends Controller
           unset($flatProjectDatum['field']);
           unset($flatProjectDatum['projectParticipant']);
           $dataOption = $projectDatum->getDataOption();
-          $flatDataOption = array_filter($dataOption->toArray());
+          $flatDataOption = array_filter($dataOption->toArray(), fn($x) => $x !== null);
           foreach (['field', 'fieldData', 'payments'] as $key) {
             unset($flatDataOption[$key]);
           }
@@ -216,13 +247,14 @@ class MemberDataController extends Controller
             $flatCompositePayment['sepaBankAccount'] = empty($bankAccount) ? null : $bankAccount->getIban();
             $debitMandate = $compositePayment->getSepaDebitMandate();
             $flatCompositePayment['sepaDebitMandate'] = empty($debitMandate) ? null : $debitMandate->getMandateReference();
-            $flatPayment['compositePayment'] = array_filter($flatCompositePayment);
-            $payments[] = array_filter($flatPayment);
+            $flatPayment['compositePayment'] = array_filter($flatCompositePayment, fn($x) => $x !== null);
+            $payments[] = array_filter($flatPayment, fn($x) => $x !== null);
           }
           $flatProjectDatum['payments'] = $payments;
-          $flatProjectField['fieldData'][(string)$projectDatum->getOptionKey()] = array_filter($flatProjectDatum);
+          $flatProjectField['fieldData'][(string)$projectDatum->getOptionKey()] =
+            array_filter($flatProjectDatum, fn($x) => $x !== null);
         }
-        $projectFields[$projectField->getId()] = array_filter($flatProjectField);
+        $projectFields[$projectField->getId()] = array_filter($flatProjectField, fn($x) => $x !== null);
       }
       $flatParticipant['participantFields'] = $projectFields;
       unset($flatParticipant['participantFieldsData']);
@@ -231,26 +263,26 @@ class MemberDataController extends Controller
     }
 
     usort($musicianData['projectParticipation'], function($pp1, $pp2) {
-      $p1 = $pp1['project'];
-      $p2 = $pp2['project'];
-      $t1 = $p1['type'];
-      $t2 = $p2['type'];
-      if ($t1 == $t2) {
-        $y1 = $p1['year'];
-        $y2 = $p2['year'];
-        if ($y1 == $y2) {
-          return strcmp($p1['name'], $p2['name']);
+      $pr1 = $pp1['project'];
+      $pr2 = $pp2['project'];
+      $tp1 = $pr1['type'];
+      $tp2 = $pr2['type'];
+      if ($tp1 == $tp2) {
+        $yr1 = $pr1['year'];
+        $yr2 = $pr2['year'];
+        if ($yr1 == $yr2) {
+          return strcmp($pr1['name'], $pr2['name']);
         } else {
-          return $y2 < $y1 ? -1 : 1;
+          return $yr2 < $yr1 ? -1 : 1;
         }
       } else {
-        if ($t1 == 'template') {
+        if ($tp1 == 'template') {
           return 1;
-        } else if ($t1 == 'permanent') {
+        } elseif ($tp1 == 'permanent') {
           return -1;
         } else {
-          // $t1 == 'temporary'
-          if ($t2 == 'template') {
+          // $tp1 == 'temporary'
+          if ($tp2 == 'template') {
             return -1;
           } else {
             // $t2 == 'permanent'
@@ -277,34 +309,59 @@ class MemberDataController extends Controller
 
     $this->logInfo('SIZE OF DATA ' . strlen(json_encode($musicianData)));
 
-    return self::dataResponse($musicianData);
+    return $musicianData;
   }
 
-  private function flattenProject(Entities\Project $project)
+  /**
+   * @param Entities\Project $project
+   *
+   * @return array
+   */
+  private function flattenProject(Entities\Project $project):array
   {
+    // if any of these are needed flatten needs to be refined.
+    $keysDoDelete = [
+      'participants',
+      'participantFields',
+      'participantFieldsData',
+      'sepaDebitMandates',
+      'payments',
+      'instrumentationNumbers',
+      'calendarEvents',
+    ];
     $flatProject = $project->toArray();
-    foreach(['participants', 'participantFields', 'participantFieldsData', 'sepaDebitMandates', 'payments'] as $key) {
+    foreach ($keysDoDelete as $key) {
       unset($flatProject[$key]);
     }
+
     return $flatProject;
   }
 
   /**
-   * @NoAdminRequired
-   *
    * Download file-data. The download is always only for the currently logged
    * on user.
    *
-   * @param string $optionKey The UUID of the corresponding field-datum
+   * @param string $optionKey The UUID of the corresponding field-datum.
+   *
+   * @return Response
    */
-  public function download(string $optionKey)
+  #[CoreAttributes\NoAdminRequired]
+  #[CoreAttributes\FrontpageRoute(
+    url: '/download/member/{optionKey}',
+    verb: 'GET',
+  )]
+  public function download(string $optionKey):Response
   {
+    $authOk = $this->checkAccess();
+    if ($authOk !== true) {
+      return $authOk;
+    }
     $musicians = $this->entityManager->getRepository(Entities\Musician::class)->findAll();
     $this->logInfo('NUMBER OF MUSICIANS ' . count($musicians));
     if (count($musicians) == 0) {
-      return self::grumble($this->l->t('No member-data found for user-id "%s".', $this->userId));
-    } else if (count($musicians) > 1) {
-      return self::grumble($this->l->t('More than one musician found for user-id "%s".', $this->userId));
+      throw new EnduserNotificationException($this->l->t('No member-data found for user-id "%s".', $this->userId));
+    } elseif (count($musicians) > 1) {
+      throw new EnduserNotificationException($this->l->t('More than one musician found for user-id "%s".', $this->userId));
     }
 
     /** @var Entities\Musician $musician */
@@ -312,12 +369,12 @@ class MemberDataController extends Controller
 
     $fieldDatum = $musician->getProjectParticipantFieldsDatum($optionKey);
     if (empty($fieldDatum)) {
-      return self::grumble($this->l->t('Unable to find data for the option-uuid "%s".', $optionKey));
+      throw new EnduserNotificationException($this->l->t('Unable to find data for the option-uuid "%s".', $optionKey));
     }
 
     $pathInfo = $this->dataService->participantFileInfo($fieldDatum);
     if (empty($pathInfo)) {
-      return self::grumble($this->l->t('The option "%s" does not have any associated files.', $fieldDatum->getDataOption()->getLabel()));
+      throw new EnduserNotificationException($this->l->t('The option "%s" does not have any associated files.', $fieldDatum->getDataOption()->getLabel()));
     }
 
     // $pathInfo['file'] is already the file entity
@@ -327,5 +384,21 @@ class MemberDataController extends Controller
     $fileName = $pathInfo['baseName'];
 
     return $this->dataDownloadResponse($file->getFileData()->getData(), $fileName, $mimeType);
+  }
+
+  /**
+   * Check whether the cafevdb database can be accessed
+   *
+   * @return {bool|Response} true if everything is ok, otherwise an error
+   * response to be passed back to the web-client.
+   */
+  private function checkAccess()
+  {
+    try {
+      $this->authenticationService->getRowAccessToken();
+      return true;
+    } catch (\Throwable $t) {
+      throw new EnduserNotificationException($this->l->t('Access to the member-data is not authorized: %s', $t->getMessage()));
+    }
   }
 }

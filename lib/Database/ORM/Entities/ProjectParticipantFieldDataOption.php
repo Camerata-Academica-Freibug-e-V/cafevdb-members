@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,31 +18,31 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
+use Exception;
+
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 
-use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation as Gedmo;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
 use OCA\CAFeVDBMembers\Utils\Uuid;
 
 /**
  * ProjectParticipantFieldsDataOptions
- *
- * @ORM\Table(name="PersonalizedProjectParticipantFieldsDataOptionsView")
- * @ORM\Entity
- * @Gedmo\TranslationEntity(class="TableFieldTranslation")
  */
+#[ORM\Table(name: 'PersonalizedProjectParticipantFieldsDataOptionsView')]
+#[ORM\Entity]
+#[Gedmo\TranslationEntity(class: 'TableFieldTranslation')]
 class ProjectParticipantFieldDataOption implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
   use CAFEVDB\Traits\TimestampableEntity;
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
   use CAFEVDB\Traits\SoftDeleteableEntity;
   use CAFEVDB\Traits\TranslatableTrait;
 
@@ -52,26 +50,23 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
    * @var ProjectParticipantField
    *
    * Link back to ProjectParticipantField
-   *
-   * @ORM\ManyToOne(targetEntity="ProjectParticipantField", inversedBy="dataOptions")
-   * @ORM\Id
    */
+  #[ORM\ManyToOne(targetEntity: ProjectParticipantField::class, inversedBy: 'dataOptions')]
+  #[ORM\Id]
   private $field;
 
   /**
    * @var \Ramsey\Uuid\UuidInterface
-   *
-   * @ORM\Column(type="uuid_binary")
-   * @ORM\Id
    */
+  #[ORM\Column(type: 'uuid_binary')]
+  #[ORM\Id]
   private $key;
 
   /**
    * @var string
-   *
-   * @Gedmo\Translatable(untranslated="untranslatedLabel")
-   * @ORM\Column(type="string", length=128, nullable=true)
    */
+  #[Gedmo\Translatable(untranslated: 'untranslatedLabel')]
+  #[ORM\Column(type: 'string', length: 128, nullable: true)]
   private $label;
 
   /**
@@ -87,17 +82,15 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
    * name of the generator class.
    *
    * @var string
-   *
-   * @ORM\Column(type="string", length=1024, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 1024, nullable: true)]
   private $data;
 
   /**
    * @var float
    * Optional value of a deposit for monetary options.
-   *
-   * @ORM\Column(type="float", nullable=true)
    */
+  #[ORM\Column(type: 'float', nullable: true)]
   private $deposit;
 
   /**
@@ -105,31 +98,27 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
    * Multiplicity::GROUPSOFPEOPLE, Multiplicity::GROUPOFPEOPLE
    * fields. Misused as starting date for recurring receivables
    * generators.
-   *
-   * @ORM\Column(type="bigint", nullable=true)
    */
+  #[ORM\Column(type: 'bigint', nullable: true)]
   private $limit;
 
   /**
    * @var string
-   *
-   * @Gedmo\Translatable
-   * @ORM\Column(type="string", length=4096, nullable=true)
    */
+  #[Gedmo\Translatable]
+  #[ORM\Column(type: 'string', length: 4096, nullable: true)]
   private $tooltip;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectParticipantFieldDatum", mappedBy="dataOption", indexBy="musician_id", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: ProjectParticipantFieldDatum::class, mappedBy: 'dataOption', indexBy: 'musician_id', fetch: 'EXTRA_LAZY')]
   private $fieldData;
 
   /**
    * @var ProjectPayment
-   *
-   * @ORM\OneToMany(targetEntity="ProjectPayment", mappedBy="receivableOption")
    */
+  #[ORM\OneToMany(targetEntity: ProjectPayment::class, mappedBy: 'receivableOption')]
   private $payments;
 
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
   public function __construct()
   {
     $this->__wakeup();
@@ -138,7 +127,9 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
     $this->key = null;
     $this->field = null;
   }
+  // phpcs:enable
 
+  /** {@inheritdoc} */
   public function __clone()
   {
     if (empty($this->field) || empty($this->key)) {
@@ -151,23 +142,10 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
                : Uuid::create();
   }
 
+  /** {@inheritdoc} */
   public function __wakeup()
   {
     $this->arrayCTOR();
-  }
-
-  /**
-   * Set field.
-   *
-   * @param ProjectParticipantField $field
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setField($field):ProjectParticipantFieldDataOption
-  {
-    $this->field = $field;
-
-    return $this;
   }
 
   /**
@@ -181,23 +159,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   }
 
   /**
-   * Set key.
-   *
-   * @param string|UuidInterface $key
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setKey($key):ProjectParticipantFieldDataOption
-  {
-    if (empty($key = Uuid::asUuid($key))) {
-      throw new \Exception("UUID DATA: ".$key);
-    }
-    $this->key = $key;
-
-    return $this;
-  }
-
-  /**
    * Get key.
    *
    * @return UuidInterface
@@ -205,22 +166,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   public function getKey()
   {
     return $this->key;
-  }
-
-  /**
-   * Set label.
-   *
-   * @param null|string $label
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setLabel(?string $label):ProjectParticipantFieldDataOption
-  {
-    $this->label = $label;
-    if ($this->getLocale() == ConfigService::DEFAULT_LOCALE) {
-      $this->untranslatedLabel = $this->label;
-    }
-    return $this;
   }
 
   /**
@@ -234,19 +179,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   }
 
   /**
-   * Set untranslatedLabel.
-   *
-   * @param null|string $untranslatedLabel
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setUntranslatedLabel(?string $untranslatedLabel):ProjectParticipantFieldDataOption
-  {
-    throw new Exceptions\DatabaseReadonlyException('The property "untranslatedLabel" cannot be set, it is read-only.');
-    return $this;
-  }
-
-  /**
    * Get untranslatedLabel.
    *
    * @return string|null
@@ -254,20 +186,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   public function getUntranslatedLabel():?string
   {
     return $this->untranslatedLabel;
-  }
-
-  /**
-   * Set data.
-   *
-   * @param null|string $data
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setData(?string $data):ProjectParticipantFieldDataOption
-  {
-    $this->data = $data;
-
-    return $this;
   }
 
   /**
@@ -281,20 +199,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   }
 
   /**
-   * Set deposit.
-   *
-   * @param null|string $float
-   *
-   * @return ProjectParticipantFieldDatum
-   */
-  public function setDeposit(?float $deposit):ProjectParticipantFieldDataOption
-  {
-    $this->deposit = $deposit;
-
-    return $this;
-  }
-
-  /**
    * Get deposit.
    *
    * @return null|float
@@ -302,20 +206,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   public function getDeposit():?float
   {
     return $this->deposit;
-  }
-
-  /**
-   * Set tooltip.
-   *
-   * @param string|null $tooltip
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setTooltip(?string $tooltip):ProjectParticipantFieldDataOption
-  {
-    $this->tooltip = $tooltip;
-
-    return $this;
   }
 
   /**
@@ -329,20 +219,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   }
 
   /**
-   * Set limit.
-   *
-   * @param int $limit
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setLimit($limit):ProjectParticipantFieldDataOption
-  {
-    $this->limit = $limit;
-
-    return $this;
-  }
-
-  /**
    * Get limit.
    *
    * @return int
@@ -353,20 +229,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   }
 
   /**
-   * Set fieldData.
-   *
-   * @param Collection $fieldData
-   *
-   * @return ProjectParticipantFieldDataOption
-   */
-  public function setFieldData($fieldData):ProjectParticipantFieldDataOption
-  {
-    $this->fieldData = $fieldData;
-
-    return $this;
-  }
-
-  /**
    * Get fieldData.
    *
    * @return Collection
@@ -374,20 +236,6 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   public function getFieldData():Collection
   {
     return $this->fieldData;
-  }
-
-  /**
-   * Set payments.
-   *
-   * @param Collection $payments
-   *
-   * @return ProjectParticipantPaymentsOption
-   */
-  public function setPayments($payments):ProjectParticipantFieldDataOption
-  {
-    $this->payments = $payments;
-
-    return $this;
   }
 
   /**
@@ -403,10 +251,12 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
   /**
    * Filter field-data by musician.
    *
+   * @param Musician $musician
+   *
    * @todo Why does this return a collection? There should be zero or one data
    * item.
    *
-   * @param Musician $musician
+   * @return Collection
    */
   public function getMusicianFieldData(Musician $musician):Collection
   {

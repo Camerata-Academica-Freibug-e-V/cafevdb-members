@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,26 +18,24 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation as Gedmo;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
 
 /**
  * Instruments
- *
- * @ORM\Table(name="PersonalizedInstrumentsView")
- * @ORM\Entity
- * @Gedmo\TranslationEntity(class="TableFieldTranslation")
  */
+#[ORM\Table(name: 'PersonalizedInstrumentsView')]
+#[ORM\Entity]
+#[Gedmo\TranslationEntity(class: 'TableFieldTranslation')]
 class Instrument implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
@@ -49,48 +45,56 @@ class Instrument implements \ArrayAccess
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
-   * @ORM\Id
-   * @ORM\GeneratedValue(strategy="IDENTITY")
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
+  #[ORM\Id]
+  #[ORM\GeneratedValue(strategy: 'NONE')]
   private ?int $id = null;
 
   /**
    * @var string
-   *
-   * @Gedmo\Translatable
-   * @ORM\Column(type="string", length=128, nullable=false)
    */
+  #[Gedmo\Translatable(untranslated: 'untranslatedName')]
+  #[ORM\Column(type: 'string', length: 128, nullable: false)]
   private string $name;
 
   /**
-   * @var int
-   *
-   * @ORM\Column(type="smallint", nullable=false)
+   * @var string
    */
+  private string $untranslatedName;
+
+  /**
+   * @var int
+   */
+  #[ORM\Column(type: 'smallint', nullable: false)]
   private int $sortOrder;
 
-  /**
-   * @ORM\ManyToMany(targetEntity="InstrumentFamily", inversedBy="instruments")
-   * @ORM\JoinTable(
-   *   name="PersonalizedInstrumentInstrumentFamilyView",
-   *   joinColumns={@ORM\JoinColumn(referencedColumnName="id")},
-   *   inverseJoinColumns={@ORM\JoinColumn(referencedColumnName="id")}
-   * )
-   */
+  #[ORM\JoinTable(name: 'PersonalizedInstrumentInstrumentFamilyView')]
+  #[ORM\JoinColumn(referencedColumnName: 'id')]
+  #[ORM\InverseJoinColumn(referencedColumnName: 'id')]
+  #[ORM\ManyToMany(targetEntity: InstrumentFamily::class, inversedBy: 'instruments')]
   private $families;
 
-  /**
-   * @ORM\OneToMany(targetEntity="MusicianInstrument", mappedBy="instrument")
-   */
+  #[ORM\OneToMany(targetEntity: MusicianInstrument::class, mappedBy: 'instrument', fetch: 'EXTRA_LAZY')]
   private $musicianInstruments;
 
-  public function __construct() {
+  #[ORM\OneToMany(targetEntity: ProjectInstrument::class, mappedBy: 'instrument', fetch: 'EXTRA_LAZY')]
+  private $projectInstruments;
+
+  #[ORM\OneToMany(targetEntity: ProjectInstrumentationNumber::class, mappedBy: 'instrument', fetch: 'EXTRA_LAZY')]
+  private $projectInstrumentationNumbers;
+
+
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
     $this->families = new ArrayCollection();
     $this->musicianInstruments = new ArrayCollection();
+    $this->projectInstruments = new ArrayCollection();
+    $this->projectInstrumentationNumbers = new ArrayCollection();
   }
+  // phpcs:enable
 
   /**
    * Get id.
@@ -100,20 +104,6 @@ class Instrument implements \ArrayAccess
   public function getId():int
   {
     return $this->id;
-  }
-
-  /**
-   * Set name.
-   *
-   * @param string $name
-   *
-   * @return Instrument
-   */
-  public function setName(string $name):Instrument
-  {
-    $this->name = $name;
-
-    return $this;
   }
 
   /**
@@ -127,17 +117,13 @@ class Instrument implements \ArrayAccess
   }
 
   /**
-   * Set familie.
+   * Get untranslated name.
    *
-   * @param Collection $families
-   *
-   * @return Instrument
+   * @return string
    */
-  public function setFamilies(Collection $families):Instrument
+  public function getUntranslatedName():string
   {
-    $this->families = $families;
-
-    return $this;
+    return $this->untranslatedName;
   }
 
   /**
@@ -151,20 +137,6 @@ class Instrument implements \ArrayAccess
   }
 
   /**
-   * Set sortOrder.
-   *
-   * @param int $sortOrder
-   *
-   * @return Instrument
-   */
-  public function setSortOrder($sortOrder):Instrument
-  {
-    $this->sortOrder = $sortOrder;
-
-    return $this;
-  }
-
-  /**
    * Get sortOrder.
    *
    * @return int
@@ -172,20 +144,6 @@ class Instrument implements \ArrayAccess
   public function getSortOrder():int
   {
     return $this->sortOrder;
-  }
-
-  /**
-   * Set musicianInstruments.
-   *
-   * @param bool $musicianInstruments
-   *
-   * @return Instrument
-   */
-  public function setMusicianInstruments($musicianInstruments):Instrument
-  {
-    $this->musicianInstruments = $musicianInstruments;
-
-    return $this;
   }
 
   /**
@@ -199,7 +157,30 @@ class Instrument implements \ArrayAccess
   }
 
   /**
-   * Get the usage count, i.e. the number of entity instances which  use this instrument.
+   * Get projectInstruments.
+   *
+   * @return Collection
+   */
+  public function getProjectInstruments():Collection
+  {
+    return $this->projectInstruments;
+  }
+
+  /**
+   * Get projectInstrumentationNumbers.
+   *
+   * @return Collection
+   */
+  public function getProjectInstrumentationNumbers():Collection
+  {
+    return $this->projectInstrumentationNumbers;
+  }
+
+  /**
+   * Get the usage count, i.e. the number of entity instances which use this
+   * instrument.
+   *
+   * @return int
    */
   public function usage():int
   {

@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,90 +18,70 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-
-use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
+use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Common\RationalNumber;
+use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Common\DecimalRationalP4S4 as RateNumberType;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
+use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\DBAL\Types\DecimalRationalP4S4Type as RateDatabaseType;
+use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Types\Types as DBALTypes;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 /**
  * InsuranceRate
- *
- * @ORM\Table(name="PersonalizedInsuranceRatesView")
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedInsuranceRatesView')]
+#[ORM\Entity]
 class InsuranceRate implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
 
-  /**
-   * @ORM\ManyToOne(targetEntity="InsuranceBroker", inversedBy="insuranceRates", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumn(referencedColumnName="short_name")
-   * @ORM\Id
-   */
+  #[ORM\JoinColumn(referencedColumnName: 'short_name')]
+  #[ORM\ManyToOne(targetEntity: InsuranceBroker::class, inversedBy: 'insuranceRates', fetch: 'EXTRA_LAZY')]
+  #[ORM\Id]
   private $broker;
 
   /**
    * @var Types\EnumGeographicalScope
-   *
-   * @ORM\Column(type="EnumGeographicalScope", nullable=false, options={"default"="Germany"})
-   * @ORM\Id
    */
-  private $geographicalScope;
+  #[ORM\Column(type: DBALTypes::ENUM, nullable: false)]
+  #[ORM\Id]
+  private Types\EnumGeographicalScope $geographicalScope;
 
-  /**
-   * @var float
-   *
-   * @ORM\Column(type="float", precision=10, scale=0, nullable=false, options={"comment"="fraction, not percentage, excluding taxes"})
-   */
-  private $rate;
+  #[ORM\Column(type: RateDatabaseType::NAME_BASE . '_' . RateNumberType::PRECISION . '_' . RateNumberType::SCALE, nullable: false, options: ['unsigned' => true, 'comment' => 'fraction, not percentage, excluding taxes'])]
+  private RateNumberType $rate;
 
   /**
    * @var \DateTimeImmutable
-   *
-   * @ORM\Column(type="date_immutable", nullable=false, options={"comment"="start of the yearly insurance period"})
    */
+  #[ORM\Column(type: 'date_immutable', nullable: false, options: ['comment' => 'start of the yearly insurance period'])]
   private $dueDate;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=255, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 255, nullable: true)]
   private $policyNumber;
 
   /**
    * @var Collection
-   *
-   * @ORM\OneToMany(targetEntity="InstrumentInsurance", mappedBy="insuranceRate", fetch="EXTRA_LAZY")
    */
+  #[ORM\OneToMany(targetEntity: InstrumentInsurance::class, mappedBy: 'insuranceRate', fetch: 'EXTRA_LAZY')]
   private $instrumentInsurances;
 
-  public function __construct() {
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
     $this->instrumentInsurances = new ArrayCollection();
   }
-
-  /**
-   * Set broker.
-   *
-   * @param string $broker
-   *
-   * @return InsuranceRate
-   */
-  public function setBroker($broker):InsuranceRate
-  {
-    $this->broker = $broker;
-
-    return $this;
-  }
+  // phpcs:enable
 
   /**
    * Get broker.
@@ -116,64 +94,23 @@ class InsuranceRate implements \ArrayAccess
   }
 
   /**
-   * Set geographicalScope.
-   *
-   * @param string|Types\EnumGeographicalScope $geographicalScope
-   *
-   * @return InsuranceRate
-   */
-  public function setGeographicalScope($geographicalScope):InsuranceRate
-  {
-    $this->geographicalScope = new Types\EnumGeographicalScope($geographicalScope);
-
-    return $this;
-  }
-
-  /**
    * Get geographicalScope.
    *
-   * @return array
+   * @return Types\EnumGeographicalScope
    */
-  public function getGeographicalScope():Types\EnumGeographicalScope
+  public function getGeographicalScope(): Types\EnumGeographicalScope
   {
     return $this->geographicalScope;
   }
 
   /**
-   * Set rate.
-   *
-   * @param float $rate
-   *
-   * @return InsuranceRate
-   */
-  public function setRate(float $rate):InsuranceRate
-  {
-    $this->rate = $rate;
-
-    return $this;
-  }
-
-  /**
    * Get rate.
    *
-   * @return float
+   * @return ?RateNumberType
    */
-  public function getRate():float
+  public function getRate(): ?RateNumberType
   {
-    return $this->rate;
-  }
-
-  /**
-   * Set dueDate.
-   *
-   * @param string|\DateTimeInterface $dueDate
-   *
-   * @return InsuranceRate
-   */
-  public function setDueDate($dueDate):InsuranceRate
-  {
-    $this->dueDate = self::convertToDateTime($dueDate);
-    return $this;
+    return $this->rate ?? null;
   }
 
   /**
@@ -187,20 +124,6 @@ class InsuranceRate implements \ArrayAccess
   }
 
   /**
-   * Set policyNumber.
-   *
-   * @param string $policyNumber
-   *
-   * @return InsuranceRate
-   */
-  public function setPolicyNumber(?string $policyNumber):InsuranceRate
-  {
-    $this->policyNumber = $policyNumber;
-
-    return $this;
-  }
-
-  /**
    * Get policyNumber.
    *
    * @return string
@@ -208,20 +131,6 @@ class InsuranceRate implements \ArrayAccess
   public function getPolicyNumber():?string
   {
     return $this->policyNumber;
-  }
-
-  /**
-   * Set instrumentInsurances.
-   *
-   * @param ArrayCollection $instrumentInsurances
-   *
-   * @return InsuranceBroker
-   */
-  public function setInstrumentInsurances(Collection $instrumentInsurances):InsuranceRate
-  {
-    $this->instrumentInsurances = $instrumentInsurances;
-
-    return $this;
   }
 
   /**

@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,12 +18,11 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Traits;
 
-use Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 /**
  * Simple trait that adds two convenience methods provided the
@@ -35,7 +32,7 @@ use Doctrine\ORM\Mapping as ORM;
 trait UnusedTrait
 {
   /**
-   * Return a boolean to indicate that this field is no longer used.
+   * @return bool A boolean to indicate that this field is no longer used.
    */
   public function unused():bool
   {
@@ -43,7 +40,7 @@ trait UnusedTrait
   }
 
   /**
-   * Return a boolean to indicate that this field is used.
+   * @return bool Return a boolean to indicate that this field is used.
    */
   public function inUse():bool
   {

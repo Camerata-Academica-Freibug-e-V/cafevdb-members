@@ -1,0 +1,151 @@
+/**
+ * @file
+ *
+ * @author Claus-Justus Heine
+ * @copyright 2025, 2026 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @license AGPL-3.0-or-later
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @module
+ */
+
+import type { StackFrame } from 'stacktrace-js';
+
+import StackTrace from 'stacktrace-js';
+
+export const stackTraceOptions = {
+  sourceMapConsumerCache: {},
+  sourceCache: {},
+};
+
+const syncStackFrames = (offset: number, depth: number) => StackTrace
+  .getSync(stackTraceOptions).slice(offset + 1, offset + 1 + depth);
+
+const asyncStackFrames = async (offset: number, depth: number) => {
+  const stackFrames = await StackTrace.get(stackTraceOptions);
+  return stackFrames.slice(offset + 1, offset + 1 + depth);
+};
+
+export type ConsoleMethod = 'debug' | 'info' | 'warn' | 'error' | 'trace';
+
+export interface ConsoleOptions {
+  smaps?: { [x in ConsoleMethod]?: boolean };
+  stackDepth?: number;
+}
+
+export const defaultConsoleOptions = {
+  smaps: { debug: true, info: true, warn: true, error: true, trace: true },
+  stackDepth: 0,
+};
+
+class Console {
+
+  constructor(prefix: string, options?: ConsoleOptions) {
+    this.prefix = prefix;
+    options = { ...defaultConsoleOptions, ...(options || {}) };
+    this.smaps = { ...{ debug: true, info: true, warn: true, error: true, trace: true }, ...(options?.smaps || {}) };
+    this.stackDepth = options?.stackDepth || 0;
+  }
+
+  readonly prefix: string;
+  private smaps: { debug: boolean; info: boolean; warn: boolean; error: boolean; trace: boolean };
+  private stackDepth: number;
+  private timestamp() {
+    return (new Date()).toLocaleTimeString('en-gb', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+  }
+
+  private async asyncStackFrames(depth: number) {
+    try {
+      return (await asyncStackFrames(4, depth));
+    } catch {
+      return [];
+    }
+  }
+
+  private syncStackFrames(depth: number) {
+    try {
+      return syncStackFrames(4, depth);
+    } catch {
+      return [];
+    }
+  }
+
+  private locationObject(stack: StackFrame[], time: string) {
+    const prefix = time + ' ' + this.prefix + (stack.length > 0 ? (' ' + stack[0].toString()) : '');
+    return stack.length > 1 ? [prefix, { stack: stack.map((entry) => entry.toString()) }] : [prefix];
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private emitMessage(method: ConsoleMethod, ...args: any[]) {
+    const time = this.timestamp();
+    const depth = Math.max(1, (args.length > 0 && typeof args[0] === 'number') ? args.shift() : this.stackDepth);
+    if (this.smaps[method]) {
+      this.asyncStackFrames(depth).then((stack) => {
+        console[method](...this.locationObject(stack, time), ...args);
+      });
+    } else {
+      console[method](...this.locationObject(this.syncStackFrames(depth), time), ...args);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  debug(...args: any[]) {
+    return this.emitMessage('debug', ...args);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  info(...args: any[]) {
+    return this.emitMessage('info', ...args);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  warn(...args: any[]) {
+    return this.emitMessage('warn', ...args);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error(...args: any[]) {
+    return this.emitMessage('error', ...args);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trace(...args: any[]) {
+    return this.emitMessage('trace', ...args);
+  }
+
+  enableSourceMaps(method?: ConsoleMethod, state: boolean = true) {
+    if (!method) {
+      for (const key of Object.keys(this.smaps) as ConsoleMethod[]) {
+        this.smaps[key] = state;
+      }
+    } else {
+      this.smaps[method] = state;
+    }
+  }
+
+  disableSourceMaps(method?: ConsoleMethod) {
+    this.enableSourceMaps(method, false);
+  }
+
+  withStack(depth: number) {
+    this.stackDepth = depth;
+  }
+
+  withoutStack() {
+    this.stackDepth = 0;
+  }
+}
+
+export default Console;

@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,14 +18,13 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 
-use Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 /**
  * ProjectInstruments
@@ -43,94 +40,62 @@ use Doctrine\ORM\Mapping as ORM;
  * Of course: the generic case is that a layman just plays one
  * instrument. Still we need to handle the more fabular cases for fun
  * -- and otherwise they imply ugly kludges and conventions in the frontend usage.
- *
- * @ORM\Table(name="PersonalizedProjectInstrumentsView")
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedProjectInstrumentsView')]
+#[ORM\Entity]
 class ProjectInstrument implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
 
   const UNVOICED = 0;
 
-  /**
-   * @ORM\ManyToOne(targetEntity="Project", inversedBy="participantInstruments", fetch="EXTRA_LAZY")
-   * @ORM\Id
-   */
+  #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'participantInstruments', fetch: 'EXTRA_LAZY')]
+  #[ORM\Id]
   private $project;
 
-  /**
-   * @ORM\ManyToOne(targetEntity="Musician", inversedBy="projectInstruments", fetch="EXTRA_LAZY")
-   * @ORM\Id
-   */
+  #[ORM\ManyToOne(targetEntity: Musician::class, inversedBy: 'projectInstruments', fetch: 'EXTRA_LAZY')]
+  #[ORM\Id]
   private $musician;
 
-  /**
-   * @ORM\ManytoOne(targetEntity="Instrument", inversedBy="projectInstruments", fetch="EXTRA_LAZY")
-   * @ORM\Id
-   */
+  #[ORM\ManyToOne(targetEntity: Instrument::class, inversedBy: 'projectInstruments', fetch: 'EXTRA_LAZY')]
+  #[ORM\Id]
   private $instrument;
 
   /**
    * @var int|null
-   *
-   * @ORM\Column(type="integer", nullable=false, options={"default"="0","comment"="Voice specification if applicable, set to 0 if separation by voice is not needed"})
-   * @ORM\Id
    */
+  #[ORM\Column(type: 'integer', nullable: false, options: ['default' => '0', 'comment' => 'Voice specification if applicable, set to 0 if separation by voice is not needed'])]
+  #[ORM\Id]
   private $voice = self::UNVOICED;
 
   /**
    * @var bool
-   *
-   * @ORM\Column(type="boolean", nullable=false, options={"default"="0"})
    */
+  #[ORM\Column(type: 'boolean', nullable: false, options: ['default' => '0'])]
   private $sectionLeader = false;
 
-  /**
-   * @ORM\ManyToOne(targetEntity="ProjectParticipant", inversedBy="projectInstruments", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumns(
-   *   @ORM\JoinColumn(name="project_id", referencedColumnName="project_id"),
-   *   @ORM\JoinColumn(name="musician_id",referencedColumnName="musician_id")
-   * )
-   */
+  #[ORM\ManyToOne(targetEntity: ProjectParticipant::class, inversedBy: 'projectInstruments', fetch: 'EXTRA_LAZY')]
+  #[ORM\JoinColumn(name: 'project_id', referencedColumnName: 'project_id', onDelete: 'cascade')]
+  #[ORM\JoinColumn(name: 'musician_id', referencedColumnName: 'musician_id', onDelete: 'cascade')]
   private $projectParticipant;
 
-  /**
-   * @ORM\ManyToOne(targetEntity="MusicianInstrument", inversedBy="projectInstruments", fetch="EXTRA_LAZY")
-   * @ORM\JoinColumns(
-   *   @ORM\JoinColumn(name="musician_id",referencedColumnName="musician_id"),
-   *   @ORM\JoinColumn(name="instrument_id",referencedColumnName="instrument_id")
-   * )
-   */
+  #[ORM\ManyToOne(targetEntity: MusicianInstrument::class, inversedBy: 'projectInstruments', fetch: 'EXTRA_LAZY')]
+  #[ORM\JoinColumn(name: 'musician_id', referencedColumnName: 'musician_id')]
+  #[ORM\JoinColumn(name: 'instrument_id', referencedColumnName: 'instrument_id')]
   private $musicianInstrument;
 
-  // /**
-  //  * @ORM\ManyToOne(targetEntity="ProjectInstrumentationNumber", inversedBy="instruments", fetch="EXTRA_LAZY")
-  //  * @ORM\JoinColumns(
-  //  *   @ORM\JoinColumn(name="project_id", referencedColumnName="project_id"),
-  //  *   @ORM\JoinColumn(name="instrument_id", referencedColumnName="instrument_id"),
-  //  *   @ORM\JoinColumn(name="voice", referencedColumnName="voice")
-  //  * )
-  //  */
-  // private $instrumentationNumber;
+  #[ORM\ManyToOne(targetEntity: ProjectInstrumentationNumber::class, inversedBy: 'instruments', fetch: 'EXTRA_LAZY')]
+  #[ORM\JoinColumn(name: 'project_id', referencedColumnName: 'project_id')]
+  #[ORM\JoinColumn(name: 'instrument_id', referencedColumnName: 'instrument_id')]
+  #[ORM\JoinColumn(name: 'voice', referencedColumnName: 'voice')]
+  private $instrumentationNumber;
 
-  public function __construct() {
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
   }
-
-  /**
-   * Set project.
-   *
-   * @param int $project
-   *
-   * @return ProjectInstrument
-   */
-  public function setProject($project)
-  {
-    $this->project = $project;
-
-    return $this;
-  }
+  // phpcs:enable
 
   /**
    * Get project.
@@ -140,20 +105,6 @@ class ProjectInstrument implements \ArrayAccess
   public function getProject()
   {
     return $this->project;
-  }
-
-  /**
-   * Set musician.
-   *
-   * @param int $musician
-   *
-   * @return ProjectInstrument
-   */
-  public function setMusician($musician)
-  {
-    $this->musician = $musician;
-
-    return $this;
   }
 
   /**
@@ -167,20 +118,6 @@ class ProjectInstrument implements \ArrayAccess
   }
 
   /**
-   * Set instrument.
-   *
-   * @param int $instrument
-   *
-   * @return ProjectInstrument
-   */
-  public function setInstrument($instrument)
-  {
-    $this->instrument = $instrument;
-
-    return $this;
-  }
-
-  /**
    * Get instrument.
    *
    * @return int
@@ -188,20 +125,6 @@ class ProjectInstrument implements \ArrayAccess
   public function getInstrument()
   {
     return $this->instrument;
-  }
-
-  /**
-   * Set voice.
-   *
-   * @param int|null $voice
-   *
-   * @return ProjectInstrument
-   */
-  public function setVoice($voice = null)
-  {
-    $this->voice = $voice;
-
-    return $this;
   }
 
   /**
@@ -215,20 +138,6 @@ class ProjectInstrument implements \ArrayAccess
   }
 
   /**
-   * Set sectionLeader.
-   *
-   * @param bool $sectionLeader
-   *
-   * @return ProjectInstrument
-   */
-  public function setSectionLeader($sectionLeader)
-  {
-    $this->sectionLeader = $sectionLeader;
-
-    return $this;
-  }
-
-  /**
    * Get sectionLeader.
    *
    * @return bool
@@ -236,29 +145,6 @@ class ProjectInstrument implements \ArrayAccess
   public function getSectionLeader()
   {
     return $this->sectionLeader;
-  }
-
-  /**
-   * Set projectParticipant.
-   *
-   * @param int $projectParticipant
-   *
-   * @return ProjectInstrument
-   */
-  public function setProjectParticipant($projectParticipant)
-  {
-    $this->projectParticipant = $projectParticipant;
-
-    if (!empty($this->projectParticipant)) {
-      if (empty($this->project)) {
-        $this->project = $this->projectParticipant->getProject();
-      }
-      if (empty($this->musician)) {
-        $this->musician = $this->projectParticipant->getMusician();
-      }
-    }
-
-    return $this;
   }
 
   /**
@@ -272,29 +158,6 @@ class ProjectInstrument implements \ArrayAccess
   }
 
   /**
-   * Set musicianInstrument.
-   *
-   * @param int $musicianInstrument
-   *
-   * @return ProjectInstrument
-   */
-  public function setMusicianInstrument($musicianInstrument)
-  {
-    $this->musicianInstrument = $musicianInstrument;
-
-    if (!empty($this->musicianInstrument)) {
-      if (empty($this->instrument)) {
-        $this->instrument = $this->musicianInstrument->getInstrument();
-      }
-      if (empty($this->musician)) {
-        $this->musician = $this->musicianInstrument->getMusician();
-      }
-    }
-
-    return $this;
-  }
-
-  /**
    * Get musicianInstrument.
    *
    * @return int
@@ -302,5 +165,15 @@ class ProjectInstrument implements \ArrayAccess
   public function getMusicianInstrument()
   {
     return $this->musicianInstrument;
+  }
+
+  /**
+   * Get instrumentationNumber.
+   *
+   * @return ProjectInstrumentationNumber
+   */
+  public function getInstrumentationNumber():ProjectInstrumentationNumber
+  {
+    return $this->instrumentationNumber;
   }
 }

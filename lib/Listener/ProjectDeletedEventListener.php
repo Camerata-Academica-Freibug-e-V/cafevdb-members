@@ -1,7 +1,7 @@
 <?php
 /**
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @copyright Copyright (c) 2022-2024 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 namespace OCA\CAFeVDBMembers\Listener;
 
-use OCP\AppFramework\IAppContainer;
+use Psr\Container\ContainerInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -28,20 +28,21 @@ use OCA\CAFEVDB\Events\BeforeProjectDeletedEvent as HandledEvent;
 
 use OCA\CAFeVDBMembers\Service\ProjectGroupService;
 
+/** Remove the group-shared folder after deleting the project. */
 class ProjectDeletedEventListener implements IEventListener
 {
   const EVENT = HandledEvent::class;
 
-  /** @var IAppContainer */
-  private $appContainer;
-
-  public function __construct(IAppContainer $appContainer)
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct(private ContainerInterface $appContainer)
   {
-    $this->appContainer = $appContainer;
   }
+  // phpcs:enable
 
-  public function handle(Event $event): void {
-    if (!($event instanceOf HandledEvent)) {
+  /** {@inheritdoc} */
+  public function handle(Event $event):void
+  {
+    if (!($event instanceof HandledEvent)) {
       return;
     }
     /** @var ProjectGroupService $service */
@@ -49,8 +50,3 @@ class ProjectDeletedEventListener implements IEventListener
     $service->handleProjectDeletedEvent($event);
   }
 }
-
-// Local Variables: ***
-// c-basic-offset: 2 ***
-// indent-tabs-mode: nil ***
-// End: ***

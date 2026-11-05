@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,15 +18,14 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Mapping\Annotation as Gedmo;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
@@ -40,10 +37,9 @@ use OCA\CAFeVDBMembers\Database\DBAL\Types;
  * instruments and musicians) but for the "ranking" column which codes
  * a loose ranking like "primary instrument", i.e. the preference of
  * instruments of the given musician.
- *
- * @ORM\Table(name="PersonalizedMusicianInstrumentsView")
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedMusicianInstrumentsView')]
+#[ORM\Entity]
 class MusicianInstrument implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
@@ -53,41 +49,35 @@ class MusicianInstrument implements \ArrayAccess
 
   /**
    * @var Musician
-   * @ORM\ManyToOne(targetEntity="Musician", inversedBy="instruments")
-   * @ORM\Id
    */
+  #[ORM\ManyToOne(targetEntity: Musician::class, inversedBy: 'instruments')]
+  #[ORM\Id]
   private $musician;
 
   /**
    * @var Instrument
-   * @ORM\ManyToOne(targetEntity="Instrument", inversedBy="musicianInstruments")
-   * @ORM\Id
    */
+  #[ORM\ManyToOne(targetEntity: Instrument::class, inversedBy: 'musicianInstruments')]
+  #[ORM\Id]
   private $instrument;
 
   /**
    * @var int
-   * @ORM\Column(type="integer", nullable=false)
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
   private $ranking = 1;
 
-  public function __construct() {
-    $this->__wakeup();
-  }
+  /** @var Collection */
+  #[ORM\OneToMany(targetEntity: ProjectInstrument::class, mappedBy: 'musicianInstrument')]
+  private Collection $projectInstruments;
 
-  /**
-   * Set musician.
-   *
-   * @param int $musician
-   *
-   * @return MusicianInstrument
-   */
-  public function setMusician($musician):MusicianInstrument
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
   {
-    $this->musician = $musician;
-
-    return $this;
+    $this->__wakeup();
+    $this->projectInstruments = new ArrayCollection();
   }
+  // phpcs:enable
 
   /**
    * Get musician.
@@ -100,20 +90,6 @@ class MusicianInstrument implements \ArrayAccess
   }
 
   /**
-   * Set instrument.
-   *
-   * @param Instrument $instrument
-   *
-   * @return MusicianInstrument
-   */
-  public function setInstrument($instrument):MusicianInstrument
-  {
-    $this->instrument = $instrument;
-
-    return $this;
-  }
-
-  /**
    * Get instrument.
    *
    * @return Instrument
@@ -121,20 +97,6 @@ class MusicianInstrument implements \ArrayAccess
   public function getInstrument():Instrument
   {
     return $this->instrument;
-  }
-
-  /**
-   * Set ranking.
-   *
-   * @param int $ranking
-   *
-   * @return MusicianInstrument
-   */
-  public function setRanking(int $ranking):MusicianInstrument
-  {
-    $this->ranking = $ranking;
-
-    return $this;
   }
 
   /**
@@ -150,9 +112,21 @@ class MusicianInstrument implements \ArrayAccess
   /**
    * Return the number of project instrumentation slots the associated
    * musician is registered with.
+   *
+   * @return int
    */
-  public function usage()
+  public function usage():int
   {
     return 0; /* $this->projectInstruments->count(); */
+  }
+
+  /**
+   * Get projectInstruments.
+   *
+   * @return Collection
+   */
+  public function getProjectInstruments():Collection
+  {
+    return $this->projectInstruments;
   }
 }

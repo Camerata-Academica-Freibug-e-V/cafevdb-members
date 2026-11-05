@@ -2,8 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
+ * @copyright Copyright (c) 2022-2024, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,42 +25,40 @@ namespace OCA\CAFeVDBMembers\Service;
 use Psr\Log\LoggerInterface;
 use OCP\IL10N;
 
-use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
-use OCA\CAFeVDBMembers\Database\ORM\Entities;
 use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumParticipantFieldDataType as FieldDataType;
 use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumParticipantFieldMultiplicity as FieldMultiplicity;
+use OCA\CAFeVDBMembers\Database\ORM\Entities;
+use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 
 /**
  * Some support functions for giving access to the private data of a member.
  */
 class MemberDataService
 {
-  use \OCA\CAFeVDBMembers\Traits\LoggerTrait;
-  use \OCA\CAFeVDBMembers\Traits\UtilTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\LoggerTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\UtilTrait;
 
   const PATH_SEP = '/';
 
-  /** @var EntityManager */
-  private $entityManager;
-
-  /** @var IL10N */
-  private $l;
-
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
   public function __construct(
-    EntityManager $entityManager
-    , LoggerInterface $logger
-    , IL10N $l10n
+    private EntityManager $entityManager,
+    protected LoggerInterface $logger,
+    protected IL10N $l,
   ) {
-    $this->entityManager = $entityManager;
-    $this->logger = $logger;
-    $this->l = $l10n;
   }
+  // phpcs:enable
 
   /**
-   * e.g. passport-clausjustusheine.pdf
-   * e.g. passport-claus-justus-heine.pdf
+   * Generates e.g. passport-clausJustusHeine.pdf.
+   *
+   * @param string $base
+   *
+   * @param Entities\Musician $musician
+   *
+   * @return string
    */
-  public function participantFilename(string $base, Entities\Musician $musician)
+  public function participantFilename(string $base, Entities\Musician $musician):string
   {
     $userIdSlug = $musician->getUserIdSlug();
     return $base . '-' . self::dashesToCamelCase($userIdSlug, true, '_-.');
@@ -71,6 +69,8 @@ class MemberDataService
    * information for the file.
    *
    * @param Entities\ProjectParticipantFieldDatum $fieldDatum
+   *
+   * @param bool $includeDeleted
    *
    * @return null|array
    * ```
@@ -104,9 +104,10 @@ class MemberDataService
     switch ($dataType) {
       case FieldDataType::DB_FILE:
         $fileId = (int)$fieldDatum->getOptionValue();
-        $file = $this->entityManager->find(Entities\File::class, $fileId);
+        $file = $this->entityManager->find(Entities\DatabaseStorageFile::class, $fileId);
         break;
-      case FieldDataType::SERVICE_FEE:
+      case FieldDataType::LIABILITIES:
+      case FieldDataType::RECEIVABLES:
         $file = $fieldDatum->getSupportingDocument();
         break;
       default:
@@ -115,7 +116,7 @@ class MemberDataService
     if (empty($file)) {
       return null;
     }
-    /** @var Entities\File $file */
+    /** @var Entities\DatabaseStorageFile $file */
     $dbFileName = $file->getFileName();
     $extension = pathinfo($dbFileName, PATHINFO_EXTENSION);
     $fieldName = $field->getName();

@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,34 +18,36 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Traits;
 
-use Doctrine\ORM\Mapping as ORM;
+use DateTimeInterface;
+use DateTimeImmutable;
+
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 
+/** Helper for Gedmo soft-deleteable entities. */
 trait SoftDeleteableEntity
 {
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
 
   /**
-   * @ORM\Column(type="datetime_immutable", nullable=true)
-   *
-   * @var DateTimeImmutable|null
+   * @var null|DateTimeInterface
    */
-  protected $deleted;
+  #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+  protected ?DateTimeInterface $deleted;
 
   /**
    * Set or clear the deleted at timestamp.
    *
-   * @param string|int|\DateTimeInterface $mandateDate
+   * @param mixed $deleted
    *
    * @return self
    */
-  public function setDeleted($deleted = null)
+  public function setDeleted(mixed $deleted = null):self
   {
     $this->deleted = self::convertToDateTime($deleted);
     return $this;
@@ -57,9 +57,9 @@ trait SoftDeleteableEntity
    * Get the deleted at timestamp value. Will return null if
    * the entity has not been soft deleted.
    *
-   * @return \DateTimeImmutable|null
+   * @return DateTimeInterface|null
    */
-  public function getDeleted()
+  public function getDeleted():?DateTimeInterface
   {
     return $this->deleted;
   }
@@ -69,8 +69,19 @@ trait SoftDeleteableEntity
    *
    * @return bool
    */
-  public function isDeleted()
+  public function isDeleted():bool
   {
     return null !== $this->deleted;
+  }
+
+  /**
+   * Return whether this object is expired and is about to be deleted on the
+   * next call to delete.
+   *
+   * @return bool
+   */
+  public function isExpired():bool
+  {
+    return $this->isDeleted() && $this->deleted <= (new DateTimeImmutable) && $this->unused();
   }
 }

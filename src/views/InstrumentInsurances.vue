@@ -1,320 +1,335 @@
-<script>
-/**
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
- * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
- * @license AGPL-3.0-or-later
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- */
-</script>
+<!--
+ - @copyright Copyright (c) 2022-2026 Claus-Justus Heine <himself@claus-justus-heine.de>
+ -
+ - @author Claus-Justus Heine <himself@claus-justus-heine.de>
+ -
+ - @license AGPL-3.0-or-later
+ -
+ - This program is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License, or (at your option) any later version.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program. If not, see <http://www.gnu.org/licenses/>.
+ -->
 <template>
-  <Content :app-name="appId">
-    <div v-if="loading" class="page-container loading" />
-    <div v-else class="page-container">
-      <h2>{{ t(appId, 'Instrument Insurances of {publicName}', {publicName: memberData.personalPublicName }) }}</h2>
-      <CheckboxRadioSwitch v-if="haveDeleted" :checked.sync="showDeleted">
-        {{ t(appId, 'show deleted') }}
-      </CheckboxRadioSwitch>
-      <ul class="insurance-sections">
-        <ListItem :title="t(appId, 'Summary')"
-                  :bold="true"
-                  class="summary">
-          <template #subtitle>
-            <ul class="insurance-summary">
-              <ListItem :title="t(appId, 'Total Insured Value')"
-                        :details="totalInsuredValue + ' ' + currencySymbol" />
-              <ListItem v-if="totalInsuredValue != totalPayableValue"
-                        :title="t(appId, 'Total Payable Value')"
-                        :details="totalPayableValue + ' ' + currencySymbol" />
-              <ListItem :title="t(appId, 'Yearly Insurance fees w/o taxes')"
-                        :details="totalPayableFees.toFixed(2) + ' ' + currencySymbol" />
-              <ListItem :title="t(appId, 'Yearly Insurance fees with {taxes}% taxes', { taxes: taxRate*100.0 })"
-                        :details="(totalPayableFees * (1.0 + taxRate)).toFixed(2) + ' ' + currencySymbol" />
-              <ListItem :title="t(appId, 'Yearly Insurance Bills')">
-                <template #details>
-                  <Actions class="insurance-bill-list">
-                    <ActionLink v-for="receivable in insuranceBills"
-                                :key="receivable.optionKey"
-                                icon="icon-download"
-                                :href="optionDownloadUrl(receivable.optionKey)">
-                      {{ receivable.dataOption.label }}
-                    </ActionLink>
-                  </Actions>
-                </template>
-              </ListItem>
-            </ul>
-          </template>
-        </ListItem>
-        <ListItem v-if="memberData.instrumentInsurances.forOthers.length > 0"
-                  :title="t(appname, 'Paid for Others')"
-                  :details="t(appId, 'paid by me, instrument used by someone else')"
-                  :bold="true">
-          <template #subtitle>
-            <ul class="insurance-list for-others">
-              <ListItem v-for="insurance in memberData.instrumentInsurances.forOthers"
-                        :key="insurance.id"
-                        :title="insurance.object"
-                        :bold="true">
-                <template #details>
-                  <span class="insurance-amount">{{ insurance.insuranceAmount + ' ' + currencySymbol }}</span>
-                  <Actions class="insurance-details">
-                    <ActionButton icon="icon-info"
-                                  @click="requestInsuranceDetails(insurance)">
-                      {{ t(appId, 'details') }}
-                    </ActionButton>
-                  </Actions>
-                </template>
-              </ListItem>
-            </ul>
-          </template>
-        </ListItem>
-        <ListItem v-if="memberData.instrumentInsurances.byOthers.length > 0"
-                  :title="t(appname, 'Paid by Others')"
-                  :details="t(appId, 'paid by someone else, instrument used by me')"
-                  :bold="true">
-          <template #subtitle>
-            <ul class="insurance-list by-others">
-              <ListItem v-for="insurance in memberData.instrumentInsurances.byOthers"
-                        :key="insurance.id"
-                        :title="insurance.object"
-                        :bold="true">
-                <template #details>
-                  <span class="insurance-amount">{{ insurance.insuranceAmount + ' ' + currencySymbol }}</span>
-                  <Actions class="insurance-details">
-                    <ActionButton icon="icon-info"
-                                  @click="requestInsuranceDetails(insurance)">
-                      {{ t(appId, 'details') }}
-                    </ActionButton>
-                  </Actions>
-                </template>
-              </ListItem>
-            </ul>
-          </template>
-        </ListItem>
-        <ListItem v-if="memberData.instrumentInsurances.self.length > 0"
-                  :title="haveOthers ? t(appId, 'Self Used and Paid') : t(appId, 'Insured Instruments')"
-                  :details="haveOthers ? t(appId, 'paid and used by myself') : ''"
-                  :bold="true">
-          <template #subtitle>
-            <ul class="insurance-list self">
-              <ListItem v-for="insurance in memberData.instrumentInsurances.self"
-                        :key="insurance.id"
-                        :title="insurance.object"
-                        class="insurance-item">
-                <template #details>
-                  <span class="insurance-amount">{{ insurance.insuranceAmount + ' ' + currencySymbol }}</span>
-                  <Actions class="insurance-details">
-                    <ActionButton icon="icon-info"
-                                  @click="requestInsuranceDetails(insurance)">
-                      {{ t(appId, 'details') }}
-                    </ActionButton>
-                  </Actions>
-                </template>
-              </ListItem>
-            </ul>
-          </template>
-        </ListItem>
-      </ul>
-      <DebugInfo :debug-data="memberData" />
+  <div class="page-container" :class="{ 'icon-loading': loading, loading }">
+    <h2>{{ t(appId, 'Instrument Insurances of {publicName}', {publicName: memberData.personalPublicName }) }}</h2>
+    <NcCheckboxRadioSwitch v-if="haveDeleted" v-model="showDeleted">
+      {{ t(appId, 'show deleted') }}
+    </NcCheckboxRadioSwitch>
+    <div v-if="memberData.instrumentInsurances.length === 0">
+      {{ t(appId, 'You do not have any instrument insurances.') }}
     </div>
-  </Content>
+    <ul v-else class="insurance-sections">
+      <NcListItem :name="t(appId, 'Summary')"
+                  :bold="true"
+                  class="summary"
+      >
+        <template #subname>
+          <ul class="insurance-summary">
+            <NcListItem :name="t(appId, 'Total Insured Value')"
+                        :details="totalInsuredValue + ' ' + currencySymbol"
+            />
+            <NcListItem v-if="totalInsuredValue != totalPayableValue"
+                        :name="t(appId, 'Total Payable Value')"
+                        :details="totalPayableValue + ' ' + currencySymbol"
+            />
+            <NcListItem :name="t(appId, 'Yearly Insurance fees w/o taxes')"
+                        :details="totalPayableFees.toFixed(2) + ' ' + currencySymbol"
+            />
+            <NcListItem :name="t(appId, 'Yearly Insurance fees with {taxes}% taxes', { taxes: taxRate * 100.0 })"
+                        :details="(totalPayableFees * (1.0 + taxRate)).toFixed(2) + ' ' + currencySymbol"
+            />
+            <NcListItem :name="t(appId, 'Yearly Insurance Bills')"
+                        :forceDisplayActions="true"
+            >
+              <template #actions>
+                <NcActionLink v-for="receivable in insuranceBills"
+                              :key="receivable.optionKey"
+                              :href="optionDownloadUrl(receivable.optionKey)"
+                >
+                  <template #icon>
+                    <IconDownload />
+                  </template>
+                  {{ receivable.dataOption.label }}
+                </NcActionLink>
+              </template>
+            </NcListItem>
+          </ul>
+        </template>
+      </NcListItem>
+      <NcListItem v-if="memberData.insuranceDetails.forOthers.length > 0"
+                  :name="t(appId, 'Paid for Others')"
+                  :details="t(appId, 'instrument used by someone else')"
+                  :bold="true"
+      >
+        <template #subname>
+          <ul class="insurance-list for-others">
+            <NcListItem v-for="insurance in memberData.insuranceDetails.forOthers"
+                        :key="insurance.id"
+                        :name="insurance.object"
+                        class="insurance-item"
+            >
+              <template #details>
+                <span class="insurance-amount">{{ insurance.insuranceAmount + ' ' + currencySymbol }}</span>
+                <NcActions class="insurance-details">
+                  <NcActionButton @click="requestInsuranceDetails(insurance)">
+                    <template #icon>
+                      <IconInfo />
+                    </template>
+                    {{ t(appId, 'details') }}
+                  </NcActionButton>
+                </NcActions>
+              </template>
+            </NcListItem>
+          </ul>
+        </template>
+      </NcListItem>
+      <NcListItem v-if="memberData.insuranceDetails.byOthers.length > 0"
+                  :name="t(appId, 'Paid by Others')"
+                  :details="t(appId, 'instrument owned or used by me')"
+                  :bold="true"
+      >
+        <template #subname>
+          <ul class="insurance-list by-others">
+            <NcListItem v-for="insurance in memberData.insuranceDetails.byOthers"
+                        :key="insurance.id"
+                        :name="insurance.object"
+                        class="insurance-item"
+            >
+              <template #details>
+                <span class="insurance-amount">{{ insurance.insuranceAmount + ' ' + currencySymbol }}</span>
+                <NcActions class="insurance-details">
+                  <NcActionButton @click="requestInsuranceDetails(insurance)">
+                    <template #icon>
+                      <IconInfo />
+                    </template>
+                    {{ t(appId, 'details') }}
+                  </NcActionButton>
+                </NcActions>
+              </template>
+            </NcListItem>
+          </ul>
+        </template>
+      </NcListItem>
+      <NcListItem v-if="memberData.insuranceDetails.self.length > 0"
+                  :name="haveOthers ? t(appId, 'Self Used and Paid') : t(appId, 'Insured Instruments')"
+                  :details="haveOthers ? t(appId, 'instrument owned or used by me') : ''"
+                  :bold="true"
+      >
+        <template #subname>
+          <ul class="insurance-list self">
+            <NcListItem v-for="insurance in memberData.insuranceDetails.self"
+                        :key="insurance.id"
+                        :name="insurance.object"
+                        class="insurance-item"
+            >
+              <template #details>
+                <span class="insurance-amount">{{ insurance.insuranceAmount + ' ' + currencySymbol }}</span>
+                <NcActions class="insurance-details">
+                  <NcActionButton icon="icon-info"
+                                  @click="requestInsuranceDetails(insurance)"
+                  >
+                    {{ t(appId, 'details') }}
+                  </NcActionButton>
+                </NcActions>
+              </template>
+            </NcListItem>
+          </ul>
+        </template>
+      </NcListItem>
+    </ul>
+    <DebugInfo :debugData="memberData" />
+  </div>
 </template>
-<script>
 
-import { appName as appId } from '../config.js'
-import Vue from 'vue'
-import Content from '@nextcloud/vue/dist/Components/Content'
-import ListItem from '../components/ListItem'
-import DebugInfo from '../components/DebugInfo'
-import Actions from '@nextcloud/vue/dist/Components/Actions'
-import ActionLink from '@nextcloud/vue/dist/Components/ActionLink'
-import ActionButton from '@nextcloud/vue/dist/Components/ActionButton'
-import CheckboxRadioSwitch from '@nextcloud/vue/dist/Components/CheckboxRadioSwitch'
-import AppSidebar from '@nextcloud/vue/dist/Components/AppSidebar'
-import AppSidebarTab from '@nextcloud/vue/dist/Components/AppSidebarTab'
-import InsuranceDetails from './InstrumentInsurances/InsuranceDetails'
-import { generateUrl } from '@nextcloud/router'
-import { getLocale, getCanonicalLocale, } from '@nextcloud/l10n'
-import { getInitialState } from '../services/InitialStateService'
+<script setup lang="ts">
+import type { InitialState } from 'cafevdbmembers'
+import type { ViewDetailsEventData } from '../App.vue'
+import type {
+  InstrumentInsurance,
+  Receivable,
+} from '../stores/memberData.ts'
+
 import { getRequestToken } from '@nextcloud/auth'
+import { translate as t } from '@nextcloud/l10n'
+import {
+  NcActionButton,
+  NcActionLink,
+  NcActions,
+  NcCheckboxRadioSwitch,
+  NcListItem,
+} from '@nextcloud/vue'
+import {
+  computed,
+  onBeforeMount,
+  ref,
+} from 'vue'
+import IconDownload from 'vue-material-design-icons/Download.vue'
+import IconInfo from 'vue-material-design-icons/InformationVariant.vue'
+import DebugInfo from '../components/DebugInfo.vue'
+import { appName as appId } from '../config.ts'
+import logger from '../logger.ts'
+import { useMemberDataStore } from '../stores/memberData.ts'
+import generateAppUrl from '../toolkit/util/generate-url.ts'
+import getInitialState from '../toolkit/util/initial-state.ts'
 
-const initialState = getInitialState()
-import { useMemberDataStore } from '../stores/memberData.js'
+const viewName = 'InstrumentInsurances' as const
 
-const viewName ='InstrumentInsurances'
+// eslint-disable-next-line vue/define-macros-order
+const emit = defineEmits<{
+  viewDetails: [data: ViewDetailsEventData<typeof viewName>]
+}>()
 
-export default {
-  name: viewName,
-  components: {
-    Content,
-    CheckboxRadioSwitch,
-    ListItem,
-    DebugInfo,
-    Actions,
-    ActionLink,
-    ActionButton,
-    InsuranceDetails,
-    AppSidebar,
-    AppSidebarTab,
-  },
-  mixins: [
-    {
-      data() {
-        return {
-          currencyCode: initialState.currencyCode,
-          currencySymbol: initialState.currencySymbol,
-          orchestraLocale: initialState.orchestraLocale,
-        }
-      },
+const initialState = getInitialState<InitialState>()!
+
+const memberData = useMemberDataStore()
+
+// const currencyCode = computed(() => initialState.currencyCode)
+const currencySymbol = computed(() => initialState.currencySymbol)
+// const orchestraLocale = computed(() => initialState.orchestraLocale)
+
+const taxRate = computed(() => 0.19) // @todo make this configurable
+const totalInsuredValue = ref(0.0)
+const totalPayableValue = ref(0.0)
+const totalPayableFees = ref(0.0)
+const loading = ref(true)
+const showDeleted = ref(false)
+const haveDeleted = ref(false)
+const haveOthers = ref(false)
+
+const insuranceBills = computed(
+  () => memberData.insuranceDetails.receivables.filter((x) => x.supportingDocumentId),
+)
+
+const optionDownloadUrl = (key: string) =>
+  generateAppUrl('download/member/' + key + '?requesttoken=' + encodeURIComponent(getRequestToken() || ''))
+
+const requestInsuranceDetails = (insurance: InstrumentInsurance) => {
+  emit('viewDetails', {
+    viewName,
+    title: t(appId, '{insuredObject} ({insuredValue} {currencySymbol})', {
+      insuredObject: insurance.object,
+      insuredValue: insurance.insuranceAmount,
+      currencySymbol: currencySymbol.value,
+    }),
+    props: {
+      insurance,
+      taxRate: taxRate.value,
+      currencySymbol: currencySymbol.value,
+      includeRole: haveOthers.value,
     },
-  ],
-  setup() {
-    const memberData = useMemberDataStore()
-    return { memberData }
-  },
-  data() {
-    return {
-      taxRate: 0.19, // @todo make this configurable
-      totalInsuredValue: 0.0,
-      totalPayableValue: 0.0,
-      totalPayableFees: 0.0,
-      loading: true,
-      showDeleted: false,
-      haveDeleted: false,
-      haveOthers: false,
-    }
-  },
-  computed: {
-    insuranceBills() {
-      return this.memberData.instrumentInsurances.receivables.filter(x => x.supportingDocumentId)
-    },
-  },
-  async created() {
-    await this.memberData.initialize()
+  })
+}
 
-    if (this.memberData.initialized.loaded && !this.memberData.initialized[viewName]) {
-      // extract insurances information
-      const ownInsurances = []; // holder === debitor
-      const insurancesForOthers = []; // debitor === thisMember, holder different
-      const insurancesByOthers = []; // holer === thisMember, debitor different
-      for (const insurance of this.memberData.instrumentInsurances) {
-        if (insurance.isDebitor === insurance.isHolder) {
+onBeforeMount(async () => {
+  await memberData.initialize()
+
+  if (memberData.initialized.loaded && !memberData.initialized[viewName]) {
+    // extract insurances information
+    const ownInsurances: InstrumentInsurance[] = [] // holder or owner === debitor
+    const insurancesForOthers: InstrumentInsurance[] = [] // debitor === thisMember, holder and owner different
+    const insurancesByOthers: InstrumentInsurance[] = [] // holder or owner === thisMember, debitor different
+    for (const insurance of memberData.instrumentInsurances) {
+      if (insurance.isDebitor) {
+        if (insurance.isHolder) {
           ownInsurances.push(insurance)
-        } else if (insurance.isDebitor) {
-          insurancesForOthers.push(insurance)
         } else {
-          insurancesByOthers.push(insurance)
+          insurancesForOthers.push(insurance)
         }
+      } else {
+        insurancesByOthers.push(insurance)
       }
-      Vue.set(this.memberData, 'instrumentInsurances', {})
-      Vue.set(this.memberData.instrumentInsurances, 'forOthers', insurancesForOthers)
-      Vue.set(this.memberData.instrumentInsurances, 'byOthers', insurancesByOthers)
-      Vue.set(this.memberData.instrumentInsurances, 'self', ownInsurances)
+    }
+    memberData.insuranceDetails.forOthers = insurancesForOthers
+    memberData.insuranceDetails.byOthers = insurancesByOthers
+    memberData.insuranceDetails.self = ownInsurances
 
-      const insuranceReceivables = [];
-      for (const participant of this.memberData.projectParticipation) {
-        if (participant.project.clubMembers) {
-          // extract insurance receivables and supporting documents
-          for (const [id, field] of Object.entries(participant.participantFields)) {
-            if (field.name === 'Instrument Insurance'
-                || field.untranslatedName === 'Instrument Insurance'
-                || field.name === t(appId, 'Instrument Insurance')
-                || field.untranslatedName === t(appId, 'Instrument Insurance')) {
-              for (const [key, receivable] of Object.entries(field.fieldData)) {
-                insuranceReceivables.push(receivable)
-              }
+    const insuranceReceivables: Receivable[] = []
+    for (const participant of memberData.projectParticipation) {
+      // logger.info('PROJECT', participant)
+      if (participant.project.clubMembers) {
+        // extract insurance receivables and supporting documents
+        for (const [id, field] of Object.entries(participant.participantFields)) {
+          logger.info('FIELD', id, field)
+          if (field.name === 'Instrument Insurance'
+            || field.untranslatedName === 'Instrument Insurance'
+            || field.name === t(appId, 'Instrument Insurance')
+            || field.untranslatedName === t(appId, 'Instrument Insurance')) {
+            for (const [key, receivable] of Object.entries(field.fieldData)) {
+              logger.info('RECEIVABLE', key, receivable)
+              insuranceReceivables.push(receivable)
             }
           }
         }
       }
-      insuranceReceivables.sort((left, right) => - parseInt(left.dataOption.data) + parseInt(right.dataOption.data))
-
-      Vue.set(this.memberData.instrumentInsurances, 'receivables', insuranceReceivables)
-
-      this.memberData.initialized[viewName] = true;
     }
+    insuranceReceivables.sort((left, right) => -parseInt(left.dataOption.data) + parseInt(right.dataOption.data))
 
-    if (this.memberData.initialized[viewName]) {
+    memberData.insuranceDetails.receivables = insuranceReceivables
 
-      this.totalInsuredValue = 0.0;
-      for (const insurance of this.memberData.instrumentInsurances.self.concat(
-        this.memberData.instrumentInsurances.forOthers,
-        this.memberData.instrumentInsurances.byOthers
-      )) {
-        insurance.showDetails = false
-        if (insurance.deleted) {
-          this.haveDeleted = true
-        } else {
-          this.totalInsuredValue += insurance.insuranceAmount
-          if (insurance.isDebitor) {
-            this.totalPayableValue += insurance.insuranceAmount
-            this.totalPayableFees += insurance.insuranceAmount * insurance.insuranceRate.rate
-          }
+    memberData.initialized[viewName] = true
+  }
+
+  if (memberData.initialized[viewName]) {
+
+    totalInsuredValue.value = 0.0
+    for (const insurance of memberData.insuranceDetails.self.concat(
+      memberData.insuranceDetails.forOthers,
+      memberData.insuranceDetails.byOthers,
+    )) {
+      if (insurance.deleted) {
+        haveDeleted.value = true
+      } else {
+        totalInsuredValue.value += insurance.insuranceAmount
+        if (insurance.isDebitor) {
+          totalPayableValue.value += insurance.insuranceAmount
+          totalPayableFees.value += insurance.insuranceAmount * insurance.insuranceRate.rate
         }
       }
-      this.haveOthers = (
-        this.memberData.instrumentInsurances.byOthers.length
-        +
-        this.memberData.instrumentInsurances.forOthers.length
-      ) > 0
     }
+    haveOthers.value = (
+      memberData.insuranceDetails.byOthers.length
+      + memberData.insuranceDetails.forOthers.length
+    ) > 0
+  }
 
-    this.loading = false
-  },
-  methods: {
-    optionDownloadUrl(key) {
-      return generateUrl('/apps/' + appId + '/download/member/' + key + '?requesttoken=' + encodeURIComponent(getRequestToken()))
-    },
-    requestInsuranceDetails(insurance) {
-      this.$emit('view-details', {
-        viewName,
-        title: t(appId, '{insuredObject} ({insuredValue} {currencySymbol})', {
-          insuredObject: insurance.object,
-          insuredValue: insurance.insuranceAmount,
-          currencySymbol: this.currencySymbol,
-        }),
-        props: {
-          insurance,
-          taxRate: this.taxRate,
-          currencySymbol: this.currencySymbol,
-        }
-      })
-    },
-  },
-}
+  loading.value = false
+
+  logger.info('INSURANCE MEMBER DATA', { memberData })
+})
 </script>
+
 <style lang="scss" scoped>
 .page-container {
-  padding-left:0.5rem;
+  padding-left:50px;
+  padding-top:12px;
+  min-height:100%;
   &.loading {
     width:100%;
+    * {
+      display:none;
+    }
   }
 }
 
 .insurance-sections {
   min-width:32rem;
-  ::v-deep > li:not(.summary) > .list-item {
+  :deep(&) > li:not(.summary) > .list-item {
     &:hover, &:focus {
       background-color:inherit;
     }
   }
 
-  ::v-deep {
-    .list-item {
+  & {
+    :deep(.list-item) {
       padding-right: 0;
       ul .list-item {
         padding-top:2px;
@@ -322,23 +337,27 @@ export default {
       }
     }
 
-    .line-two__subtitle {
+    :deep(.list-item__anchor) {
+      height: auto;
+    }
+
+    :deep(.list-item-content__subname) {
       padding-right:0;
     }
-
-    .line-one--bold {
-      &.line-one {
-        .line-one__details {
+    :deep(.list-item-content__subname--bold) {
+      padding-right:0;
+      .list-item-content {
+        &__details {
           font-weight:inherit;
         }
-      }
-      &.line-two {
-        font-weight: normal;
+        &__subname {
+          font-weight: normal;
+        }
       }
     }
 
-    .list-item__wrapper.insurance-item {
-      .line-one__details {
+    :deep(.list-item__wrapper).insurance-item {
+      .list-item-content__details {
         color:inherit;
         display:flex;
         align-items:center;

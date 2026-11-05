@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2023 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,74 +18,57 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
 
 use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 
 /**
  * InsuranceBroker
- *
- * @ORM\Table(name="PersonalizedInsuranceBrokersView")
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedInsuranceBrokersView')]
+#[ORM\Entity]
 class InsuranceBroker implements \ArrayAccess
 {
   use CAFEVDB\Traits\ArrayTrait;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=40, nullable=false)
-   * @ORM\Id
    */
+  #[ORM\Column(type: 'string', length: 40, nullable: false)]
+  #[ORM\Id]
   private $shortName;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=512, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 512, nullable: false)]
   private $longName;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=512, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 512, nullable: false)]
   private $address;
 
   /**
    * @var Collection
-   *
-   * @ORM\OneToMany(targetEntity="InsuranceRate", mappedBy="broker", fetch="EXTRA_LAZY")
    */
+  #[ORM\OneToMany(targetEntity: InsuranceRate::class, mappedBy: 'broker', fetch: 'EXTRA_LAZY')]
   private $insuranceRates;
 
-  public function __construct() {
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->arrayCTOR();
     $this->insuranceRates = new ArrayCollection();
   }
-
-  /**
-   * Set shortName.
-   *
-   * @param string $shortName
-   *
-   * @return InsuranceBroker
-   */
-  public function setShortName(string $shortName):InsuranceBroker
-  {
-    $this->shortName = $shortName;
-
-    return $this;
-  }
+  // phpcs:enable
 
   /**
    * Get shortName.
@@ -97,20 +78,6 @@ class InsuranceBroker implements \ArrayAccess
   public function getShortName():string
   {
     return $this->shortName;
-  }
-
-  /**
-   * Set longName.
-   *
-   * @param string $longName
-   *
-   * @return InsuranceBroker
-   */
-  public function setLongName(string $longName):InsuranceBroker
-  {
-    $this->longName = $longName;
-
-    return $this;
   }
 
   /**
@@ -124,20 +91,6 @@ class InsuranceBroker implements \ArrayAccess
   }
 
   /**
-   * Set address.
-   *
-   * @param string $address
-   *
-   * @return InsuranceBroker
-   */
-  public function setAddress(string $address):InsuranceBroker
-  {
-    $this->address = $address;
-
-    return $this;
-  }
-
-  /**
    * Get address.
    *
    * @return string
@@ -145,20 +98,6 @@ class InsuranceBroker implements \ArrayAccess
   public function getAddress():string
   {
     return $this->address;
-  }
-
-  /**
-   * Set insuranceRates.
-   *
-   * @param ArrayCollection $insuranceRates
-   *
-   * @return InsuranceBroker
-   */
-  public function setInsuranceRates(Collection $insuranceRates):InsuranceBroker
-  {
-    $this->insuranceRates = $insuranceRates;
-
-    return $this;
   }
 
   /**

@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022, 2023, 2025, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,70 +18,66 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Entities;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\ArrayCollection;
-
-use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
+use OCA\CAFeVDBMembers\Database\ORM as CAFEVDB;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\Collection;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Types\Types as DBALTypes;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\Mapping as ORM;
 
 /**
  * Musician
- *
- * @ORM\Table(name="PersonalizedMusiciansView")
- * @ORM\Entity
  */
+#[ORM\Table(name: 'PersonalizedMusiciansView')]
+#[ORM\Entity]
 class Musician implements \ArrayAccess, \JsonSerializable
 {
   use CAFEVDB\Traits\ArrayTrait;
   use CAFEVDB\Traits\TimestampableEntity;
   use CAFEVDB\Traits\UuidTrait;
   use CAFEVDB\Traits\GetByUuidTrait;
-  use \OCA\CAFeVDBMembers\Traits\DateTimeTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
 
   /**
    * @var int
-   *
-   * @ORM\Column(type="integer", nullable=false)
-   * @ORM\Id
-   * @ORM\GeneratedValue(strategy="IDENTITY")
    */
+  #[ORM\Column(type: 'integer', nullable: false)]
+  #[ORM\Id]
+  #[ORM\GeneratedValue(strategy: 'NONE')]
   private $id;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: false)]
   private $surName;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: false)]
   private $firstName;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: true)]
   private $nickName;
 
   /**
    * @var string
    *
    * Display name, replaces default "$surName, $firstName"
-   *
-   * @ORM\Column(type="string", length=256, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 256, nullable: true)]
   private $displayName;
+
+  #[ORM\Column(type: DBALTypes::ENUM, nullable: true)]
+  private ?Types\EnumGender $gender = null;
 
   /**
    * @var string
@@ -94,9 +88,8 @@ class Musician implements \ArrayAccess, \JsonSerializable
    * "personal":  firstName or firstname-FIRSTLETER_OF_SURNAME, e.g kathap, kathid
    *
    * We use the semi-official nickName.surName, e.g. katha.puff.
-   *
-   * @ORM\Column(type="string", length=256, unique=true, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 256, unique: true, nullable: true)]
   private $userIdSlug;
 
   /**
@@ -104,86 +97,93 @@ class Musician implements \ArrayAccess, \JsonSerializable
    *
    * Meant for per-user authentication which might be used for future
    * extensions.
-   *
-   * @ORM\Column(type="string", length=256, unique=false, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 256, unique: false, nullable: true)]
   private $userPassphrase;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: true)]
   private $city;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: true)]
   private $street;
 
   /**
    * @var string
    *
-   * @ORM\Column(type="string", length=2, nullable=true)
+   * The street-number. I may actually be alpha-numeric like "2a" or something, so it is a string.
    */
+  #[ORM\Column(type: 'string', length: 32, nullable: true)]
+  private $streetNumber;
+
+  /**
+   * @var string
+   *
+   * Additional address information, like "Appartment 200" or c/o.
+   */
+  #[ORM\Column(type: 'string', length: 128, nullable: true)]
+  private $addressSupplement;
+
+  /**
+   * @var string
+   */
+  #[ORM\Column(type: 'string', length: 2, nullable: true)]
   private $country;
 
   /**
    * @var int|null
-   *
-   * @ORM\Column(type="string", length=32, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 32, nullable: true)]
   private $postalCode;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=2, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 2, nullable: true)]
   private $language;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: true)]
   private $mobilePhone;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=128, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 128, nullable: true)]
   private $fixedLinePhone;
 
   /**
    * @var \DateTime|null
-   *
-   * @ORM\Column(type="date_immutable", nullable=true)
    */
+  #[ORM\Column(type: 'date_immutable', nullable: true)]
   private $birthday;
 
   /**
    * @var string
-   *
-   * @ORM\Column(type="string", length=256, nullable=false)
    */
+  #[ORM\Column(type: 'string', length: 256, nullable: false)]
   private $email;
 
   /**
-   * @var Types\EnumMemberStatus|null
-   *
-   * @ORM\Column(type="EnumMemberStatus", nullable=false)
+   * @var Collection All email addresses.
    */
-  private $memberStatus;
+  #[ORM\OneToMany(targetEntity: MusicianEmailAddress::class, mappedBy: 'musician', indexBy: 'address')]
+  private $emailAddresses;
+
+  #[ORM\Column(type: DBALTypes::ENUM, nullable: false)]
+  private Types\EnumParticipationStatus $defaultParticipationStatus;
 
   /**
    * @var string|null
-   *
-   * @ORM\Column(type="string", length=1024, nullable=true)
    */
+  #[ORM\Column(type: 'string', length: 1024, nullable: true)]
   private $remarks;
 
   /**
@@ -195,9 +195,8 @@ class Musician implements \ArrayAccess, \JsonSerializable
    *
    * This only affects the cloud-account of DB-musicians. It can be set by
    * admins and group-admins through the cloud admin UI.
-   *
-   * @ORM\Column(type="boolean", nullable=true)
    */
+  #[ORM\Column(type: 'boolean', nullable: true)]
   private $cloudAccountDeactivated;
 
   /**
@@ -209,75 +208,61 @@ class Musician implements \ArrayAccess, \JsonSerializable
    * the "...Deactivated" flag can be changed by the cloud administrator.
    *
    * Not that deleted users are also not exported to the cloud.
-   *
-   * @ORM\Column(type="boolean", nullable=true)
    */
+  #[ORM\Column(type: 'boolean', nullable: true)]
   private $cloudAccountDisabled;
 
-  /**
-   * @ORM\OneToMany(targetEntity="MusicianInstrument", mappedBy="musician", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: ProjectApplication::class, mappedBy: 'musician', indexBy: 'project_id', orphanRemoval: true, fetch: 'EXTRA_LAZY')]
+  private $projectApplications;
+
+  #[ORM\OneToMany(targetEntity: MusicianInstrument::class, mappedBy: 'musician', fetch: 'EXTRA_LAZY')]
   private $instruments;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectParticipant", mappedBy="musician", indexBy="project_id", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: ProjectParticipant::class, mappedBy: 'musician', indexBy: 'project_id', fetch: 'EXTRA_LAZY')]
   private $projectParticipation;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectInstrument", mappedBy="musician", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: ProjectInstrument::class, mappedBy: 'musician', fetch: 'EXTRA_LAZY')]
   private $projectInstruments;
 
-  /**
-   * @ORM\OneToMany(targetEntity="ProjectParticipantFieldDatum", mappedBy="musician", indexBy="option_key", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: ProjectParticipantFieldDatum::class, mappedBy: 'musician', indexBy: 'option_key', fetch: 'EXTRA_LAZY')]
   private $projectParticipantFieldsData;
 
-  /**
-   * @ORM\OneToMany(targetEntity="SepaBankAccount", mappedBy="musician", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: SepaBankAccount::class, mappedBy: 'musician', fetch: 'EXTRA_LAZY')]
   private $sepaBankAccounts;
 
-  /**
-   * @ORM\OneToMany(targetEntity="SepaDebitMandate", mappedBy="musician", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: SepaDebitMandate::class, mappedBy: 'musician', fetch: 'EXTRA_LAZY')]
   private $sepaDebitMandates;
 
-  /**
-   * @ORM\OneToMany(targetEntity="CompositePayment", mappedBy="musician", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: CompositePayment::class, mappedBy: 'musician', fetch: 'EXTRA_LAZY')]
   private $payments;
 
-  /**
-   * @ORM\OneToMany(targetEntity="InstrumentInsurance", mappedBy="musician", fetch="EXTRA_LAZY")
-   */
+  #[ORM\OneToMany(targetEntity: InstrumentInsurance::class, mappedBy: 'musician', fetch: 'EXTRA_LAZY')]
   private $instrumentInsurances;
 
   /**
    * @var Collection
-   *
-   * @ORM\ManyToMany(targetEntity="EncryptedFile", inversedBy="owners", indexBy="id", fetch="EXTRA_LAZY")
-   * @ORM\JoinTable(name="EncryptedFileOwners")
-   *
-   * The list of files owned by this musician. This is in particular important for
-   * encrypted files where the list of owners determines the encryption keys
-   * which are used to seal the data.
    */
+  #[ORM\JoinTable(name: 'PersonalizedEncryptedFileOwnersView')]
+  #[ORM\ManyToMany(targetEntity: EncryptedFile::class, inversedBy: 'owners', indexBy: 'id', fetch: 'EXTRA_LAZY')]
   private $encryptedFiles;
 
-  public function __construct() {
+  // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+  public function __construct()
+  {
     $this->__wakeup();
-    $this->memberStatus = Types\EnumMemberStatus::REGULAR();
+    $this->defaultParticipationStatus = Types\EnumParticipationStatus::REGULAR();
     $this->instruments = new ArrayCollection;
+    $this->payments = new ArrayCollection();
+    $this->projectApplications = new ArrayCollection();
     $this->projectInstruments = new ArrayCollection();
-    $this->projectParticipation = new ArrayCollection();
     $this->projectParticipantFieldsData = new ArrayCollection();
+    $this->projectParticipation = new ArrayCollection();
     $this->sepaBankAccounts = new ArrayCollection;
     $this->sepaDebitMandates = new ArrayCollection;
-    $this->payments = new ArrayCollection();
   }
+  // phpcs:enable
 
+  /** {@inheritdoc} */
   public function __wakeup()
   {
     $this->arrayCTOR();
@@ -295,20 +280,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set surName.
-   *
-   * @param string $surName
-   *
-   * @return Musician
-   */
-  public function setSurName($surName):Musician
-  {
-    $this->surName = $surName;
-
-    return $this;
-  }
-
-  /**
    * Get surName.
    *
    * @return string
@@ -316,20 +287,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getSurName()
   {
     return $this->surName;
-  }
-
-  /**
-   * Set firstName.
-   *
-   * @param string $firstName
-   *
-   * @return Musician
-   */
-  public function setFirstName($firstName):Musician
-  {
-    $this->firstName = $firstName;
-
-    return $this;
   }
 
   /**
@@ -343,20 +300,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set city.
-   *
-   * @param string $city
-   *
-   * @return Musician
-   */
-  public function setCity($city):Musician
-  {
-    $this->city = $city;
-
-    return $this;
-  }
-
-  /**
    * Get city.
    *
    * @return string
@@ -364,20 +307,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getCity()
   {
     return $this->city;
-  }
-
-  /**
-   * Set street.
-   *
-   * @param string $street
-   *
-   * @return Musician
-   */
-  public function setStreet($street):Musician
-  {
-    $this->street = $street;
-
-    return $this;
   }
 
   /**
@@ -391,17 +320,23 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set postalCode.
+   * Get streetNumber.
    *
-   * @param int|null $postalCode
-   *
-   * @return Musician
+   * @return string
    */
-  public function setPostalCode($postalCode = null):Musician
+  public function getStreetNumber()
   {
-    $this->postalCode = $postalCode;
+    return $this->streetNumber;
+  }
 
-    return $this;
+  /**
+   * Get addressSupplement.
+   *
+   * @return string
+   */
+  public function getAddressSupplement()
+  {
+    return $this->addressSupplement;
   }
 
   /**
@@ -415,20 +350,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set country.
-   *
-   * @param string $country
-   *
-   * @return Musician
-   */
-  public function setCountry($country):Musician
-  {
-    $this->country = $country;
-
-    return $this;
-  }
-
-  /**
    * Get country.
    *
    * @return string
@@ -436,20 +357,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getCountry()
   {
     return $this->country;
-  }
-
-  /**
-   * Set language.
-   *
-   * @param string $language
-   *
-   * @return Musician
-   */
-  public function setLanguage($language):Musician
-  {
-    $this->language = $language;
-
-    return $this;
   }
 
   /**
@@ -463,20 +370,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set mobilePhone.
-   *
-   * @param string $mobilePhone
-   *
-   * @return Musician
-   */
-  public function setMobilePhone($mobilePhone):Musician
-  {
-    $this->mobilePhone = $mobilePhone;
-
-    return $this;
-  }
-
-  /**
    * Get mobilePhone.
    *
    * @return string
@@ -484,20 +377,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getMobilePhone()
   {
     return $this->mobilePhone;
-  }
-
-  /**
-   * Set fixedLinePhone.
-   *
-   * @param string $fixedLinePhone
-   *
-   * @return Musician
-   */
-  public function setFixedLinePhone($fixedLinePhone):Musician
-  {
-    $this->fixedLinePhone = $fixedLinePhone;
-
-    return $this;
   }
 
   /**
@@ -511,20 +390,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set birthday.
-   *
-   * @param string|int|\DateTimeInterface $birthday
-   *
-   * @return Musician
-   */
-  public function setBirthday($birthday):Musician
-  {
-    $this->birthday = self::convertToDateTime($birthday);
-
-    return $this;
-  }
-
-  /**
    * Get birthday.
    *
    * @return \DateTimeInterface|null
@@ -532,20 +397,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getBirthday():?\DateTimeInterface
   {
     return $this->birthday;
-  }
-
-  /**
-   * Set email.
-   *
-   * @param string $email
-   *
-   * @return Musician
-   */
-  public function setEmail($email):Musician
-  {
-    $this->email = $email;
-
-    return $this;
   }
 
   /**
@@ -559,41 +410,33 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set memberStatus.
+   * Get emailAddresses.
    *
-   * @param string|EnumMemberStatus $memberStatus
-   *
-   * @return Musician
+   * @return Collection
    */
-  public function setMemberStatus($memberStatus):Musician
+  public function getEmailAddresses():Collection
   {
-    $this->memberStatus = new Types\EnumMemberStatus($memberStatus);
-
-    return $this;
+    return $this->emailAddresses;
   }
 
   /**
-   * Get memberStatus.
+   * Get defaultParticipationStatus.
    *
-   * @return EnumMemberStatus
+   * @return EnumParticipationStatus
    */
-  public function getMemberStatus():Types\EnumMemberStatus
+  public function getDefaultParticipationStatus(): Types\EnumParticipationStatus
   {
-    return $this->memberStatus;
+    return $this->defaultParticipationStatus;
   }
 
   /**
-   * Set remarks.
+   * Get gender.
    *
-   * @param string|null $remarks
-   *
-   * @return Musician
+   * @return EnumGender
    */
-  public function setRemarks(?string $remarks = null):Musician
+  public function getGender(): ?Types\EnumGender
   {
-    $this->remarks = $remarks;
-
-    return $this;
+    return $this->gender;
   }
 
   /**
@@ -607,20 +450,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set cloudAccountDisabled.
-   *
-   * @param null|bool $cloudAccountDisabled
-   *
-   * @return Musician
-   */
-  public function setCloudAccountDisabled(?bool $cloudAccountDisabled):Musician
-  {
-    $this->CloudAccountDisabled = $cloudAccountDisabled;
-
-    return $this;
-  }
-
-  /**
    * Get cloudAccountDisabled.
    *
    * @return null|bool
@@ -628,20 +457,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getCloudAccountDisabled():?bool
   {
     return $this->cloudAccountDisabled;
-  }
-
-  /**
-   * Set cloudAccountDeactivated.
-   *
-   * @param null|bool $cloudAccountDeactivated
-   *
-   * @return Musician
-   */
-  public function setCloudAccountDeactivated(?bool $cloudAccountDeactivated):Musician
-  {
-    $this->CloudAccountDeactivated = $cloudAccountDeactivated;
-
-    return $this;
   }
 
   /**
@@ -655,20 +470,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set instruments.
-   *
-   * @param Collection $instruments
-   *
-   * @return Musician
-   */
-  public function setInstruments(Collection $instruments):Musician
-  {
-    $this->instruments = $instruments;
-
-    return $this;
-  }
-
-  /**
    * Get instruments.
    *
    * @return Collection
@@ -676,20 +477,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getInstruments():Collection
   {
     return $this->instruments;
-  }
-
-  /**
-   * Set encryptedFiles.
-   *
-   * @param Collection $encryptedFiles
-   *
-   * @return Musician
-   */
-  public function setEncryptedFiles(Collection $encryptedFiles):Musician
-  {
-    $this->encryptedFiles = $encryptedFiles;
-
-    return $this;
   }
 
   /**
@@ -703,20 +490,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set displayName.
-   *
-   * @param string|null $displayName
-   *
-   * @return Musician
-   */
-  public function setDisplayName(?string $displayName):Musician
-  {
-    $this->displayName = $displayName;
-
-    return $this;
-  }
-
-  /**
    * Get displayName.
    *
    * @return string
@@ -724,20 +497,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getDisplayName():?string
   {
     return $this->displayName;
-  }
-
-  /**
-   * Set nickName.
-   *
-   * @param string|null $nickName
-   *
-   * @return Musician
-   */
-  public function setNickName(?string $nickName):Musician
-  {
-    $this->nickName = $nickName;
-
-    return $this;
   }
 
   /**
@@ -754,8 +513,12 @@ class Musician implements \ArrayAccess, \JsonSerializable
   /**
    * Get the cooked display-name, taking nick-name into account and
    * just using $displayName if set.
+   *
+   * @param bool $firstNameFirst
+   *
+   * @return string
    */
-  public function getPublicName($firstNameFirst = false)
+  public function getPublicName(bool $firstNameFirst = false):string
   {
     $firstName = empty($this->nickName) ? $this->firstName : $this->nickName;
     if ($firstNameFirst) {
@@ -765,20 +528,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
       return $this->displayName;
     }
     return $this->surName.', '.$firstName;
-  }
-
-  /**
-   * Set userPassphrase.
-   *
-   * @param string|null $userPassphrase
-   *
-   * @return Musician
-   */
-  public function setUserPassphrase(?string $userPassphrase):Musician
-  {
-    $this->userPassphrase = $userPassphrase;
-
-    return $this;
   }
 
   /**
@@ -792,20 +541,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set userIdSlug.
-   *
-   * @param string|null $userIdSlug
-   *
-   * @return Musician
-   */
-  public function setUserIdSlug(?string $userIdSlug):Musician
-  {
-    $this->userIdSlug = $userIdSlug;
-
-    return $this;
-  }
-
-  /**
    * Get userIdSlug.
    *
    * @return string
@@ -813,20 +548,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getUserIdSlug():?string
   {
     return $this->userIdSlug;
-  }
-
-  /**
-   * Set projectInstruments.
-   *
-   * @param Collection $projectInstruments
-   *
-   * @return Musician
-   */
-  public function setProjectInstruments(Collection $projectInstruments):Musician
-  {
-    $this->projectInstruments = $projectInstruments;
-
-    return $this;
   }
 
   /**
@@ -840,17 +561,13 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set projectParticipation.
+   * Get projectApplications.
    *
-   * @param Collection $projectParticipation
-   *
-   * @return Musician
+   * @return Collection
    */
-  public function setProjectParticipation(Collection $projectParticipation):Musician
+  public function getProjectApplications():Collection
   {
-    $this->projectParticipation = $projectParticipation;
-
-    return $this;
+    return $this->projectApplications;
   }
 
   /**
@@ -913,20 +630,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set payments.
-   *
-   * @param Collection $payments
-   *
-   * @return Musician
-   */
-  public function setPayments($payments):Musician
-  {
-    $this->payments = $payments;
-
-    return $this;
-  }
-
-  /**
    * Get payments.
    *
    * @return Collection
@@ -934,20 +637,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   public function getPayments():Collection
   {
     return $this->payments;
-  }
-
-  /**
-   * Set sepaBankAccounts.
-   *
-   * @param Collection $sepaBankAccounts
-   *
-   * @return Musician
-   */
-  public function setSepaBankAccounts(Collection $sepaBankAccounts):Musician
-  {
-    $this->sepaBankAccounts = $sepaBankAccounts;
-
-    return $this;
   }
 
   /**
@@ -961,20 +650,6 @@ class Musician implements \ArrayAccess, \JsonSerializable
   }
 
   /**
-   * Set sepaDebitMandates.
-   *
-   * @param Collection $sepaDebitMandates
-   *
-   * @return Musician
-   */
-  public function setSepaDebitMandates(Collection $sepaDebitMandates):Musician
-  {
-    $this->sepaDebitMandates = $sepaDebitMandates;
-
-    return $this;
-  }
-
-  /**
    * Get sepaDebitMandates.
    *
    * @return Collection
@@ -984,26 +659,13 @@ class Musician implements \ArrayAccess, \JsonSerializable
     return $this->sepaDebitMandates;
   }
 
+  /** {@inheritdoc} */
   public function jsonSerialize():array
   {
     return $this->toArray();
     return array_merge($this->toArray(), [
       'publicName' => $this->getPublicName(true),
     ]);
-  }
-
-  /**
-   * Set projectParticipantFieldsData.
-   *
-   * @param Collection $projectParticipantFieldsData
-   *
-   * @return Musician
-   */
-  public function setProjectParticipantFieldsData($projectParticipantFieldsData):Musician
-  {
-    $this->projectParticipantFieldsData = $projectParticipantFieldsData;
-
-    return $this;
   }
 
   /**
@@ -1024,23 +686,9 @@ class Musician implements \ArrayAccess, \JsonSerializable
    *
    * @return null|ProjectParticipantFieldDatum
    */
-  public function getProjectParticipantFieldsDatum($key):?ProjectParticipantFieldDatum
+  public function getProjectParticipantFieldsDatum(mixed $key):?ProjectParticipantFieldDatum
   {
     return $this->getByUuid($this->projectParticipantFieldsData, $key, 'optionKey');
-  }
-
-  /**
-   * Set instrumentInsurances.
-   *
-   * @param Collection $instrumentInsurances
-   *
-   * @return Musician
-   */
-  public function setInstrumentInsurances($instrumentInsurances):Musician
-  {
-    $this->instrumentInsurances = $instrumentInsurances;
-
-    return $this;
   }
 
   /**

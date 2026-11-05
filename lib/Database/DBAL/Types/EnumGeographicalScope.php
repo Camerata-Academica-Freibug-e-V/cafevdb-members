@@ -1,11 +1,11 @@
 <?php
 /**
- * Member's data base connector for CAFEVDB orchetra management app.
+ * Orchestra member, musician and project management application.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
+ * CAFEVDB -- Camerata Academica Freiburg e.V. DataBase.
  *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright 2011-2023, 2025 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,40 +20,22 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\DBAL\Types;
 
-use MyCLabs\Enum\Enum as EnumType;
-
 /**
  * Geographical scope for insurances.
  *
- * @method static EnumGeographicalScope DOMESTIC()
- * @method static EnumGeographicalScope CONTINENT()
- * @method static EnumGeographicalScope GERMANY()
- * @method static EnumGeographicalScope EUROPE()
- * @method static EnumGeographicalScope WORLD()
- *
  * @todo Perhaps should be renamed to "COUNTRY/CONTINENT/WORLD"
  */
-class EnumGeographicalScope extends EnumType
+enum EnumGeographicalScope: string
 {
-  use \OCA\CAFeVDBMembers\Traits\FakeTranslationTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\TranslatableEnumTrait;
 
-  public const DOMESTIC = 'Domestic';
-  public const CONTINENT = 'Continent';
-  public const GERMANY = 'Germany';
-  public const EUROPE = 'Europe';
-  public const WORLD = 'World';
-
-  static private function translationHack()
-  {
-    self::t('Domestic');
-    self::t('Continent');
-    self::t('Germany');
-    self::t('Europe');
-    self::t('World');
-  }
+  case DOMESTIC = 'Domestic';
+  case CONTINENT = 'Continent';
+  case GERMANY = 'Germany';
+  case EUROPE = 'Europe';
+  case WORLD = 'World';
 }

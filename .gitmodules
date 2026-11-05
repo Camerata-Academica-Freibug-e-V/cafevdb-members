@@ -1,8 +1,6 @@
-[submodule "3rdparty/gedmo-doctrine-extensions"]
-	path = 3rdparty/gedmo-doctrine-extensions
-	url = git@github.com:rotdrop/DoctrineExtensions.git
-	branch = production/orm-2.11.x/cafevdb
-[submodule "3rdparty/mediamonks-doctrine-extensions"]
-	path = 3rdparty/mediamonks-doctrine-extensions
-	url = git@github.com:rotdrop/mediamonks-doctrine-extensions.git
-	branch = feature/transform-context-field
+[submodule "dev-scripts/MakeHelp"]
+	path = dev-scripts/MakeHelp
+	url = https://github.com/mrdor44/MakeHelp.git
+[submodule "dev-scripts/lib"]
+	path = dev-scripts/lib
+	url = git@github.com:rotdrop/nextcloud-app-build-system.git

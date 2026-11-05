@@ -2,10 +2,8 @@
 /**
  * Member's data base connector for CAFEVDB orchetra management app.
  *
- * @copyright Copyright (c) 2022 Claus-Justus Heine <himself@claus-justus-heine.de>
- *
  * @author Claus-Justus Heine <himself@claus-justus-heine.de>
- *
+ * @copyright Copyright (c) 2022-2024, 2026 Claus-Justus Heine
  * @license AGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,57 +18,54 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 namespace OCA\CAFeVDBMembers\Database\ORM\Listeners;
 
-use Psr\Log\LoggerInterface;
-use OCP\IUserSession;
-use OCP\Authentication\LoginCredentials\IStore as ICredentialsStore;
-use OCP\Authentication\LoginCredentials\ICredentials;
-use MediaMonks\Doctrine\Transformable;
-use OCA\CAFEVDB\Crypto;
+use RuntimeException;
 
+use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
+
+use OCA\CAFeVDBMembers\Crypto\IEncryptionService;
+use OCA\CAFeVDBMembers\Exceptions\EncryptionException;
+use OCA\CAFeVDBMembers\Wrapped\MediaMonks\Doctrine\Transformable;
+
+/** Implement transparent encryption/decryption of database fields. */
 class Encryption implements Transformable\Transformer\TransformerInterface
 {
-  use \OCA\CAFeVDBMembers\Traits\LoggerTrait;
+  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\LoggerTrait;
 
-  /** @var IUserSession */
-  private $userSession;
-
-  /** @var Crypto\AsymmetricKeyService */
-  private $keyService;
-
-  /** @var Crypto\SealCryptor */
-  private $sealCryptor;
-
+  // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
   public function __construct(
-    IUserSession $userSession
-    , Crypto\AsymmetricKeyService $keyService
-    , Crypto\SealCryptor $sealCryptor
-    , LoggerInterface $logger
+    private IUserSession $userSession,
+    private IEncryptionService $encryptionService,
+    protected LoggerInterface $logger,
   ) {
-    $this->userSession = $userSession;
-    $this->keyService = $keyService;
-    $this->sealCryptor = clone $sealCryptor;
-    $this->logger = $logger;
-    $this->keyService->initEncryptionKeyPair();
+    try {
+      $this->encryptionService->initEncryptionKeyPair();
+    } catch (EncryptionException $e) {
+      $this->logDebug('Unable to initialize on-the-fly encryption');
+    }
   }
+  // phpcs:enable
 
-  public function isCachable():bool
+  /** {@inheritdoc} */
+  public function isCachable(): bool
   {
     return true;
   }
 
   /**
+   * {@inheritdoc}
+   *
    * Forward transform to data-base (encrypt).
    *
    * @param string $value Unencrypted data.
    *
    * @return string Encrypted data.
    */
-  public function transform($value, &$context = null)
+  public function transform(?string $value, mixed &$context = null): mixed
   {
     $context = $this->manageEncryptionContext(null, $context);
 
@@ -78,28 +73,21 @@ class Encryption implements Transformable\Transformer\TransformerInterface
       return $value;
     }
 
-    $sealCryptors = [];
-    foreach ($context as $encryptionId) {
-      $cryptor =  $this->getSealCryptor($encryptionId);
-      if ($cryptor->canEncrypt()) {
-        $sealCryptors[$encryptionId] = $cryptor;
-      }
-    }
-    $this->sealCryptor->setSealCryptors($sealCryptors);
-
-    return $this->sealCryptor->encrypt($value);
+    return $this->encryptionService->encrypt($value, $context);
   }
 
   /**
+   * {@inheritdoc}
+   *
    * Decrypt.
    *
    * @param string $value Encrypted data.
    *
    * @return string Decrypted data.
    */
-  public function reverseTransform($value, &$context = null)
+  public function reverseTransform(?string $value, mixed &$context = null): mixed
   {
-    if (!$this->sealCryptor->getSealService()->isSealedData($value)) {
+    if (!$this->encryptionService->isSealedData($value)) {
       return $value;
     }
 
@@ -109,24 +97,17 @@ class Encryption implements Transformable\Transformer\TransformerInterface
       return $value;
     }
 
-    $sealCryptors = [];
-    foreach ($context as $encryptionId) {
-      $cryptor = $this->getSealCryptor($encryptionId);
-      if ($cryptor->canDecrypt()) {
-        $sealCryptors[$encryptionId] = $cryptor;
-      }
-    }
-    $this->sealCryptor->setSealCryptors($sealCryptors);
-
-    return $this->sealCryptor->decrypt($value);
+    return $this->encryptionService->decrypt($value, $context);
   }
 
-  private function getSealCryptor(string $encryptionId):Crypto\ICryptor
-  {
-    return $this->keyService->getCryptor($encryptionId);
-  }
-
-  private function manageEncryptionContext(?string $value, $context)
+  /**
+   * @param null|string $value
+   *
+   * @param mixed $context
+   *
+   * @return array
+   */
+  private function manageEncryptionContext(?string $value, mixed $context):array
   {
     if (is_string($context)) {
       try {
@@ -140,12 +121,11 @@ class Encryption implements Transformable\Transformer\TransformerInterface
       $context = [];
     }
 
-    if ($this->sealCryptor->getSealService()->isSealedData($value)) {
-      $sealData = $this->sealCryptor->getSealService()->parseSeal($value);
-      $context = array_merge($context, array_keys($sealData['keys']));
+    if ($this->encryptionService->isSealedData($value)) {
+      $context = array_merge($context, $this->encryptionService->getSealOwners($value));
     }
     $user = $this->userSession->getUser();
-    if (!empty($user))  {
+    if (!empty($user)) {
       $userId = $user->getUID();
       if (array_search($userId, $context) === false) {
         $context[] = $userId;
@@ -153,8 +133,8 @@ class Encryption implements Transformable\Transformer\TransformerInterface
     }
 
     if (!is_array($context)) {
-      throw new \RuntimeException('Encryption context must be an array of user- or @group-ids.');
+      throw new RuntimeException('Encryption context must be an array of user- or @group-ids.');
     }
     return array_unique($context);
   }
-};
+}

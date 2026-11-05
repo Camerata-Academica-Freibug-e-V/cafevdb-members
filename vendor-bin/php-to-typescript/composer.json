@@ -1,6 +1,11 @@
 {
   "minimum-stability": "dev",
   "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "cweagans/composer-patches": true
+    }
+  },
   "require-dev": {
     "rotdrop/php-to-typescript": "^2.0.3",
     "rotdrop/nextcloud-app-toolkit": "dev-main"

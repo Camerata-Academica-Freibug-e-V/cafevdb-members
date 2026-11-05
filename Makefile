@@ -206,7 +206,7 @@ clean: ## Tidy up local environment
 distclean: clean ## Clean even more, calls clean
 	rm -rf vendor
 	rm -rf vendor-wrapped
-	rm -rf vendor-bin/**/vendor
+	rm -rf vendor-bin/*/vendor
 	rm -rf node_modules
 .PHONY: distclean
 
@@ -214,11 +214,12 @@ distclean: clean ## Clean even more, calls clean
 mostlyclean: webpack-clean distclean
 	rm -f composer*.lock
 	rm -f composer.json
-	rm -f vendor-bin/**/composer.lock
+	rm -f vendor-bin/*/composer.lock
 	rm -f stamp.composer-core-versions
-	rm -f package-lock.json
 	rm -f *.html
 	rm -f stats.json
+	rm -f build-flavour wrapper-build-hash
+	rm -rf .vite
 
 #@@ Really delete everything but the bare source files
 realclean: mostlyclean downloadsclean

@@ -65,14 +65,16 @@ jobs:
             --admin-user=admin --admin-pass=admin --no-interaction
           php occ config:system:set debug --value=true --type=boolean
 
+      - name: Install app PHP dependencies
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: make dev-setup-php
+
       - name: Set up node
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
       - name: Full build
-        env:
-          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ github.token }}"}}'
         working-directory: server/apps/${{ env.APP_NAME }}
         run: make dev-setup npm-build
 

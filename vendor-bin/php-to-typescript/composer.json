@@ -1,4 +1,6 @@
 {
+  "minimum-stability": "dev",
+  "prefer-stable": true,
   "require-dev": {
     "rotdrop/php-to-typescript": "^2.0.3",
     "rotdrop/nextcloud-app-toolkit": "dev-main"

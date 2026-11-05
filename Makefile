@@ -104,9 +104,11 @@ $(PHING) $(PHPUNIT): composer.lock
 include $(DEV_LIB_DIR)/makefile/namespace-wrapper.mk
 
 APP_TOOLKIT_DIR = $(ABSBUILDDIR)/vendor-wrapped/rotdrop/nextcloud-app-toolkit
+L10N_VITE_CONFIG = vite.l10n.config.ts
 include $(DEV_LIB_DIR)/makefile/l10n.mk
 toolkit-l10n: $(BUILDDIR)/vendor-wrapped/autoload.php
 vue-components-l10n: package-lock.json
+vue-components-l10n-ignore: package-lock.json vite.l10n.config.ts $(BUNDLER_CONFIG) ts-app-config ts-types-files
 
 include $(DEV_LIB_DIR)/makefile/ts-app-config.mk
 include $(DEV_LIB_DIR)/makefile/ts-types-files.mk

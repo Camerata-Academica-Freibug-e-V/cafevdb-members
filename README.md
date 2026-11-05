@@ -55,6 +55,11 @@ build inputs, not runtime files. `make distclean` removes both vendor trees.
 `make ts-types-files` uses `rotdrop/php-to-typescript` from its isolated
 `vendor-bin/php-to-typescript/` environment. Toolkit modules are generated
 under `build/ts-types/php-modules/Wrapped/OCA/RotDrop/Toolkit/`.
+Entity metadata generation uses the MariaDB platform selected by
+`serverVersion=11.7.0-MariaDB`, without opening an application database
+connection. It still requires an installed Nextcloud instance for the console
+bootstrap, but does not change its database settings or require a running
+MySQL/MariaDB server.
 
 Run `make l10n-sources` before updating POT files and commit the generated
 catalogues in `l10n-sources/`. `toolkit-strings.php` exposes the Composer
@@ -64,7 +69,12 @@ strings. Neither catalogue is executed, and `l10n-sources/` is excluded from
 release archives.
 
 The tests run inside a Nextcloud server checkout, see
-`.github/workflows/ci.yml` for the exact setup.
+`.github/workflows/ci.yml` for the exact setup. CI also runs `make build` with
+Node.js 24 to generate the PHP-derived TypeScript modules and build production
+frontend assets with Vite before running the test suites.
+CI installs JavaScript dependencies with `npm ci` and checks `make realclean`
+on both a bare checkout and after the full build and tests, including repeated
+cleanup. Cleanup preserves the tracked `package-lock.json`.
 
 The build regressions can also run without Nextcloud after `make dev-setup-php`
 (PHP's `intl` extension is required):

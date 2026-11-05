@@ -107,15 +107,19 @@ class EntityManager extends AbstractEntityManager
     protected ContainerInterface $appContainer,
     protected IL10N $l,
     protected LoggerInterface $logger,
+    ?string $databaseServerVersion = null,
   ) {
     try {
-      parent::__construct($this->getEntityManager());
+      parent::__construct($this->getEntityManager(
+        $databaseServerVersion === null ? [] : ['serverVersion' => $databaseServerVersion],
+      ));
     } catch (Throwable $t) {
       $this->logException($t);
       throw $t;
     }
     $this->entityManager = $this->wrapped;
-    if ($this->connected()) {
+    // An explicit platform allows metadata and type registration without connecting.
+    if ($databaseServerVersion !== null || $this->connected()) {
       $this->registerTypes();
     }
   }

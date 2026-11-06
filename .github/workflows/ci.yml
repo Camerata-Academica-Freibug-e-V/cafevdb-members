@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Basic checks via the shared CI workflow of the build system: eslint,
+# php -l, realclean check and a full build of the unsigned app archive.
+# The server-based PHPUnit suites live in phpunit.yml.
 name: CI
 
 on:
@@ -5,6 +10,10 @@ on:
     branches: [ master, main, stable35, 'cjh-*' ]
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -15,6 +24,16 @@ env:
   APP_NAME: cafevdbmembers
 
 jobs:
+  ci:
+    uses: rotdrop/nextcloud-app-build-system/.github/workflows/ci.yml@v1
+    with:
+      php-version: '8.5'
+      php-versions: '["8.5"]'
+      php-lint-dirs: lib appinfo templates
+      build-server: true
+      signing-server-ref: stable35
+      composer-use-github-api: false
+
   phpunit:
     runs-on: ubuntu-latest
     env:

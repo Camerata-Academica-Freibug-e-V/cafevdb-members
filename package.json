@@ -17,6 +17,8 @@
   "scripts": {
     "build": "vite --mode production build",
     "dev": "vite --mode development build",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "vitest run",
     "test:build-config": "node --test tests/frontend/vite-config.test.mjs",
     "test:member-data": "node --experimental-test-module-mocks --test tests/frontend/member-data.test.mjs",

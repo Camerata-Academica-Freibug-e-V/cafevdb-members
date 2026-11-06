@@ -28,3 +28,5 @@ jobs:
       php-version: '8.5'
       sign: false
       upload-to-appstore: false
+      build-server: true
+      signing-server-ref: stable35

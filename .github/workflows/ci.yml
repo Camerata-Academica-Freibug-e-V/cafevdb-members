@@ -25,3 +25,5 @@ jobs:
       php-version: '8.5'
       php-versions: '["8.5"]'
       php-lint-dirs: lib appinfo templates
+      build-server: true
+      signing-server-ref: stable35

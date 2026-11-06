@@ -17,6 +17,8 @@
   "scripts": {
     "build": "vite --mode production build",
     "dev": "vite --mode development build",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "vitest run",
     "watch": "vitest watch"
   },

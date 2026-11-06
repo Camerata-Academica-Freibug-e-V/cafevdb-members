@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Tag-triggered release via the shared release workflow of the build
+# system. The tag must be v<version> with the version of appinfo/info.xml.
+# The app is not yet in the Nextcloud app store, so the archive is built
+# unsigned, attached to the GitHub release and not uploaded anywhere.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    uses: rotdrop/nextcloud-app-build-system/.github/workflows/release.yml@v1
+    secrets: inherit
+    permissions:
+      contents: write
+    with:
+      php-version: '8.5'
+      sign: false
+      upload-to-appstore: false

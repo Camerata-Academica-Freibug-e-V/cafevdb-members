@@ -1,0 +1,142 @@
+name: PHPUnit
+
+on:
+  push:
+    branches: [ master, main, stable35, 'cjh-*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NC_REPO: rotdrop/nextcloud-server
+  NC_BRANCH: cjh-stable35
+  APP_NAME: cafevdbmembers
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    env:
+      PHP_VERSION: '8.5'
+      MARIADB_MAJOR: '12'
+    steps:
+      - name: Checkout modified Nextcloud server
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.NC_REPO }}
+          ref: ${{ env.NC_BRANCH }}
+          submodules: recursive
+          path: server
+
+      - name: Checkout app
+        uses: actions/checkout@v4
+        with:
+          path: server/apps/${{ env.APP_NAME }}
+          submodules: recursive
+
+      - name: Install xpath
+        # the Makefile needs the xpath binary to read the app info from info.xml
+        run: sudo apt-get install -y --no-install-recommends libxml-xpath-perl
+
+      - name: Install latest MariaDB ${{ env.MARIADB_MAJOR }}.x server and client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends curl ca-certificates apt-transport-https
+          sudo install -d /etc/apt/keyrings
+          sudo curl -fsSL https://mariadb.org/mariadb_release_signing_key.pgp \
+            | sudo gpg --dearmor --yes --output /etc/apt/keyrings/mariadb-keyring.gpg
+          # newest series (e.g. 12.2) of the pinned major version, stable or RC
+          MARIADB_VERSION="$(curl -fsSL https://downloads.mariadb.org/rest-api/mariadb/ \
+            | jq -r --arg m "${MARIADB_MAJOR}." \
+              '[.major_releases[] | select(.release_id | startswith($m)) | select(.release_status | IN("Stable","RC"))][0].release_id')"
+          [ -n "$MARIADB_VERSION" ] && [ "$MARIADB_VERSION" != null ] || { echo "no MariaDB ${MARIADB_MAJOR}.x series found"; exit 1; }
+          echo "Using MariaDB series ${MARIADB_VERSION}"
+          codename="$(lsb_release -cs)"
+          echo "deb [signed-by=/etc/apt/keyrings/mariadb-keyring.gpg] https://archive.mariadb.org/mariadb-${MARIADB_VERSION}/repo/ubuntu ${codename} main" \
+            | sudo tee /etc/apt/sources.list.d/mariadb.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mariadb-server mariadb-client
+          # PHPUnit starts its own private server; type generation needs no MariaDB.
+          sudo systemctl stop mariadb
+          for b in mariadb-install-db mariadbd-safe mariadb mariadb-dump; do
+            command -v "$b" || { echo "missing $b"; exit 1; }
+          done
+          mariadb --version
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ctype, curl, dom, gd, iconv, intl, json, mbstring, openssl, pdo_sqlite, posix, sqlite3, xml, zip, apcu, bcmath, gmp, imagick, fileinfo
+          coverage: xdebug
+          tools: composer:v2
+          ini-values: apc.enable_cli=1, memory_limit=1G
+
+      - name: Install Nextcloud (sqlite)
+        working-directory: server
+        run: |
+          composer install --no-interaction --no-progress
+          php occ maintenance:install --database=sqlite \
+            --admin-user=admin --admin-pass=admin --no-interaction
+          php occ config:system:set debug --value=true --type=boolean
+
+      - name: Install app PHP dependencies
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: |
+          make composer
+
+      - name: Enable app
+        working-directory: server
+        run: php occ app:enable ${{ env.APP_NAME }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: server/apps/${{ env.APP_NAME }}/package-lock.json
+
+      - name: Install app JavaScript dependencies
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: |
+          npm ci
+          # Keep locked versions instead of letting make invoke npm update.
+          touch package-lock.json
+
+      - name: Build frontend assets
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: make build
+
+      - name: Run PHPUnit standalone suite
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: make phpunit PHPCOVERAGE='-d xdebug.mode=coverage'
+
+      - name: Run PHPUnit server suite with real database
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: make phpunit-server
+
+      - name: Upload PHPUnit coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-coverage
+          path: server/apps/${{ env.APP_NAME }}/build/artifacts/tests/phpunit/code-coverage/
+          if-no-files-found: error
+
+      - name: Remove test caches
+        if: always()
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: rm -rf .phpunit.result.cache .phpunit.cache
+
+      - name: make realclean after a full build
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: |
+          make realclean
+          git status --porcelain --ignored
+          [ -z "$(git status --porcelain --ignored)" ] || { echo "realclean left changes or build artifacts"; exit 1; }
+
+      - name: make realclean is idempotent after a build
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: |
+          make realclean
+          git status --porcelain --ignored
+          [ -z "$(git status --porcelain --ignored)" ]

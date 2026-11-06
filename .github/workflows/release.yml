@@ -30,3 +30,4 @@ jobs:
       upload-to-appstore: false
       build-server: true
       signing-server-ref: stable35
+      composer-use-github-api: false

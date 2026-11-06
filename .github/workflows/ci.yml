@@ -27,3 +27,4 @@ jobs:
       php-lint-dirs: lib appinfo templates
       build-server: true
       signing-server-ref: stable35
+      composer-use-github-api: false

@@ -3,4 +3,4 @@
 	url = https://github.com/mrdor44/MakeHelp.git
 [submodule "dev-scripts/lib"]
 	path = dev-scripts/lib
-	url = git@github.com:rotdrop/nextcloud-app-build-system.git
+	url = https://github.com/rotdrop/nextcloud-app-build-system.git

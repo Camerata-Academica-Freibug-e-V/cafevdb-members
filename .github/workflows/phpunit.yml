@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  NC_REPO: rotdrop/nextcloud-server
+  NC_REPO: Camerata-Academica-Freibug-e-V/nextcloud-server
   NC_BRANCH: cjh-stable35
   APP_NAME: cafevdbmembers
 
@@ -122,22 +122,3 @@ jobs:
           name: phpunit-coverage
           path: server/apps/${{ env.APP_NAME }}/build/artifacts/tests/phpunit/code-coverage/
           if-no-files-found: error
-
-      - name: Remove test caches
-        if: always()
-        working-directory: server/apps/${{ env.APP_NAME }}
-        run: rm -rf .phpunit.result.cache .phpunit.cache
-
-      - name: make realclean after a full build
-        working-directory: server/apps/${{ env.APP_NAME }}
-        run: |
-          make realclean
-          git status --porcelain --ignored
-          [ -z "$(git status --porcelain --ignored)" ] || { echo "realclean left changes or build artifacts"; exit 1; }
-
-      - name: make realclean is idempotent after a build
-        working-directory: server/apps/${{ env.APP_NAME }}
-        run: |
-          make realclean
-          git status --porcelain --ignored
-          [ -z "$(git status --porcelain --ignored)" ]

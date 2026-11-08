@@ -24,30 +24,61 @@ namespace OCA\CAFeVDBMembers\Controller;
 
 use Spatie\TypeScriptTransformer\Attributes as TSAttributes;
 
-use OCP\AppFramework\OCSController;
+use OCP\AppFramework\Http\Attribute as CoreAttributes;
+use OCP\AppFramework\Http\DataResponse;
+use OCP\AppFramework\OCS;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
+use OCA\CAFeVDBMembers\Exceptions\AuthenticationException;
+use OCA\CAFeVDBMembers\Service\AuthenticationService;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\EntitySerializer\EntitySerializer;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\AbstractEntityManager;
 
 /** Export entities to the frontend. */
 #[TSAttributes\TypeScript]
-class EntityRepositoryController extends OCSController
+class EntityRepositoryController extends EntityRepositoryControllerBase
 {
-  use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Controller\EntityRepositoryControllerTrait;
-
   // phpcs:disable Squiz.Commenting.FunctionComment.Missing
   public function __construct(
     ?string $appName,
     IRequest $request,
-    private AbstractEntityManager $entityManager,
-    private EntitySerializer $entitySerializer,
-    protected IL10N $l,
-    protected LoggerInterface $logger,
+    AbstractEntityManager $entityManager,
+    EntitySerializer $entitySerializer,
+    IL10N $l,
+    LoggerInterface $logger,
+    private AuthenticationService $authenticationService,
   ) {
-    parent::__construct($appName, $request);
+    parent::__construct($appName, $request, $entityManager, $entitySerializer, $l, $logger);
   }
   // phpcs:enable
+
+  /** {@inheritdoc} */
+  #[CoreAttributes\NoAdminRequired]
+  #[CoreAttributes\ApiRoute(
+    verb: 'GET',
+    url: '/' . self::END_POINT . '/{entityName}/{depth}',
+    defaults: ['depth' => 0],
+  )]
+  public function getEntities(
+    string $entityName,
+    ?string $find = null,
+    ?string $findBy = null,
+    ?string $sortBy = null,
+    ?int $limit = null,
+    int $offset = 0,
+    int $depth = 0,
+  ): DataResponse {
+    try {
+      $this->authenticationService->getRowAccessToken();
+    } catch (AuthenticationException $t) {
+      throw new OCS\OCSForbiddenException(
+        $this->l->t('Access to the member-data is not authorized: %s', $t->getMessage()),
+        previous: $t,
+      );
+    }
+
+    return parent::getEntities($entityName, $find, $findBy, $sortBy, $limit, $offset, $depth);
+  }
 }

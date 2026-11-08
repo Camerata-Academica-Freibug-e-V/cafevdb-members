@@ -19,6 +19,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import type { EnumParticipantFieldMultiplicity } from '../../build/ts-types/php-modules/Database/DBAL/Types.ts';
 import type { Instrument, Project } from './appData.ts';
 
 import { getCurrentUser, getGuestUser } from '@nextcloud/auth';
@@ -35,8 +36,8 @@ import {
 import { deepCopy } from 'walkjs';
 import { appName as appId } from '../config.ts';
 import logger from '../logger.ts';
+import { loadMemberData } from '../services/member-data.ts';
 import { isAxiosErrorResponse } from '../toolkit/types/axios-type-guards.ts';
-import { generateUrl as generateAppUrl } from '../toolkit/util/generate-url.ts';
 import getInitialState from '../toolkit/util/initial-state.ts';
 import { showError, TOAST_PERMANENT_TIMEOUT } from '../toolkit/util/toasts.ts';
 import { useAppDataStore } from './appData.ts';
@@ -102,8 +103,8 @@ export interface ProjectParticipantField {
   name: string;
   untranslatedName: string;
   tooltip: null|string;
-  dataType: ProjectParticipantFieldDataType;
-  multiplicity: 'simple'|'multiple'|'parallel';
+  dataType: `${ProjectParticipantFieldDataType}`;
+  multiplicity: EnumParticipantFieldMultiplicity;
   fieldData: Record<string, ProjectParticipantFieldDatum>;
   dataOptions: Record<string, ProjectParticipantFieldDataOption>;
   defaultValue: null|string;
@@ -119,7 +120,7 @@ export interface ProjectInstrument {
 }
 
 export interface ProjectParticipant {
-  project: Project;
+  project: Pick<Project, 'id'|'name'|'year'|'type'|'clubMembers'>;
   participantFields: Record<number, ProjectParticipantField>;
   projectInstruments: ProjectInstrument[];
 }
@@ -214,8 +215,7 @@ export const useMemberDataStore = defineStore('member-data', () => {
     fixedLinePhone: ref(undefined as string|undefined),
     initialized: ref({
       loaded: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      promise: null as null|Promise<any>,
+      promise: null as null|Promise<void>,
       error: null as null|string,
       recryptRequest: null,
       registration: undefined as undefined|boolean,
@@ -250,7 +250,7 @@ export const useMemberDataStore = defineStore('member-data', () => {
 
   const resetState = () => {
     for (const [key, value] of Object.entries(initialState)) {
-      simpleState[key].value = value;
+      simpleState[key].value = typeof value === 'object' && value !== null ? deepCopy(value) : value;
     }
   };
 
@@ -267,47 +267,50 @@ export const useMemberDataStore = defineStore('member-data', () => {
       resetState();
       initialized = simpleState.initialized.value;
     }
-    try {
-      initialized.promise = axios.get(generateAppUrl('member'));
-      const response = await initialized.promise;
-      for (const [key, value] of Object.entries(response.data)) {
-        if (key === 'birthday') {
-          simpleState[key].value = new Date(value as string);
-        } else if (simpleState[key] !== undefined) {
+    initialized.promise = (async () => {
+      try {
+        const member = await loadMemberData(getCurrentUser()?.uid ?? '');
+        for (const [key, value] of Object.entries(member)) {
           simpleState[key].value = value;
         }
-      }
-      initialized.promise = null;
-      initialized.error = null;
-      initialized.loaded = true;
-    } catch (e) {
-      logger.error('ERROR', { e });
-      let message = t(appId, 'general failure');
-      if (isAxiosErrorResponse(e) && e.response.data) {
-        const messages = (e.response.data as { messages?: string[] }).messages;
-        if (Array.isArray(messages)) {
-          message = messages.join(' ');
+        initialized.error = null;
+        initialized.loaded = true;
+      } catch (e) {
+        logger.error('ERROR', { e });
+        let message = t(appId, 'general failure');
+        const cause = e instanceof Error && e.cause ? e.cause : e;
+        if (isAxiosErrorResponse(cause) && cause.response.data) {
+          const { messages, ocs } = cause.response.data as { messages?: string[]; ocs?: { meta?: { message?: string } } };
+          if (Array.isArray(messages)) {
+            message = messages.join(' ');
+          } else if (ocs?.meta?.message) {
+            message = ocs.meta.message;
+          }
+        } else if (e instanceof Error) {
+          message = e.message;
         }
-      }
-      initialized.error = message;
-      if (!silent) {
-        showError(t(appId, 'Could not fetch musician(s): {message}', { message }), { timeout: TOAST_PERMANENT_TIMEOUT });
-      }
-      const cloudUser = getCurrentUser();
-      initialized.recryptRequest = null;
-      if (cloudUser?.uid) {
-        try {
-          const url = generateOcsUrl('apps/cafevdb/api/v1/maintenance/encryption/recrypt/{userId}', {
-            userId: cloudUser.uid,
-          });
-          const response = await axios.get(url + '?format=json');
-          initialized.recryptRequest = response.data.ocs.data.request;
-        } catch (e) {
-          logger.error('Error retrieving recryption request', { e });
+        initialized.error = message;
+        if (!silent) {
+          showError(t(appId, 'Could not fetch musician(s): {message}', { message }), { timeout: TOAST_PERMANENT_TIMEOUT });
         }
+        const cloudUser = getCurrentUser();
+        initialized.recryptRequest = null;
+        if (cloudUser?.uid) {
+          try {
+            const url = generateOcsUrl('apps/cafevdb/api/v1/maintenance/encryption/recrypt/{userId}', {
+              userId: cloudUser.uid,
+            });
+            const response = await axios.get(url + '?format=json');
+            initialized.recryptRequest = response.data.ocs.data.request;
+          } catch (e) {
+            logger.error('Error retrieving recryption request', { e });
+          }
+        }
+      } finally {
+        initialized.promise = null;
       }
-      initialized.promise = null;
-    }
+    })();
+    await initialized.promise;
   };
 
   const load = async () => {

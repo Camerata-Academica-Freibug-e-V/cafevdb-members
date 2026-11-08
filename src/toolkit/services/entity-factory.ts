@@ -65,7 +65,7 @@ const entityFactory = async <E extends EntityNames, D extends NumberTuple = Zero
     (await import(`../../../build/ts-types/php-modules/Wrapped/OCA/RotDrop/Toolkit/Doctrine/ORM/EntityMetadata/${entityName}Metadata.ts`)).default;
 
   const dtoStructure = Object.fromEntries(Object.keys(entityDto).map((key) => [key, true])) as Record<keyof EntityDto<E>, true>;
-  const entity: FrontEndEntity<E, D> = <FrontEndEntity<E, D> >{};
+  const entity = {} as FrontEndEntity<E, D>;
   for (const fieldName of Object.keys(metadata) as (EntityFieldNames<E>)[]) {
     delete dtoStructure[fieldName];
     const fieldInfo = metadata[fieldName];

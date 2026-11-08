@@ -38,7 +38,7 @@ use OCA\CAFeVDBMembers\Utils\Uuid;
 #[ORM\Table(name: 'PersonalizedProjectParticipantFieldsDataOptionsView')]
 #[ORM\Entity]
 #[Gedmo\TranslationEntity(class: 'TableFieldTranslation')]
-class ProjectParticipantFieldDataOption implements \ArrayAccess
+class ProjectParticipantFieldDataOption implements \ArrayAccess, \JsonSerializable
 {
   use CAFEVDB\Traits\ArrayTrait;
   use CAFEVDB\Traits\TimestampableEntity;
@@ -263,5 +263,13 @@ class ProjectParticipantFieldDataOption implements \ArrayAccess
     return $this->fieldData->matching(
       DBUtil::criteriaWhere([ 'musician' => $musician ])
     );
+  }
+
+  /** {@inheritdoc} */
+  public function jsonSerialize(): array
+  {
+    return [
+      'untranslatedLabel' => $this->getUntranslatedLabel(),
+    ];
   }
 }

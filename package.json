@@ -3,13 +3,13 @@
   "version": "0.0.4",
   "private": true,
   "description": "Expose a member's data record for the respective member",
-  "homepage": "https://github.com/rotdrop/cafevdb-members.git",
+  "homepage": "https://github.com/Camerata-Academica-Freibug-e-V/cafevdb-members.git",
   "bugs": {
-    "url": "https://github.com/rotdrop/cafevdb-members.git"
+    "url": "https://github.com/Camerata-Academica-Freibug-e-V/cafevdb-members.git"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rotdrop/cafevdb-members.git"
+    "url": "https://github.com/Camerata-Academica-Freibug-e-V/cafevdb-members.git"
   },
   "license": "agpl",
   "author": "Claus-Justus Heine <himself@claus-justus-heine.de>",

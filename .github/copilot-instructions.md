@@ -21,3 +21,7 @@
   Members independently. Members is optional for CafeVDB; run app-specific
   checks in separate PHP processes because constants and toolkit aliases are
   process-wide. Keep app-only adapters and configuration outside the package.
+
+## Branching
+
+- Base branches and pull requests must target the repository's remote default branch (check with `gh repo view --repo OWNER/REPO --json defaultBranchRef`), not a possibly stale local branch or saved project metadata, unless the user explicitly specifies another. Fetch it before branching.

@@ -70,7 +70,7 @@ class ProjectEventsApiController extends ApiController
    * ProjectEventsApiController::INDEX_BY_PROJECT ("byProject") or
    * ProjectEventsApiController::INDEX_BY_WEB_PAGE ("byWebPage").
    *
-   * @param int|string $objectId Numeric or textual identifier. If
+   * @param string $objectId Numeric or textual identifier. If
    * $indexObject equal ProjectEventsApiController::INDEX_BY_PROJECT then the
    * project can as well be identified by its (unique) name. For
    * INDEX_BY_WEB_PAGE this is the article id of the web page.
@@ -108,11 +108,15 @@ class ProjectEventsApiController extends ApiController
   )]
   public function serviceSwitch(
     string $indexObject,
-    int|string $objectId,
+    string $objectId,
     string $calendar,
     ?string $timezone,
     ?string $locale,
   ):DataResponse {
+    // Path parameters are strings; keep numeric identifiers as integers.
+    // A plain string type keeps the generated OpenAPI schema simple.
+    $objectId = ctype_digit($objectId) ? (int)$objectId : $objectId;
+
     // OC uses symphony which rawurldecodes the request URL. This
     // implies that in order to pass a slash / we caller must
     // urlencode that thingy twice, and Symphony consequently will

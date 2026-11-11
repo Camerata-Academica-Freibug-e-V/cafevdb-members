@@ -64,15 +64,7 @@
                         "description": "Numeric or textual identifier. If $indexObject equal ProjectEventsApiController::INDEX_BY_PROJECT then the project can as well be identified by its (unique) name. For INDEX_BY_WEB_PAGE this is the article id of the web page.",
                         "required": true,
                         "schema": {
-                            "oneOf": [
-                                {
-                                    "type": "integer",
-                                    "format": "int64"
-                                },
-                                {
-                                    "type": "string"
-                                }
-                            ]
+                            "type": "string"
                         }
                     },
                     {

@@ -64,21 +64,33 @@ class ProjectEventsApiController extends ApiController
   // phpcs:enable
 
   /**
-   * @param string $indexObject
+   * Get the events of a project, or of all projects attached to a web page
+   *
+   * @param string $indexObject How to interpret $objectId, either
+   * ProjectEventsApiController::INDEX_BY_PROJECT ("byProject") or
+   * ProjectEventsApiController::INDEX_BY_WEB_PAGE ("byWebPage").
    *
    * @param int|string $objectId Numeric or textual identifier. If
    * $indexObject equal ProjectEventsApiController::INDEX_BY_PROJECT then the
-   * project can as well be identified by its (unique) name.
+   * project can as well be identified by its (unique) name. For
+   * INDEX_BY_WEB_PAGE this is the article id of the web page.
    *
-   * @param string $calendar
+   * @param string $calendar URI of a single calendar or "all" for all public
+   * calendars.
    *
-   * @param string $timezone
+   * @param null|string $timezone URL-encoded time zone name, defaults to the
+   * time zone of the current user or the server.
    *
-   * @param string $locale
+   * @param null|string $locale URL-encoded locale, defaults to the locale of
+   * the current user.
    *
-   * @return DataResponse
+   * @return DataResponse<Http::STATUS_OK, array{status: int, data: array<string, array<string, array{name: string, events: list<array{times: array{timezone: string, locale: string, allday: bool, start: array{stamp: int, date: string, time: string}, end: array{stamp: int, date: string, time: string, altDate: string, altTime: string}}, summary: string, location: string, description: string}>}>>}, array{}>|DataResponse<Http::STATUS_NOT_FOUND, list<empty>, array{}>
+   *
+   * 200: Event data, indexed by project name and then by calendar URI.
+   * 404: The project or index type is unknown.
    */
   #[CoreAttributes\CORS]
+  #[CoreAttributes\OpenAPI(scope: CoreAttributes\OpenAPI::SCOPE_DEFAULT)]
   #[CoreAttributes\NoAdminRequired]
   #[CoreAttributes\NoCSRFRequired]
   #[CoreAttributes\PublicPage]
@@ -91,7 +103,7 @@ class ProjectEventsApiController extends ApiController
       'locale' => null,
     ],
     requirements: [
-      'apiVersion' => '0.1',
+      'apiVersion' => '^(0.1)$',
     ],
   )]
   public function serviceSwitch(

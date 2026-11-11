@@ -46,6 +46,33 @@ vue-components-l10n: node_modules
 
 ###############################################################################
 #
+# OpenAPI specification
+
+OPENAPI_EXTRACTOR = vendor-bin/openapi-extractor/vendor/bin/generate-spec
+
+#@private
+$(OPENAPI_EXTRACTOR): vendor-bin/openapi-extractor/composer.json
+	$(COMPOSER) bin openapi-extractor install
+
+# The extractor cannot digest the full appinfo/routes.php with its
+# non-OCS web controllers. Therefore it is run on a scratch app directory
+# with an empty route list; the routes are found from the route attributes of
+# the controllers which carry an OpenAPI attribute.
+#@@ Generates openapi.json from the annotated controllers
+openapi: $(OPENAPI_EXTRACTOR) $(SCOPED_VENDOR_DIR)/autoload.php
+	tmpdir=$$(mktemp -d) && trap 'rm -rf "$$tmpdir"' EXIT \
+	&& mkdir "$$tmpdir/appinfo" \
+	&& cp $(ABSSRCDIR)/appinfo/info.xml "$$tmpdir/appinfo/" \
+	&& echo '<?php return [ "routes" => [] ];' > "$$tmpdir/appinfo/routes.php" \
+	&& ln -s $(ABSSRCDIR)/lib "$$tmpdir/lib" \
+	&& cd "$$tmpdir" \
+	&& OPENAPI_APP_DIR=$(ABSSRCDIR) $(PHP) -d auto_prepend_file=$(ABSSRCDIR)/dev-scripts/openapi-prepend.php \
+	  $(ABSSRCDIR)/$(OPENAPI_EXTRACTOR) \
+	&& cp "$$tmpdir/openapi.json" $(ABSSRCDIR)/openapi.json
+.PHONY: openapi
+
+###############################################################################
+#
 # PHPUnit
 
 #@private

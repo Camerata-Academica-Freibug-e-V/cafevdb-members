@@ -1,0 +1,272 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "cafevdbmembers",
+        "version": "0.0.1",
+        "description": "CAFeV DB Member's Connector",
+        "license": {
+            "name": "agpl"
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "basic_auth": {
+                "type": "http",
+                "scheme": "basic"
+            },
+            "bearer_auth": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        },
+        "schemas": {}
+    },
+    "paths": {
+        "/index.php/apps/cafevdbmembers/api/{apiVersion}/projects/events/{indexObject}/{objectId}/{calendar}/{timezone}/{locale}": {
+            "get": {
+                "operationId": "project_events_api-service-switch",
+                "summary": "Get the events of a project, or of all projects attached to a web page",
+                "description": "This endpoint allows CORS requests",
+                "tags": [
+                    "project_events_api"
+                ],
+                "security": [
+                    {},
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "apiVersion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0.1"
+                            ],
+                            "default": "0.1"
+                        }
+                    },
+                    {
+                        "name": "indexObject",
+                        "in": "path",
+                        "description": "How to interpret $objectId, either ProjectEventsApiController::INDEX_BY_PROJECT (\"byProject\") or ProjectEventsApiController::INDEX_BY_WEB_PAGE (\"byWebPage\").",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "objectId",
+                        "in": "path",
+                        "description": "Numeric or textual identifier. If $indexObject equal ProjectEventsApiController::INDEX_BY_PROJECT then the project can as well be identified by its (unique) name. For INDEX_BY_WEB_PAGE this is the article id of the web page.",
+                        "required": true,
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "format": "int64"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "calendar",
+                        "in": "path",
+                        "description": "URI of a single calendar or \"all\" for all public calendars.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "all"
+                        }
+                    },
+                    {
+                        "name": "timezone",
+                        "in": "path",
+                        "description": "URL-encoded time zone name, defaults to the time zone of the current user or the server.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": null
+                        }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "path",
+                        "description": "URL-encoded locale, defaults to the locale of the current user.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": null
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Event data, indexed by project name and then by calendar URI.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "status",
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "object",
+                                                "additionalProperties": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "name",
+                                                        "events"
+                                                    ],
+                                                    "properties": {
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "events": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "required": [
+                                                                    "times",
+                                                                    "summary",
+                                                                    "location",
+                                                                    "description"
+                                                                ],
+                                                                "properties": {
+                                                                    "times": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "timezone",
+                                                                            "locale",
+                                                                            "allday",
+                                                                            "start",
+                                                                            "end"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "timezone": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "locale": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "allday": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "start": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "stamp",
+                                                                                    "date",
+                                                                                    "time"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "stamp": {
+                                                                                        "type": "integer",
+                                                                                        "format": "int64"
+                                                                                    },
+                                                                                    "date": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "time": {
+                                                                                        "type": "string"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "end": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "stamp",
+                                                                                    "date",
+                                                                                    "time",
+                                                                                    "altDate",
+                                                                                    "altTime"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "stamp": {
+                                                                                        "type": "integer",
+                                                                                        "format": "int64"
+                                                                                    },
+                                                                                    "date": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "time": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "altDate": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "altTime": {
+                                                                                        "type": "string"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "summary": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "location": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "description": {
+                                                                        "type": "string"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The project or index type is unknown.",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "member_data",
+            "description": "AJAX endpoints for dealing with the personal data of the logged in user."
+        },
+        {
+            "name": "page",
+            "description": "AJAX endpoint for generating the main page of the app."
+        },
+        {
+            "name": "project_events_api",
+            "description": "Public API for project events. This is somehow \"legacy\" and could be improved. It is used by the Redaxo CMS in order to automatically blend in rehearsal and concert events."
+        },
+        {
+            "name": "project_registration",
+            "description": "AJAX endpoints for a project registration form."
+        }
+    ]
+}

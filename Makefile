@@ -71,6 +71,25 @@ openapi: $(OPENAPI_EXTRACTOR) $(SCOPED_VENDOR_DIR)/autoload.php
 	&& cp "$$tmpdir/openapi.json" $(ABSSRCDIR)/openapi.json
 .PHONY: openapi
 
+OPENAPI_BRANCH ?= chore/update-openapi
+
+#@@ Regenerates openapi.json and opens a draft pull request (no-op if unchanged)
+commit-openapi: openapi
+	if git diff --quiet HEAD -- openapi.json; then\
+	  echo "openapi.json is unchanged, nothing to do.";\
+	else\
+	  base=$$(git rev-parse --abbrev-ref HEAD) && \
+	  git checkout -B "$(OPENAPI_BRANCH)" && \
+	  git commit -m "chore(openapi): update openapi.json" -- openapi.json && \
+	  git push --force-with-lease -u origin "$(OPENAPI_BRANCH)" && \
+	  { gh pr create --draft --base "$$base" --head "$(OPENAPI_BRANCH)" \
+	      --title "chore(openapi): update openapi.json" \
+	      --body "Automated regeneration of openapi.json." \
+	    || echo "A pull request for $(OPENAPI_BRANCH) may already exist."; }; \
+	  status=$$?; git checkout "$$base"; exit $$status;\
+	fi
+.PHONY: commit-openapi
+
 ###############################################################################
 #
 # PHPUnit

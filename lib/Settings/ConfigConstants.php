@@ -38,6 +38,16 @@ class ConfigConstants
   const ORCHESTRA_LOCALE_KEY = 'orchestraLocale';
   const CONCERTS_CALENDAR_URI = 'concerts';
   const REHEARSALS_CALENDAR_URI = 'rehearsals';
+  const OTHER_CALENDAR_URI = 'other';
+  const MANAGEMENT_CALENDAR_URI = 'management';
+  const FINANCE_CALENDAR_URI = 'finance';
+  const CALENDARS = [
+    self::CONCERTS_CALENDAR_URI => [ 'uri' => self::CONCERTS_CALENDAR_URI, 'public' => true ],
+    self::REHEARSALS_CALENDAR_URI => [ 'uri' => self::REHEARSALS_CALENDAR_URI, 'public' => true ],
+    self::OTHER_CALENDAR_URI => [ 'uri' => self::OTHER_CALENDAR_URI, 'public' => true ],
+    self::MANAGEMENT_CALENDAR_URI => [ 'uri' => self::MANAGEMENT_CALENDAR_URI, 'public' => false ],
+    self::FINANCE_CALENDAR_URI => [ 'uri' => self::FINANCE_CALENDAR_URI, 'public' => false ],
+  ];
 
   const SETTINGS_KEYS = [
     self::FOLDER_GROUPS_KEY,

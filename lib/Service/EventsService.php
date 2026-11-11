@@ -150,9 +150,8 @@ class EventsService
    *
    * @param int|Entities\Project $projectOrId
    *
-   * @param null|string|array $calendarUris null to get the events from all
-   * calendars or the 'uri' component from
-   * OCA\CAFEVDB\Settings\ConfigConstants::CALENDARS;
+   * @param null|array $calendarUris null to get the events from all public
+   * calendars or an array of 'uri' components from ConfigConstants::CALENDARS.
    *
    * @return array
    * ```

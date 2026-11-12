@@ -109,6 +109,20 @@ SET character_set_client = utf8mb4;
 SET character_set_client = @saved_cs_client;
 
 --
+-- Temporary table structure for view `PersonalizedDatabaseStoragesView`
+--
+
+DROP TABLE IF EXISTS `PersonalizedDatabaseStoragesView`;
+/*!50001 DROP VIEW IF EXISTS `PersonalizedDatabaseStoragesView`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8mb4;
+/*!50001 CREATE VIEW `PersonalizedDatabaseStoragesView` AS SELECT
+ NULL AS `storage_id`,
+ NULL AS `id`,
+ NULL AS `root_id` */;
+SET character_set_client = @saved_cs_client;
+
+--
 -- Temporary table structure for view `PersonalizedEncryptedFileOwnersView`
 --
 
@@ -1126,7 +1140,26 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_uca1400_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`phpunit`@`%` SQL SECURITY DEFINER */
-/*!50001 VIEW `PersonalizedDatabaseStorageDirEntriesView` AS select `t`.`name` AS `name`,`t`.`id` AS `id`,`t`.`created` AS `created`,`t`.`updated` AS `updated`,`t`.`parent_id` AS `parent_id`,`t`.`type` AS `type`,`t`.`file_id` AS `file_id` from `cafevdb`.`DatabaseStorageDirEntries` `t` where `t`.`file_id` is null or `t`.`file_id` in (select `efov`.`encrypted_file_id` AS `file_id` from `cafevdb_cloud_connector`.`PersonalizedEncryptedFileOwnersView` `efov`) */
+/*!50001 VIEW `PersonalizedDatabaseStorageDirEntriesView` AS with recursive `authorized_entries` as (select `t`.`id` AS `id`,`t`.`parent_id` AS `parent_id` from `cafevdb`.`DatabaseStorageDirEntries` `t` join `cafevdb_cloud_connector`.`PersonalizedFilesView` `fv` on(`t`.`file_id` = `fv`.`id`) union distinct select `t`.`id` AS `id`,`t`.`parent_id` AS `parent_id` from `cafevdb`.`DatabaseStorageDirEntries` `t` join `authorized_entries` `ae` on(`t`.`id` = `ae`.`parent_id`)) select `t`.`name` AS `name`,`t`.`id` AS `id`,`t`.`created` AS `created`,`t`.`updated` AS `updated`,`t`.`parent_id` AS `parent_id`,`t`.`type` AS `type`,`t`.`file_id` AS `file_id` from (`cafevdb`.`DatabaseStorageDirEntries` `t` join `authorized_entries` `ae` on(`t`.`id` = `ae`.`id`)) */
+/*!50002 WITH CASCADED CHECK OPTION */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `PersonalizedDatabaseStoragesView`
+--
+
+/*!50001 DROP VIEW IF EXISTS `PersonalizedDatabaseStoragesView`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_uca1400_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`phpunit`@`%` SQL SECURITY DEFINER */
+/*!50001 VIEW `PersonalizedDatabaseStoragesView` AS select `t`.`storage_id` AS `storage_id`,`t`.`id` AS `id`,`t`.`root_id` AS `root_id` from (`cafevdb`.`DatabaseStorages` `t` join `cafevdb_cloud_connector`.`PersonalizedDatabaseStorageDirEntriesView` `dsev` on(`t`.`root_id` = `dsev`.`id`)) where `dsev`.`parent_id` is null */
 /*!50002 WITH CASCADED CHECK OPTION */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;

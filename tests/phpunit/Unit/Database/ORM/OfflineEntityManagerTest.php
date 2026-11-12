@@ -26,6 +26,7 @@ use OCP\Security\ICrypto;
 use OCA\CAFeVDBMembers\AppInfo\Application;
 use OCA\CAFeVDBMembers\Database\DBAL\Logging\CloudLogger;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
+use OCA\CAFeVDBMembers\Database\ORM\Entities;
 use OCA\CAFeVDBMembers\Database\ORM\Listeners;
 use OCA\CAFeVDBMembers\L10N\IBidirectionalTranslator;
 use OCA\CAFeVDBMembers\Service\AuthenticationService;
@@ -68,6 +69,15 @@ class OfflineEntityManagerTest extends TestCase
     self::assertArrayHasKey('ProjectParticipantField', $metadata);
     self::assertSame('owned', $metadata['Musician']['id']['mapping']);
     self::assertTrue($metadata['Musician']['id']['id']);
+
+    $storageMetadata = $entityManager->getClassMetadata(Entities\DatabaseStorage::class);
+    self::assertSame('PersonalizedDatabaseStoragesView', $storageMetadata->getTableName());
+    self::assertSame(['id'], $storageMetadata->getIdentifierFieldNames());
+    self::assertTrue($storageMetadata->isSingleValuedAssociation('root'));
+    self::assertSame(
+      'OCA\\CAFeVDBMembers\\Database\\ORM\\Entities\\DatabaseStorageFolder',
+      $storageMetadata->getAssociationTargetClass('root'),
+    );
     self::assertFalse($connection->isConnected());
   }
 

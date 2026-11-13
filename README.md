@@ -15,7 +15,14 @@ each member can see, but not change:
 
 - their contact information,
 - their project participation,
-- their instrument insurances.
+- their instrument insurances,
+- authorized files from CAFeVDB's database-backed storages.
+
+Database-backed files appear under the movable `cafevdb/` folder in the
+member's Files area. Project participant storage roots are presented as
+`cafevdb/projects/PROJECT_NAME/`; other database storage identifiers retain
+their path beneath `cafevdb/`. The view is read-only and uses the personalized
+database views to limit entries to those authorized for the logged-in member.
 
 ## Relation to CAFeVDB
 

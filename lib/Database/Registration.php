@@ -28,10 +28,19 @@ use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\EntityManagerInterface;
 
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\App\IAppManager;
+use OCP\IConfig;
+use OCP\IL10N;
+use OCP\ISession;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\AbstractEntityManager;
+use OCA\CAFeVDBMembers\Crypto\IEncryptionService;
+use OCA\CAFeVDBMembers\Database\DBAL\Logging\CloudLogger;
+use OCA\CAFeVDBMembers\Storage\Database\EntityManagerFactory;
+use OCA\CAFeVDBMembers\Storage\Database\MountProvider;
 
 /** Register some utiltiy services in order to ease dependency injection. */
 class Registration
@@ -47,6 +56,26 @@ class Registration
   {
     $context->registerServiceAlias(EntityManagerInterface::class, EntityManager::class);
     $context->registerServiceAlias(AbstractEntityManager::class, EntityManager::class);
+
+    $context->registerService(EntityManagerFactory::class, function(ContainerInterface $c) {
+      return new EntityManagerFactory(
+        $c->get(IEncryptionService::class),
+        $c->get(CloudLogger::class),
+        $c->get(IConfig::class),
+        $c->get(ISession::class),
+        $c,
+        $c->get(IL10N::class),
+        $c->get(LoggerInterface::class),
+      );
+    });
+    $context->registerService(MountProvider::class, function(ContainerInterface $c) {
+      return new MountProvider(
+        $c->get(EntityManagerFactory::class),
+        $c->get(IConfig::class),
+        $c->get(IUserSession::class),
+        $c->get(LoggerInterface::class),
+      );
+    });
 
     /* Doctrine DBAL needs a factory to be constructed. */
     $context->registerService(Connection::class, function(ContainerInterface $c) {

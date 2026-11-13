@@ -30,6 +30,7 @@ use Exception;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\Bootstrap\IBootContext;
+use OCP\Files\Config\IMountProviderCollection;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\IConfig;
 
@@ -42,6 +43,7 @@ use OCA\CAFeVDBMembers\L10N\IBidirectionalTranslator;
 use OCA\CAFeVDBMembers\L10N\OrchestraTranslator;
 use OCA\CAFeVDBMembers\Database\Registration as DatabaseRegistration;
 use OCA\CAFeVDBMembers\Listener\Registration as ListenerRegistration;
+use OCA\CAFeVDBMembers\Storage\Database\MountProvider;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\AppInfo\AbstractApplication;
 
@@ -74,6 +76,10 @@ class Application extends AbstractApplication
   /** {@inheritdoc} */
   public function boot(IBootContext $context):void
   {
+    $context->injectFn(function(IMountProviderCollection $mountProviders, MountProvider $mountProvider) {
+      $mountProviders->registerProvider($mountProvider);
+    });
+
     $context->injectFn(function(IInitialState $initialState, IConfig $config) {
       self::getOrchestraAppName();
       $orchestraLocale = $config->getAppValue(self::$orchestraAppName, ConfigConstants::ORCHESTRA_LOCALE_KEY, self::DEFAULT_LOCALE);

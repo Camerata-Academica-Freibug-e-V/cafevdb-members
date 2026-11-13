@@ -75,6 +75,8 @@ class Registration
         $c->get(IUserSession::class),
         $c->get(LoggerInterface::class),
         $c->get(\OCP\L10N\IFactory::class),
+        $c->get(\OCP\Files\Config\IUserMountCache::class),
+        $c->get(\OCP\IDBConnection::class),
       );
     });
 

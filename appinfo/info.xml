@@ -31,4 +31,7 @@
   <commands>
     <command>OCA\CAFeVDBMembers\Command\EnsureGroupFolders</command>
   </commands>
+  <types>
+    <filesystem/><!-- required for catching dav events, otherwise app is not loaded -->
+  </types>
 </info>

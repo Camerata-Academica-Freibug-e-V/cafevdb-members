@@ -91,7 +91,7 @@
     <div class="input-row">
       <InputText v-model="memberData.email"
                  :label="t(appId, 'Email')"
-                 :placeholder="t(appId, 'e.g. me@you.tld')"
+                 :placeholder="emailPlaceholder"
                  :readonly="readonly"
                  icon="email"
       />
@@ -154,6 +154,9 @@ const viewName = 'PersonalProfile'
 
 const loading = ref(true)
 const readonly = computed(() => true) // change to ref if changing personal data has been implemented
+
+// xgettext: no-email-check
+const emailPlaceholder = t(appId, 'e.g. me@you.tld')
 
 const memberData = useMemberDataStore()
 const {

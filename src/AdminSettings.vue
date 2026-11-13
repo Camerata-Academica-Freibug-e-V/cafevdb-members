@@ -67,7 +67,7 @@
                  :hint="t(appName, `The applicants are notified by email after they have submitted their project application,
 they also receive password-reset emails if they want to review or change their submitted data at a later.
 This is the sender and reply-to email address of these automatically generated emails.`)"
-                 :placeholder="t(appName, 'orchestra+registration@my.domain.tld')"
+                 :placeholder="registrationEmailPlaceholder"
                  @submit="saveTextInput('registrationReplyTo')"
       />
       <div>TODO</div>
@@ -106,6 +106,9 @@ interface CloudUserGroup {
   displayName: string
   gid: string
 }
+
+// xgettext: no-email-check
+const registrationEmailPlaceholder = t(appName, 'orchestra+registration@my.domain.tld')
 
 const initialState = getInitialState<InitialState>()
 

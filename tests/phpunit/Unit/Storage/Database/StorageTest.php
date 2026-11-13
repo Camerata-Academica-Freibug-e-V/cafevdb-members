@@ -23,13 +23,109 @@
 namespace OCA\CAFeVDBMembers\Tests\Unit\Storage\Database;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
+use OCP\Constants;
+use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
+use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorage;
+use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFolder;
+use OCA\CAFeVDBMembers\Database\ORM\Repositories\EntityRepository;
 use OCA\CAFeVDBMembers\Storage\Database\Storage;
 
 #[CoversClass(Storage::class)]
+#[UsesClass(DatabaseStorage::class)]
+#[UsesClass(DatabaseStorageFolder::class)]
 class StorageTest extends TestCase
 {
+  public function testSyntheticDirectoriesSupportMetadataAndTraversal(): void
+  {
+    $root = (new DatabaseStorageFolder())->setUpdated(new \DateTimeImmutable('@1'));
+    $sources = [
+      (new DatabaseStorage())->setStorageId('project/participant/ProjectName/member-id/')->setRoot($root),
+      (new DatabaseStorage())->setStorageId('finance/invoices/')->setRoot($root),
+    ];
+    $storage = $this->storageForSources($sources);
+
+    foreach (['projects', 'projects/ProjectName', 'finance', 'finance/invoices'] as $path) {
+      self::assertTrue($storage->file_exists($path), $path);
+      self::assertTrue($storage->is_dir($path), $path);
+      self::assertFalse($storage->is_file($path), $path);
+      self::assertSame('dir', $storage->filetype($path));
+      self::assertSame(0, $storage->filesize($path));
+      self::assertSame(['size' => 0, 'mtime' => 1], $storage->stat($path));
+      self::assertSame('httpd/unix-directory', $storage->getMimeType($path));
+      self::assertSame(Constants::PERMISSION_READ, $storage->getPermissions($path));
+    }
+
+    self::assertSame(['finance', 'projects'], $this->directoryNames($storage, ''));
+    self::assertSame(['ProjectName'], $this->directoryNames($storage, 'projects'));
+    self::assertSame([], $this->directoryNames($storage, 'projects/ProjectName'));
+    self::assertSame(['invoices'], $this->directoryNames($storage, 'finance'));
+    self::assertSame([], $this->directoryNames($storage, 'finance/invoices'));
+    self::assertFalse($storage->fopen('projects', 'rb'));
+
+    foreach (['missing', 'projects/UnknownProject', 'projects/../finance'] as $path) {
+      self::assertFalse($storage->file_exists($path), $path);
+      self::assertFalse($storage->stat($path));
+      self::assertFalse($storage->filesize($path));
+      self::assertFalse($storage->opendir($path));
+    }
+  }
+
+  public function testSyntheticDirectoriesDisappearWhenTheirSourcesAreRemoved(): void
+  {
+    $sources = [
+      (new DatabaseStorage())
+        ->setStorageId('project/participant/ProjectName/member-id/')
+        ->setRoot(new DatabaseStorageFolder()),
+    ];
+    $storage = $this->storageForSources($sources);
+
+    self::assertTrue($storage->file_exists('projects'));
+    $sources = [];
+    self::assertFalse($storage->file_exists('projects'));
+    self::assertFalse($storage->stat('projects'));
+    self::assertFalse($storage->opendir('projects'));
+  }
+
+  /** @param list<DatabaseStorage> $sources */
+  private function storageForSources(array &$sources): Storage
+  {
+    $repository = $this->getMockBuilder(EntityRepository::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['findAll'])
+      ->getMock();
+    $repository->expects($this->atLeastOnce())->method('findAll')->willReturnCallback(static function() use (&$sources): array {
+      return $sources;
+    });
+
+    $entityManager = $this->getMockBuilder(EntityManager::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['getRepository', 'clear'])
+      ->getMock();
+    $entityManager->expects($this->atLeastOnce())->method('getRepository')
+      ->with(DatabaseStorage::class)->willReturn($repository);
+
+    return new Storage(['entityManager' => $entityManager, 'userId' => 'member-id']);
+  }
+
+  /** @return list<string> */
+  private function directoryNames(Storage $storage, string $path): array
+  {
+    $directory = $storage->opendir($path);
+    self::assertIsResource($directory);
+    $names = [];
+    try {
+      while (($name = readdir($directory)) !== false) {
+        $names[] = $name;
+      }
+    } finally {
+      closedir($directory);
+    }
+    return $names;
+  }
+
   public function testParticipantStoragesAreFlattenedToTheirProjectName(): void
   {
     self::assertSame(

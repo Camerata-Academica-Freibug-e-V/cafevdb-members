@@ -204,7 +204,8 @@ class Storage extends AbstractStorage
     return $entries;
   }
 
-  private function findEntry(string $path): DatabaseStorageDirEntry|false
+  /** @return DatabaseStorageDirEntry|null|false Null denotes a synthetic folder. */
+  private function findEntry(string $path): DatabaseStorageDirEntry|null|false
   {
     $parts = self::pathParts($path);
     if ($parts === false || $parts === []) {
@@ -212,7 +213,7 @@ class Storage extends AbstractStorage
     }
     $name = array_pop($parts);
     $children = $this->children(implode('/', $parts));
-    if ($children === false || !isset($children[$name]) || $children[$name][0] === null) {
+    if ($children === false || !isset($children[$name])) {
       return false;
     }
     return $children[$name][0];
@@ -233,7 +234,7 @@ class Storage extends AbstractStorage
       return 'dir';
     }
     $entry = $this->findEntry($path);
-    if ($entry instanceof DatabaseStorageFolder) {
+    if ($entry === null || $entry instanceof DatabaseStorageFolder) {
       return 'dir';
     }
     if ($entry instanceof DatabaseStorageFile && $entry->getFile() !== null) {
@@ -290,6 +291,9 @@ class Storage extends AbstractStorage
 
   public function filesize($path): int|float|false
   {
+    if ($this->is_dir($path)) {
+      return 0;
+    }
     $entry = $this->findEntry($path);
     return $entry instanceof DatabaseStorageFile && $entry->getFile()
       ? $entry->getFile()->getSize()

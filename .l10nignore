@@ -1,5 +1,6 @@
 vendor/
 vendor-wrapped/
+vendor-bin/
 build/
 doc/
 js/

@@ -28,10 +28,12 @@ use OCP\Files\Storage\IStorageFactory;
 use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCP\L10N\IFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 use OCA\CAFeVDBMembers\AppInfo\Application;
+use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 
 /** Mount authorized database files in the logged-in user's Files tree. */
 class MountProvider implements IMountProvider
@@ -45,6 +47,7 @@ class MountProvider implements IMountProvider
     private IConfig $config,
     private IUserSession $userSession,
     private LoggerInterface $logger,
+    private IFactory $l10nFactory,
   ) {
   }
 
@@ -65,6 +68,14 @@ class MountProvider implements IMountProvider
       $storage = new Storage([
         'entityManager' => $entityManager,
         'userId' => $user->getUID(),
+        'l10n' => $this->l10nFactory->get(
+          Application::getAppName(),
+          $this->config->getAppValue(
+            Application::getOrchestraAppName(),
+            ConfigConstants::ORCHESTRA_LOCALE_KEY,
+            Application::DEFAULT_LOCALE,
+          ),
+        ),
       ]);
 
       $relativePath = $this->config->getUserValue(

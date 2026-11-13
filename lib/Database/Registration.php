@@ -74,6 +74,7 @@ class Registration
         $c->get(IConfig::class),
         $c->get(IUserSession::class),
         $c->get(LoggerInterface::class),
+        $c->get(\OCP\L10N\IFactory::class),
       );
     });
 

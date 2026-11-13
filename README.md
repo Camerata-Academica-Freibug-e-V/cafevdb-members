@@ -20,9 +20,14 @@ each member can see, but not change:
 
 Database-backed files appear under the movable `cafevdb/` folder in the
 member's Files area. Project participant storage roots are presented as
-`cafevdb/projects/PROJECT_NAME/`; other database storage identifiers retain
-their path beneath `cafevdb/`. The view is read-only and uses the personalized
-database views to limit entries to those authorized for the logged-in member.
+`cafevdb/Projects/PROJECT_NAME/` before localization; other database storage
+identifiers retain their hierarchy beneath `cafevdb/`. The view is read-only
+and uses the personalized database views to limit entries to those authorized
+for the logged-in member.
+Generated folder labels, such as `Projects` and `Finance`, are translatable
+through the Members catalogue using the orchestra's configured language.
+Project names and database directory-entry names are not translated; neither
+is the movable `cafevdb/` mount name.
 
 ## Relation to CAFeVDB
 

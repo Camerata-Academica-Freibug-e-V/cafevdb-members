@@ -27,6 +27,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 use OCP\Constants;
+use OCP\IL10N;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorage;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFolder;
@@ -47,7 +48,7 @@ class StorageTest extends TestCase
     ];
     $storage = $this->storageForSources($sources);
 
-    foreach (['projects', 'projects/ProjectName', 'finance', 'finance/invoices'] as $path) {
+    foreach (['Projects', 'Projects/ProjectName', 'Finance', 'Finance/Invoices'] as $path) {
       self::assertTrue($storage->file_exists($path), $path);
       self::assertTrue($storage->is_dir($path), $path);
       self::assertFalse($storage->is_file($path), $path);
@@ -58,14 +59,14 @@ class StorageTest extends TestCase
       self::assertSame(Constants::PERMISSION_READ, $storage->getPermissions($path));
     }
 
-    self::assertSame(['finance', 'projects'], $this->directoryNames($storage, ''));
-    self::assertSame(['ProjectName'], $this->directoryNames($storage, 'projects'));
-    self::assertSame([], $this->directoryNames($storage, 'projects/ProjectName'));
-    self::assertSame(['invoices'], $this->directoryNames($storage, 'finance'));
-    self::assertSame([], $this->directoryNames($storage, 'finance/invoices'));
-    self::assertFalse($storage->fopen('projects', 'rb'));
+    self::assertSame(['Finance', 'Projects'], $this->directoryNames($storage, ''));
+    self::assertSame(['ProjectName'], $this->directoryNames($storage, 'Projects'));
+    self::assertSame([], $this->directoryNames($storage, 'Projects/ProjectName'));
+    self::assertSame(['Invoices'], $this->directoryNames($storage, 'Finance'));
+    self::assertSame([], $this->directoryNames($storage, 'Finance/Invoices'));
+    self::assertFalse($storage->fopen('Projects', 'rb'));
 
-    foreach (['missing', 'projects/UnknownProject', 'projects/../finance'] as $path) {
+    foreach (['missing', 'Projects/UnknownProject', 'Projects/../Finance'] as $path) {
       self::assertFalse($storage->file_exists($path), $path);
       self::assertFalse($storage->stat($path));
       self::assertFalse($storage->filesize($path));
@@ -82,15 +83,15 @@ class StorageTest extends TestCase
     ];
     $storage = $this->storageForSources($sources);
 
-    self::assertTrue($storage->file_exists('projects'));
+    self::assertTrue($storage->file_exists('Projects'));
     $sources = [];
-    self::assertFalse($storage->file_exists('projects'));
-    self::assertFalse($storage->stat('projects'));
-    self::assertFalse($storage->opendir('projects'));
+    self::assertFalse($storage->file_exists('Projects'));
+    self::assertFalse($storage->stat('Projects'));
+    self::assertFalse($storage->opendir('Projects'));
   }
 
   /** @param list<DatabaseStorage> $sources */
-  private function storageForSources(array &$sources): Storage
+  private function storageForSources(array &$sources, ?IL10N $l = null): Storage
   {
     $repository = $this->getMockBuilder(EntityRepository::class)
       ->disableOriginalConstructor()
@@ -107,7 +108,50 @@ class StorageTest extends TestCase
     $entityManager->expects($this->atLeastOnce())->method('getRepository')
       ->with(DatabaseStorage::class)->willReturn($repository);
 
-    return new Storage(['entityManager' => $entityManager, 'userId' => 'member-id']);
+    return new Storage(['entityManager' => $entityManager, 'userId' => 'member-id', 'l10n' => $l ?? $this->translator()]);
+  }
+
+  private function translator(array $translations = []): IL10N
+  {
+    $l = $this->createStub(IL10N::class);
+    $l->method('t')->willReturnCallback(static fn(string $text): string => $translations[$text] ?? $text);
+    return $l;
+  }
+
+  public function testTranslatedFoldersSupportTraversalWithoutTranslatingProjectNames(): void
+  {
+    $sources = [
+      (new DatabaseStorage())->setStorageId('project/participant/Invoices/member-id/')
+        ->setRoot((new DatabaseStorageFolder())->setUpdated(new \DateTimeImmutable('@1'))),
+    ];
+    $storage = $this->storageForSources($sources, $this->translator(['Projects' => 'LocalizedProjects']));
+    self::assertSame(['LocalizedProjects'], $this->directoryNames($storage, ''));
+    self::assertSame(['Invoices'], $this->directoryNames($storage, 'LocalizedProjects'));
+    self::assertTrue($storage->is_dir('LocalizedProjects/Invoices'));
+    self::assertSame(0, $storage->filesize('LocalizedProjects'));
+    self::assertFalse($storage->file_exists('Projects'));
+
+    self::assertSame(
+      ['LocalizedFinance', 'LocalizedBalances', 'LocalizedProjects', 'invoices'],
+      Storage::visiblePathForStorageId(
+        'finance/balances/projects/invoices/',
+        $this->translator([
+          'Finance' => 'LocalizedFinance',
+          'Balances' => 'LocalizedBalances',
+          'Projects' => 'LocalizedProjects',
+          'Invoices' => 'LocalizedInvoices',
+        ]),
+      ),
+    );
+  }
+
+  public function testTranslationCannotIntroducePathTraversal(): void
+  {
+    $this->expectException(\RuntimeException::class);
+    Storage::visiblePathForStorageId(
+      'project/participant/ProjectName/member-id/',
+      $this->translator(['Projects' => '../Private']),
+    );
   }
 
   /** @return list<string> */
@@ -129,22 +173,43 @@ class StorageTest extends TestCase
   public function testParticipantStoragesAreFlattenedToTheirProjectName(): void
   {
     self::assertSame(
-      [ 'projects', 'ProjectName' ],
-      Storage::visiblePathForStorageId('project/participant/ProjectName/member-id/'),
+      [ 'Projects', 'ProjectName' ],
+      Storage::visiblePathForStorageId('project/participant/ProjectName/member-id/', $this->translator()),
     );
   }
 
   public function testOtherStoragePathsArePreserved(): void
   {
     self::assertSame(
-      [ 'finance', 'invoices' ],
-      Storage::visiblePathForStorageId('finance/invoices/'),
+      [ 'Finance', 'Invoices' ],
+      Storage::visiblePathForStorageId('finance/invoices/', $this->translator()),
     );
+  }
+
+  public function testKnownVirtualFolderLabelsAreTranslatable(): void
+  {
+    $translations = [
+      'Finance' => 'LocalizedFinance',
+      'Invoices' => 'LocalizedInvoices',
+      'BankTransactions' => 'LocalizedTransactions',
+      'Receipts' => 'LocalizedReceipts',
+      'DonationReceipts' => 'LocalizedDonations',
+      'TaxExemptionNotices' => 'LocalizedTaxNotices',
+    ];
+    $l = $this->translator($translations);
+    foreach ([
+      'finance/invoices/' => ['LocalizedFinance', 'LocalizedInvoices'],
+      'finance/transactions/' => ['LocalizedFinance', 'LocalizedTransactions'],
+      'finance/receipts/donations/' => ['LocalizedFinance', 'LocalizedReceipts', 'LocalizedDonations'],
+      'finance/tax-exemption-notices/' => ['LocalizedFinance', 'LocalizedTaxNotices'],
+    ] as $storageId => $expected) {
+      self::assertSame($expected, Storage::visiblePathForStorageId($storageId, $l));
+    }
   }
 
   public function testInvalidStoragePathComponentsAreRejected(): void
   {
-    self::assertFalse(Storage::visiblePathForStorageId('../private'));
-    self::assertFalse(Storage::visiblePathForStorageId('finance//invoices'));
+    self::assertFalse(Storage::visiblePathForStorageId('../private', $this->translator()));
+    self::assertFalse(Storage::visiblePathForStorageId('finance//invoices', $this->translator()));
   }
 }

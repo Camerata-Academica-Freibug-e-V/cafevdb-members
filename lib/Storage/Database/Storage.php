@@ -27,6 +27,7 @@ use RuntimeException;
 
 use OC\Files\Storage\Common as AbstractStorage;
 use OCP\Constants;
+use OCP\IL10N;
 use OCP\Files\ForbiddenException;
 
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
@@ -40,12 +41,14 @@ class Storage extends AbstractStorage
 {
   private EntityManager $entityManager;
   private string $userId;
+  private IL10N $l;
 
   public function __construct(array $parameters)
   {
     parent::__construct($parameters);
     $this->entityManager = $parameters['entityManager'];
     $this->userId = $parameters['userId'];
+    $this->l = $parameters['l10n'];
   }
 
   public function getId()
@@ -66,7 +69,7 @@ class Storage extends AbstractStorage
         continue;
       }
 
-      $path = self::visiblePathForStorageId($storageId);
+      $path = self::visiblePathForStorageId($storageId, $this->l);
       if (is_array($path) && $path !== []) {
         $sources[] = [ 'path' => $path, 'root' => $root ];
       }
@@ -76,7 +79,7 @@ class Storage extends AbstractStorage
   }
 
   /** @return list<string>|false */
-  public static function visiblePathForStorageId(string $storageId): array|false
+  public static function visiblePathForStorageId(string $storageId, IL10N $l): array|false
   {
     $parts = explode('/', trim($storageId, '/'));
     if ($parts === [] || in_array('', $parts, true)
@@ -86,9 +89,35 @@ class Storage extends AbstractStorage
     if (($parts[0] ?? null) === 'project'
         && ($parts[1] ?? null) === 'participant'
         && !empty($parts[2])) {
-      return [ 'projects', $parts[2] ];
+      // TRANSLATORS: folder-name
+      return [ self::folderName($l->t('Projects')), $parts[2] ];
     }
-    return $parts;
+    $path = $parts;
+    foreach ($parts as $index => $part) {
+      // TRANSLATORS: names of virtual filesystem folders
+      $name = match (implode('/', array_slice($parts, 0, $index + 1))) {
+        'finance' => $l->t('Finance'),
+        'finance/invoices' => $l->t('Invoices'),
+        'finance/transactions' => $l->t('BankTransactions'),
+        'finance/receipts' => $l->t('Receipts'),
+        'finance/receipts/donations' => $l->t('DonationReceipts'),
+        'finance/tax-exemption-notices' => $l->t('TaxExemptionNotices'),
+        'finance/balances' => $l->t('Balances'),
+        'finance/balances/projects' => $l->t('Projects'),
+        default => $part,
+      };
+      $path[$index] = self::folderName($name);
+    }
+    return $path;
+  }
+
+  private static function folderName(string $name): string
+  {
+    if ($name === '' || $name === '.' || $name === '..'
+        || str_contains($name, '/') || str_contains($name, "\0")) {
+      throw new RuntimeException('Invalid virtual folder name in database-storage translation.');
+    }
+    return $name;
   }
 
   /** @return list<string>|false */

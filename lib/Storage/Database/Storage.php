@@ -53,7 +53,17 @@ class Storage extends AbstractStorage
 
   public function getId()
   {
-    return 'cafevdbmembers::database-storage::' . $this->userId;
+    return self::idForUser($this->userId);
+  }
+
+  /**
+   * @param string $userId
+   *
+   * @return string Stable identity shared by live and unavailable mounts.
+   */
+  public static function idForUser(string $userId): string
+  {
+    return 'cafevdbmembers::database-storage::' . $userId;
   }
 
   /** @return array<array{path: list<string>, root: DatabaseStorageFolder}> */

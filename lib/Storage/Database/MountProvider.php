@@ -23,9 +23,14 @@
 namespace OCA\CAFeVDBMembers\Storage\Database;
 
 use OC\Files\Mount\MountPoint as CloudMountPoint;
+use OC\Files\Cache\Storage as StorageCache;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Config\IMountProvider;
+use OCP\Files\Config\IUserMountCache;
 use OCP\Files\Storage\IStorageFactory;
+use OCP\Files\StorageNotAvailableException;
 use OCP\IConfig;
+use OCP\IDBConnection;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\L10N\IFactory;
@@ -33,6 +38,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 use OCA\CAFeVDBMembers\AppInfo\Application;
+use OCA\CAFeVDBMembers\Exceptions\RowAccessTokenMissingException;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 
 /** Mount authorized database files in the logged-in user's Files tree. */
@@ -48,6 +54,8 @@ class MountProvider implements IMountProvider
     private IUserSession $userSession,
     private LoggerInterface $logger,
     private IFactory $l10nFactory,
+    private IUserMountCache $mountCache,
+    private IDBConnection $connection,
   ) {
   }
 
@@ -56,13 +64,13 @@ class MountProvider implements IMountProvider
   {
     if (!$this->userSession->isLoggedIn()
         || $this->userSession->getUser()?->getUID() !== $user->getUID()) {
-      return [];
+      return $this->unavailableMounts($user, $loader);
     }
 
     try {
       $entityManager = $this->entityManagerFactory->create($user->getUID());
       if (!$entityManager->connected()) {
-        return [];
+        throw new StorageNotAvailableException('The authorized database connection is unavailable.');
       }
 
       $storage = new Storage([
@@ -168,12 +176,70 @@ class MountProvider implements IMountProvider
           }
         },
       ];
+    } catch (RowAccessTokenMissingException $e) {
+      $this->logger->warning('Database-storage authorization has been removed or has not been provisioned.', [
+        'exception' => $e,
+        'userId' => $user->getUID(),
+      ]);
+      return [];
     } catch (Throwable $t) {
       $this->logger->error('Unable to mount authorized database storage.', [
         'exception' => $t,
         'userId' => $user->getUID(),
       ]);
-      return [];
+      return $this->unavailableMounts($user, $loader);
     }
+  }
+
+  /**
+   * Retain only this provider's existing, user-scoped mount during outages.
+   *
+   * @param IUser $user
+   * @param IStorageFactory $loader
+   *
+   * @return list<UnavailableMount>
+   */
+  private function unavailableMounts(IUser $user, IStorageFactory $loader): array
+  {
+    $mounts = [];
+    $storageId = Storage::idForUser($user->getUID());
+    foreach ($this->mountCache->getMountsForUser($user) as $cachedMount) {
+      if ($cachedMount->getMountProvider() !== self::class) {
+        continue;
+      }
+
+      $prefix = '/' . $user->getUID() . '/files/';
+      $mountPath = $cachedMount->getMountPoint();
+      $parts = explode('/', trim(substr($mountPath, strlen($prefix)), '/'));
+      if ($cachedMount->getUser()->getUID() !== $user->getUID()
+          || !str_starts_with($mountPath, $prefix)
+          || in_array('', $parts, true)
+          || in_array('.', $parts, true)
+          || in_array('..', $parts, true)
+          || $cachedMount->getRootInternalPath() !== ''
+          || $cachedMount->getStorageId() <= 0
+          || $cachedMount->getRootId() <= 0
+          || $mounts !== []) {
+        throw new StorageNotAvailableException('Invalid cached database-storage mount.');
+      }
+
+      $query = $this->connection->getQueryBuilder();
+      $query->select('s.id')
+        ->from('storages', 's')
+        ->innerJoin('s', 'filecache', 'f', $query->expr()->eq('f.storage', 's.numeric_id'))
+        ->where($query->expr()->eq('s.numeric_id', $query->createNamedParameter($cachedMount->getStorageId(), IQueryBuilder::PARAM_INT)))
+        ->andWhere($query->expr()->eq('f.fileid', $query->createNamedParameter($cachedMount->getRootId(), IQueryBuilder::PARAM_INT)))
+        ->andWhere($query->expr()->eq('f.path', $query->createNamedParameter('')));
+      $result = $query->executeQuery();
+      $cachedStorageId = $result->fetchOne();
+      $result->closeCursor();
+      if ($cachedStorageId !== StorageCache::adjustStorageId($storageId)) {
+        throw new StorageNotAvailableException('Cached database-storage identity does not match the user.');
+      }
+
+      $mounts[] = new UnavailableMount($storageId, $cachedMount, $loader);
+    }
+
+    return $mounts;
   }
 }

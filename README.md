@@ -29,6 +29,26 @@ through the Members catalogue using the orchestra's configured language.
 Project names and database directory-entry names are not translated; neither
 is the movable `cafevdb/` mount name.
 
+When a user's authorization credentials are unavailable (for example during
+cron scans), an already registered mount is retained as unavailable. Nextcloud's
+standard scanner skips this placeholder: the existing mount/root/storage IDs
+and file-cache rows, including file IDs used by links in Markdown, are preserved.
+Cached directories and file contents are not exposed offline, and the mount
+cannot be moved in that state. Its previously saved path is retained verbatim,
+without regenerating localized directory names.
+
+Authenticated access reconnects the real storage to the same cache. A missing
+row-access token during authenticated setup intentionally removes the mount;
+temporary decryption or database failures retain the unavailable placeholder.
+No placeholder is created for a user without a previous mount. Incomplete cache
+entries remain incomplete until authenticated scanning resumes, so Nextcloud's
+background job may continue reporting that the user has unscanned files.
+
+This preservation-only approach does not reconstruct or refresh the filesystem
+offline. The companion app's related discussion is tracked in
+[cafevdb#123](https://github.com/Camerata-Academica-Freibug-e-V/cafevdb/issues/123);
+its provider would need its own integration before retiring the server workaround.
+
 ## Relation to CAFeVDB
 
 The members app is a separate app with its own copy of the required

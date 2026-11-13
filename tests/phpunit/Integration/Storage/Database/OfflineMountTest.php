@@ -24,6 +24,8 @@ use OC\Files\Utils\Scanner;
 use OC\Files\SetupManager;
 use OCP\Diagnostics\IEventLogger;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\Authentication\LoginCredentials\ICredentials;
+use OCP\Authentication\LoginCredentials\IStore;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\Mount\IMovableMount;
 use OCP\Files\StorageNotAvailableException;
@@ -100,14 +102,22 @@ class OfflineMountTest extends TestCase
     $project = $this->cacheEntry('Projects/Example', $projects, 123, 'httpd/unix-directory');
     $this->fileId = $this->cacheEntry(self::FILE_PATH, $project, 123, 'text/markdown');
     $this->cacheEntry('Projects/Pending', $projects, -1, 'httpd/unix-directory');
-    $this->insert('mounts', [
-      'storage_id' => $this->storageId,
-      'root_id' => $this->rootId,
-      'user_id' => $this->user->getUID(),
-      'mount_point' => $this->mountPath,
-      'mount_point_hash' => hash('xxh128', $this->mountPath),
-      'mount_provider_class' => MountProvider::class,
+    $storage = new Storage([
+      'entityManager' => $this->createStub(EntityManager::class),
+      'userId' => $this->user->getUID(),
+      'l10n' => $this->createStub(IL10N::class),
     ]);
+    $this->mountCache()->registerMounts($this->user, [
+      new MountPoint(
+        $storage,
+        $this->mountPath,
+        null,
+        $this->loader,
+        ['readonly' => true, 'enable_sharing' => false, 'authenticated' => true],
+        null,
+        MountProvider::class,
+      ),
+    ], [MountProvider::class]);
   }
 
   protected function tearDown(): void
@@ -264,7 +274,27 @@ class OfflineMountTest extends TestCase
     $this->factory->expects($this->once())->method('create')->willThrowException(new RowAccessTokenMissingException('Removed'));
     $mounts = $this->provider()->getMountsForUser($this->user, $this->loader);
     self::assertSame([], $mounts);
-    $this->mountCache()->registerMounts($this->user, $mounts, [MountProvider::class]);
+    // The server fork also checks the global login state before removing
+    // authenticated mounts, independently of the provider's injected session.
+    $session = Server::get(\OCP\ISession::class);
+    $previousUser = $session->get('user_id');
+    $previousStore = Server::get(IStore::class);
+    $credentials = $this->createStub(ICredentials::class);
+    $credentials->method('getUID')->willReturn($this->user->getUID());
+    $store = $this->createStub(IStore::class);
+    $store->method('getLoginCredentials')->willReturn($credentials);
+    try {
+      $session->set('user_id', $this->user->getUID());
+      \OC::$server->registerService(IStore::class, static fn() => $store);
+      $this->mountCache()->registerMounts($this->user, $mounts, [MountProvider::class]);
+    } finally {
+      \OC::$server->registerService(IStore::class, static fn() => $previousStore);
+      if ($previousUser === null) {
+        $session->remove('user_id');
+      } else {
+        $session->set('user_id', $previousUser);
+      }
+    }
     self::assertSame([], $this->mountCache()->getMountsForUser($this->user));
   }
 

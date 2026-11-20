@@ -96,8 +96,11 @@ trait GenerateEntityManagerTrait
       $cloudConfig->setAppValue(
         Application::getOrchestraAppName(),
         ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY,
-        $appContainer->get(ICrypto::class)->encrypt(json_encode($credentials, JSON_THROW_ON_ERROR)),
+        'encrypted',
       );
+      $crypto = $this->createStub(ICrypto::class);
+      $crypto->method('decrypt')->willReturn(json_encode($credentials, JSON_THROW_ON_ERROR));
+      $this->mockProvider->registerClassInstance(ICrypto::class, $crypto);
       $cloudConfig->setSystemValue('dbtype', 'pgsql');
       $cloudConfig->setSystemValue('dbhost', '127.0.0.1:1');
       $cloudConfig->setSystemValue('dbuser', 'not-the-connector');

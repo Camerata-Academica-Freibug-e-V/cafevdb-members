@@ -120,9 +120,16 @@ class EntityManagerTest extends TestCase
       'REVOKE SELECT ON ' . $connection->quoteIdentifier($databaseName)
       . ".`PersonalizedMusiciansView` FROM 'nextcloud'@'localhost'",
     );
-    $this->generateEntityManager($token, independent: true, allowView: false);
-    self::assertTrue($this->entityManager->connected());
-    self::assertNotNull($this->entityManager->validatePersonalizedViews());
+    try {
+      $this->generateEntityManager($token, independent: true, allowView: false);
+      self::assertTrue($this->entityManager->connected());
+      self::assertNotNull($this->entityManager->validatePersonalizedViews());
+    } finally {
+      $connection->executeStatement(
+        'GRANT SELECT ON ' . $connection->quoteIdentifier($databaseName)
+        . ".`PersonalizedMusiciansView` TO 'nextcloud'@'localhost'",
+      );
+    }
   }
 
   /** @return void */

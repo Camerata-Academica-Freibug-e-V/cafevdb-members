@@ -101,6 +101,28 @@ class EntityManagerTest extends TestCase
     self::assertTrue($this->entityManager->connected());
     self::assertNull($this->entityManager->validatePersonalizedViews());
     self::assertCount(1, $this->entityManager->getRepository(Entities\Musician::class)->findAll());
+    $this->entityManager->getConnection()->executeStatement("SET @ROW_ACCESS_TOKEN = 'invalid'");
+    self::assertCount(0, $this->entityManager->getRepository(Entities\Musician::class)->findAll());
+  }
+
+  /** @return void */
+  public function testMissingViewPrivilegeIsReported(): void
+  {
+    $token = $this->mockProvider->getRowAccessTokens()[MockProvider::CLOUD_USER_UID]['access_token_hash'];
+    $databaseProvider = \OCP\Server::get(DatabaseProvider::class);
+    $connection = $databaseProvider->getConnection();
+    $databaseName = $databaseProvider->databaseName(EnumDatabasePurpose::CLOUD_CONNECTOR);
+    $connection->executeStatement(
+      'GRANT SELECT ON ' . $connection->quoteIdentifier($databaseName)
+      . ".`PersonalizedMusiciansView` TO 'nextcloud'@'localhost'",
+    );
+    $connection->executeStatement(
+      'REVOKE SELECT ON ' . $connection->quoteIdentifier($databaseName)
+      . ".`PersonalizedMusiciansView` FROM 'nextcloud'@'localhost'",
+    );
+    $this->generateEntityManager($token, independent: true, allowView: false);
+    self::assertTrue($this->entityManager->connected());
+    self::assertNotNull($this->entityManager->validatePersonalizedViews());
   }
 
   /** @return void */

@@ -34,6 +34,7 @@ use OCA\CAFeVDBMembers\Service\AuthenticationService;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 use OCA\CAFeVDBMembers\Tests\MockProvider;
 use OCA\CAFeVDBMembers\Tests\DatabaseProvider;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Tools\DsnParser;
 use OCA\RotDrop\Tests\EnumDatabasePurpose;
 
 /** Construct an instance of the entity manager.  */
@@ -46,10 +47,11 @@ trait GenerateEntityManagerTrait
   /**
    * @param string $token
    * @param bool $independent Use the CafeVDB connector credentials.
+   * @param bool $allowView Grant access to the personalized musician view.
    *
    * @return void
    */
-  private function generateEntityManager(string $token, bool $independent = false): void
+  private function generateEntityManager(string $token, bool $independent = false, bool $allowView = true): void
   {
     $this->mockProvider = $this->mockProvider ?? MockProvider::create($this);
 
@@ -81,11 +83,16 @@ trait GenerateEntityManagerTrait
     $cloudConfig->setSystemValue('dbhost', $databaseConfig->databaseServer);
     $cloudConfig->setAppValue(Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY, '');
     if ($independent) {
-      $credentials = [
-        'host' => $databaseConfig->databaseServer,
-        'user' => DatabaseProvider::CLOUD_DB_USER,
-        'password' => $databaseConfig->databasePassword,
-      ];
+      $parsed = (new DsnParser())->parse($databaseConfig->databaseServer);
+      $credentials = array_intersect_key($parsed, array_flip(['host', 'port', 'unix_socket']));
+      $credentials['user'] = DatabaseProvider::CLOUD_DB_USER;
+      $credentials['password'] = $databaseConfig->databasePassword;
+      $adminConnection = $databaseProvider->getConnection();
+      $view = $allowView ? 'PersonalizedMusiciansView' : 'NextcloudGroupView';
+      $adminConnection->executeStatement(
+        'GRANT SELECT ON ' . $adminConnection->quoteIdentifier($databaseName)
+        . '.' . $adminConnection->quoteIdentifier($view) . " TO 'nextcloud'@'localhost'",
+      );
       $cloudConfig->setAppValue(
         Application::getOrchestraAppName(),
         ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY,

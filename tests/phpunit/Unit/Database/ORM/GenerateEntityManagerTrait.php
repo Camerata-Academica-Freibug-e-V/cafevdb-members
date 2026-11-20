@@ -23,8 +23,10 @@
 namespace OCA\CAFeVDBMembers\Tests\Unit\Database\ORM;
 
 use OCP\IConfig;
+use OCP\Security\ICrypto;
 use Psr\Container\ContainerInterface;
 
+use OCA\CAFeVDBMembers\AppInfo\Application;
 use OCA\CAFeVDBMembers\Crypto\IEncryptionService;
 use OCA\CAFeVDBMembers\Database\DBAL\Logging\CloudLogger;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
@@ -43,10 +45,11 @@ trait GenerateEntityManagerTrait
 
   /**
    * @param string $token
+   * @param bool $independent Use the CafeVDB connector credentials.
    *
    * @return void
    */
-  private function generateEntityManager(string $token): void
+  private function generateEntityManager(string $token, bool $independent = false): void
   {
     $this->mockProvider = $this->mockProvider ?? MockProvider::create($this);
 
@@ -76,6 +79,23 @@ trait GenerateEntityManagerTrait
     $cloudConfig->setSystemValue('dbuser', DatabaseProvider::CLOUD_DB_USER);
     $cloudConfig->setSystemValue('dbpassword', $databaseConfig->databasePassword);
     $cloudConfig->setSystemValue('dbhost', $databaseConfig->databaseServer);
+    $cloudConfig->setAppValue(Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY, '');
+    if ($independent) {
+      $credentials = [
+        'host' => $databaseConfig->databaseServer,
+        'user' => DatabaseProvider::CLOUD_DB_USER,
+        'password' => $databaseConfig->databasePassword,
+      ];
+      $cloudConfig->setAppValue(
+        Application::getOrchestraAppName(),
+        ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY,
+        $appContainer->get(ICrypto::class)->encrypt(json_encode($credentials, JSON_THROW_ON_ERROR)),
+      );
+      $cloudConfig->setSystemValue('dbtype', 'pgsql');
+      $cloudConfig->setSystemValue('dbhost', '127.0.0.1:1');
+      $cloudConfig->setSystemValue('dbuser', 'not-the-connector');
+      $cloudConfig->setSystemValue('dbpassword', 'not-the-connector');
+    }
 
     $authenticationService = $this->getMockBuilder(AuthenticationService::class)
       ->disableOriginalConstructor()

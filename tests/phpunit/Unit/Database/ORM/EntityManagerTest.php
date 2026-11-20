@@ -81,6 +81,7 @@ class EntityManagerTest extends TestCase
     $rowAccessToken = $rowAccessTokens[MockProvider::CLOUD_USER_UID]['access_token_hash'];
     $this->generateEntityManager($rowAccessToken);
     $this->assertTrue($this->entityManager->connected());
+    $this->assertNull($this->entityManager->validatePersonalizedViews());
   }
 
   /** @return void */
@@ -90,6 +91,16 @@ class EntityManagerTest extends TestCase
 
     $musicians = $this->entityManager->getRepository(Entities\Musician::class)->findAll();
     $this->assertEquals(1, count($musicians));
+  }
+
+  /** @return void */
+  public function testIndependentCredentialsWithPostgresCloud(): void
+  {
+    $token = $this->mockProvider->getRowAccessTokens()[MockProvider::CLOUD_USER_UID]['access_token_hash'];
+    $this->generateEntityManager($token, independent: true);
+    self::assertTrue($this->entityManager->connected());
+    self::assertNull($this->entityManager->validatePersonalizedViews());
+    self::assertCount(1, $this->entityManager->getRepository(Entities\Musician::class)->findAll());
   }
 
   /** @return void */

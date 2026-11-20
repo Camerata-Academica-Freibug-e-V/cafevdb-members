@@ -127,9 +127,12 @@ class OfflineEntityManagerTest extends TestCase
     $connection->expects($this->once())
       ->method('executeQuery')
       ->willThrowException(new \RuntimeException('connector-secret'));
-    $manager = $this->createStub(EntityManager::class);
-    $manager->method('connected')->willReturn(true);
-    $manager->method('getConnection')->willReturn($connection);
+    $manager = $this->getMockBuilder(EntityManager::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['connected', 'getConnection'])
+      ->getMock();
+    $manager->expects($this->once())->method('connected')->willReturn(true);
+    $manager->expects($this->once())->method('getConnection')->willReturn($connection);
     $l = $this->createStub(IL10N::class);
     $l->method('t')->willReturnCallback(fn(string $text) => $text);
     (new \ReflectionProperty(EntityManager::class, 'l'))->setValue($manager, $l);

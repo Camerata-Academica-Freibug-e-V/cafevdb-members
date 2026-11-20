@@ -30,5 +30,6 @@
   </settings>
   <commands>
     <command>OCA\CAFeVDBMembers\Command\EnsureGroupFolders</command>
+    <command>OCA\CAFeVDBMembers\Command\CheckPersonalizedViews</command>
   </commands>
 </info>

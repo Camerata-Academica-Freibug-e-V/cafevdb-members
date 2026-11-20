@@ -31,6 +31,28 @@ folders) from CAFeVDB through small interfaces and adapters which are
 resolved lazily. Without CAFeVDB installed on the same Nextcloud
 instance the members app can be installed, but it is of no use.
 
+## Personalized views connection
+
+Set the personalized views database name in the Members admin settings and
+enable/regenerate the personalized views in CafeVDB. When CafeVDB has separate
+cloud connector credentials configured, Members reads those encrypted
+credentials (including the MariaDB server and port or socket) from CafeVDB.
+This also works when Nextcloud uses PostgreSQL, SQLite, or another server.
+Changing or resetting the credentials in CafeVDB also changes the connection
+used by Members on subsequent requests.
+
+Without those credentials, Members uses Nextcloud's `dbhost`, `dbuser` and
+`dbpassword` as before; that account must be able to access the views on the
+MariaDB server. Invalid or unreadable configured credentials are not silently
+replaced with the Nextcloud credentials. The connector account needs the
+appropriate privileges on the personalized views.
+
+After configuration, run `php occ cafevdbmembers:views:check` from the
+Nextcloud directory. The command checks the connection and queries
+`PersonalizedMusiciansView` without requiring a member login; a failure points
+to the connection settings or view privileges. It does not check every view or
+verify that a member's row-access token is valid.
+
 ## Development
 
 Clone with `git clone --recurse-submodules`, or initialize the pinned build

@@ -27,7 +27,9 @@ use Psr\Container\ContainerInterface;
 use OCP\IConfig;
 use OCP\IL10N;
 use OCP\ISession;
+use OCP\Security\ICrypto;
 
+use OCA\CAFeVDBMembers\AppInfo\Application;
 use OCA\CAFeVDBMembers\Database\DBAL\Types;
 use OCA\CAFeVDBMembers\Constants;
 use OCA\CAFeVDBMembers\Database\DBAL\Logging\CloudLogger;
@@ -114,8 +116,7 @@ class EntityManager extends AbstractEntityManager
         $databaseServerVersion === null ? [] : ['serverVersion' => $databaseServerVersion],
       ));
     } catch (Throwable $t) {
-      $this->logException($t);
-      throw $t;
+      throw new \RuntimeException('Unable to configure the personalized views database. Check the connector settings.');
     }
     $this->entityManager = $this->wrapped;
     // An explicit platform allows metadata and type registration without connecting.
@@ -279,16 +280,40 @@ class EntityManager extends AbstractEntityManager
    */
   private function connectionParameters(array $params = []):array
   {
-    $connectionParams = [
-      'dbname' => $this->cloudConfig->getAppValue($this->appName, ConfigConstants::USER_VIEWS_DATABASE_KEY),
-      'user' => $this->cloudConfig->getSystemValue('dbuser'),
-      'password' => $this->cloudConfig->getSystemvalue('dbpassword'),
-      'host' => $this->cloudConfig->getSystemValue('dbhost'),
-    ];
-    if (str_contains(($connectionParams['host'] ?? ''), '://')) {
-      $parser = new DBAL\Tools\DsnParser;
-      $parsedParams = $parser->parse($connectionParams['host']);
-      $connectionParams = array_merge($connectionParams, $parsedParams);
+    $encrypted = $this->cloudConfig->getAppValue(
+      Application::getOrchestraAppName(),
+      ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY,
+      '',
+    );
+    if ($encrypted !== '') {
+      $credentials = json_decode($this->appContainer->get(ICrypto::class)->decrypt($encrypted), true, flags: JSON_THROW_ON_ERROR);
+      if (!is_array($credentials)
+          || !is_string($credentials['host'] ?? null) || $credentials['host'] === ''
+          || !is_string($credentials['user'] ?? null) || $credentials['user'] === ''
+          || !is_string($credentials['password'] ?? null)
+          || (isset($credentials['port']) && ((!is_int($credentials['port']) && !(is_string($credentials['port']) && ctype_digit($credentials['port']))) || (int)$credentials['port'] < 1 || (int)$credentials['port'] > 65535))
+          || (isset($credentials['unix_socket']) && !is_string($credentials['unix_socket']))) {
+        throw new \RuntimeException('Invalid connector credentials.');
+      }
+      $connectionParams = array_intersect_key($credentials, array_flip(['host', 'port', 'unix_socket', 'user', 'password']));
+      if (isset($connectionParams['port'])) {
+        $connectionParams['port'] = (int)$connectionParams['port'];
+      }
+    } else {
+      $connectionParams = [
+        'dbname' => $this->cloudConfig->getAppValue($this->appName, ConfigConstants::USER_VIEWS_DATABASE_KEY),
+        'user' => $this->cloudConfig->getSystemValue('dbuser'),
+        'password' => $this->cloudConfig->getSystemValue('dbpassword'),
+        'host' => $this->cloudConfig->getSystemValue('dbhost'),
+      ];
+      if (str_contains(($connectionParams['host'] ?? ''), '://')) {
+        $parser = new DBAL\Tools\DsnParser;
+        $parsedParams = $parser->parse($connectionParams['host']);
+        $connectionParams = array_merge($connectionParams, $parsedParams);
+      }
+    }
+    if ($encrypted !== '') {
+      $connectionParams['dbname'] = $this->cloudConfig->getAppValue($this->appName, ConfigConstants::USER_VIEWS_DATABASE_KEY);
     }
     $driverParams = [
       'driver' => 'pdo_mysql',
@@ -316,7 +341,7 @@ class EntityManager extends AbstractEntityManager
     }
     $params = $connection->getParams();
     $impossible = false;
-    foreach ([ 'host', 'user', 'password', 'dbname' ] as $key) {
+    foreach ([ 'host', 'user', 'dbname' ] as $key) {
       if (empty($params[$key])) {
         $impossible = true;
       }
@@ -332,10 +357,26 @@ class EntityManager extends AbstractEntityManager
         return $connection->isConnected();
       }
     } catch (Throwable $t) {
-      $this->logException($t);
+      $this->logError('Unable to connect to the personalized views database. Check the database host, account and password.');
       return false;
     }
     return true;
+  }
+
+  /**
+   * @return null|string An actionable error, or null when the view is accessible.
+   */
+  public function validatePersonalizedViews(): ?string
+  {
+    if (!$this->connected()) {
+      return $this->l->t('Cannot connect to the personalized views database. Check its name, MariaDB host, account and password.');
+    }
+    try {
+      $this->getConnection()->executeQuery('SELECT 1 FROM `PersonalizedMusiciansView` LIMIT 1')->free();
+    } catch (Throwable $t) {
+      return $this->l->t('Cannot query PersonalizedMusiciansView. Regenerate the personalized views in CafeVDB and check the connector account privileges.');
+    }
+    return null;
   }
 
   /** @return void */
@@ -440,7 +481,6 @@ class EntityManager extends AbstractEntityManager
       } else {
         // allow access to the registration data
         $applicationTokens = $this->session->get(Constants::APPLICATION_SESSION_KEY) ?? [];
-        $this->logDebug('EMITTING ACCESS TOKENS ' . print_r($applicationTokens, true));
         foreach ($applicationTokens as $name => $value) {
           self::setVariable($connection, $name, $value);
         }

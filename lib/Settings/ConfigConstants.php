@@ -29,6 +29,7 @@ class ConfigConstants
   const FOLDER_GROUPS_KEY = 'memberFolderGroups';
   const SYNCHRONIZE_KEY = 'synchronize';
   const USER_VIEWS_DATABASE_KEY = 'cloudUserViewsDatabase';
+  const CLOUD_CONNECTOR_CREDENTIALS_KEY = 'cloudConnectorCredentials';
   const REGISTRATION_REPLY_TO_KEY = 'registrationReplyTo';
 
   // Keys of the orchestra app (cafevdb) which are only read, never written.

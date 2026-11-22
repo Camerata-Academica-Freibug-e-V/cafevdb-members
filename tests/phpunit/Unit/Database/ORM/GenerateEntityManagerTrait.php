@@ -23,8 +23,10 @@
 namespace OCA\CAFeVDBMembers\Tests\Unit\Database\ORM;
 
 use OCP\IConfig;
+use OCP\Security\ICrypto;
 use Psr\Container\ContainerInterface;
 
+use OCA\CAFeVDBMembers\AppInfo\Application;
 use OCA\CAFeVDBMembers\Crypto\IEncryptionService;
 use OCA\CAFeVDBMembers\Database\DBAL\Logging\CloudLogger;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
@@ -32,6 +34,7 @@ use OCA\CAFeVDBMembers\Service\AuthenticationService;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 use OCA\CAFeVDBMembers\Tests\MockProvider;
 use OCA\CAFeVDBMembers\Tests\DatabaseProvider;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Tools\DsnParser;
 use OCA\RotDrop\Tests\EnumDatabasePurpose;
 
 /** Construct an instance of the entity manager.  */
@@ -43,10 +46,12 @@ trait GenerateEntityManagerTrait
 
   /**
    * @param string $token
+   * @param bool $independent Use the CafeVDB connector credentials.
+   * @param bool $allowView Grant access to the personalized musician view.
    *
    * @return void
    */
-  private function generateEntityManager(string $token): void
+  private function generateEntityManager(string $token, bool $independent = false, bool $allowView = true): void
   {
     $this->mockProvider = $this->mockProvider ?? MockProvider::create($this);
 
@@ -76,6 +81,31 @@ trait GenerateEntityManagerTrait
     $cloudConfig->setSystemValue('dbuser', DatabaseProvider::CLOUD_DB_USER);
     $cloudConfig->setSystemValue('dbpassword', $databaseConfig->databasePassword);
     $cloudConfig->setSystemValue('dbhost', $databaseConfig->databaseServer);
+    $cloudConfig->setAppValue(Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY, '');
+    if ($independent) {
+      $parsed = (new DsnParser())->parse($databaseConfig->databaseServer);
+      $credentials = array_intersect_key($parsed, array_flip(['host', 'port', 'unix_socket']));
+      $credentials['user'] = DatabaseProvider::CLOUD_DB_USER;
+      $credentials['password'] = $databaseConfig->databasePassword;
+      $adminConnection = $databaseProvider->getConnection();
+      $view = $allowView ? 'PersonalizedMusiciansView' : 'NextcloudGroupView';
+      $adminConnection->executeStatement(
+        'GRANT SELECT ON ' . $adminConnection->quoteIdentifier($databaseName)
+        . '.' . $adminConnection->quoteIdentifier($view) . " TO 'nextcloud'@'localhost'",
+      );
+      $cloudConfig->setAppValue(
+        Application::getOrchestraAppName(),
+        ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY,
+        'encrypted',
+      );
+      $crypto = $this->createStub(ICrypto::class);
+      $crypto->method('decrypt')->willReturn(json_encode($credentials, JSON_THROW_ON_ERROR));
+      $this->mockProvider->registerClassInstance(ICrypto::class, $crypto);
+      $cloudConfig->setSystemValue('dbtype', 'pgsql');
+      $cloudConfig->setSystemValue('dbhost', '127.0.0.1:1');
+      $cloudConfig->setSystemValue('dbuser', 'not-the-connector');
+      $cloudConfig->setSystemValue('dbpassword', 'not-the-connector');
+    }
 
     $authenticationService = $this->getMockBuilder(AuthenticationService::class)
       ->disableOriginalConstructor()

@@ -31,6 +31,56 @@ folders) from CAFeVDB through small interfaces and adapters which are
 resolved lazily. Without CAFeVDB installed on the same Nextcloud
 instance the members app can be installed, but it is of no use.
 
+## Personalized views connection
+
+Enable/regenerate the personalized views in CafeVDB. New installations use
+**Use CafeVDB views database** in Members admin settings by default. Members reads
+CafeVDB's versioned, non-secret `cloudConnectorDescriptor` on each request:
+the effective database, expected MariaDB account, personalized-view enablement
+and configuration revision. This does not copy passwords or overwrite settings.
+Existing non-empty Members database names remain explicit overrides; disable
+inheritance to edit an override, or enable it to follow CafeVDB without erasing
+the old value. No setting is automatically written back to CafeVDB.
+
+Admin settings show the effective and producer database names, expected and
+authenticated MariaDB accounts (`CURRENT_USER()`), and configuration/access
+warnings. **Check connector configuration** refreshes these diagnostics.
+The account host is an authentication identity, not the database server address.
+When the connection fails, account comparison is explicitly unverified.
+Older, disabled or unavailable CafeVDB versions retain the existing Members
+database setting with a warning. With no usable database, configuration is
+reported as incomplete. Open CafeVDB sharing settings once after upgrading to
+initialize its descriptor. A changed descriptor is used on subsequent requests;
+already-open connections are not migrated, and CafeVDB still removes old views
+when changing schemas, so coordinate database switches.
+
+Configure the views account and password in CafeVDB. When CafeVDB has separate
+cloud connector credentials configured, Members reads the encrypted credentials
+and uses their MariaDB endpoint (including port or socket), username and password.
+This also works when Nextcloud uses PostgreSQL, SQLite, or another server.
+Changing or resetting the endpoint in CafeVDB changes the connection used by
+Members on subsequent requests.
+
+If upgrading from a version that stored a Members-local password, it remains a
+fallback only until CafeVDB manages or resets the account. Producer credentials
+always take precedence. Resetting the account in CafeVDB uses Nextcloud's
+credentials and does not reactivate an old Members-local password.
+
+Without those credentials or a legacy Members-local password, Members uses Nextcloud's
+`dbhost`, `dbuser` and `dbpassword` as before; that account must be able to
+access the views on the MariaDB server. Invalid or unreadable configured
+credentials are not silently replaced with the Nextcloud credentials. The
+connector account needs the appropriate privileges on the personalized views.
+
+After configuration, run `php occ cafevdbmembers:views:check` from the
+Nextcloud directory. The command checks the connection and queries
+`PersonalizedMusiciansView` without requiring a member login; a failure points
+to the connection settings or view privileges. It does not check every view or
+verify that a member's row-access token is valid.
+Unexpected check failures log exception types and source locations in the
+Nextcloud log, without exception messages or trace arguments. Connection setup
+errors are sanitized because underlying exceptions can contain credentials.
+
 ## Development
 
 Clone with `git clone --recurse-submodules`, or initialize the pinned build
@@ -51,6 +101,13 @@ dependencies and scoped into `OCA\CAFeVDBMembers\Wrapped` in `vendor-wrapped/`.
 Both `vendor/` and `vendor-wrapped/` are required at runtime and included in
 release archives. The unscoped dependencies in `build/vendor-wrapped/` are
 build inputs, not runtime files. `make distclean` removes both vendor trees.
+
+Run the frontend unit tests independently of Nextcloud with Node.js 24:
+
+```sh
+npm ci
+npm test
+```
 
 `make ts-types-files` uses `rotdrop/php-to-typescript` from its isolated
 `vendor-bin/php-to-typescript/` environment. Toolkit modules are generated
@@ -75,6 +132,7 @@ frontend assets with Vite before running the test suites.
 CI installs JavaScript dependencies with `npm ci` and checks `make realclean`
 on both a bare checkout and after the full build and tests, including repeated
 cleanup. Cleanup preserves the tracked `package-lock.json`.
+CI also runs the frontend Vitest suite independently of the Nextcloud build.
 
 The build regressions can also run without Nextcloud after `make dev-setup-php`
 (PHP's `intl` extension is required):

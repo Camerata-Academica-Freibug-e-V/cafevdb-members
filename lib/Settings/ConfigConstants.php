@@ -29,6 +29,12 @@ class ConfigConstants
   const FOLDER_GROUPS_KEY = 'memberFolderGroups';
   const SYNCHRONIZE_KEY = 'synchronize';
   const USER_VIEWS_DATABASE_KEY = 'cloudUserViewsDatabase';
+  const INHERIT_VIEWS_DATABASE_KEY = 'inheritViewsDatabase';
+  const CONNECTOR_DESCRIPTOR_KEY = 'cloudConnectorDescriptor';
+  const CONNECTOR_STATUS_KEY = 'connectorStatus';
+  const CLOUD_CONNECTOR_CREDENTIALS_KEY = 'cloudConnectorCredentials';
+  const CLOUD_CONNECTOR_MANAGED_KEY = 'cloudConnectorCredentialsManaged';
+  const VIEWS_DATABASE_PASSWORD_KEY = 'viewsDatabasePassword';
   const REGISTRATION_REPLY_TO_KEY = 'registrationReplyTo';
 
   // Keys of the orchestra app (cafevdb) which are only read, never written.
@@ -54,6 +60,8 @@ class ConfigConstants
     self::MEMBER_ROOT_FOLDER_KEY,
     self::REGISTRATION_REPLY_TO_KEY,
     self::USER_VIEWS_DATABASE_KEY,
+    self::INHERIT_VIEWS_DATABASE_KEY,
+    self::CONNECTOR_STATUS_KEY,
     // self::SYNCHRONIZE_KEY, not a setting, rather an action
   ];
 }

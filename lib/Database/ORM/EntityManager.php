@@ -295,7 +295,6 @@ class EntityManager extends AbstractEntityManager
       }
     } else {
       $connectionParams = [
-        'dbname' => $this->cloudConfig->getAppValue($this->appName, ConfigConstants::USER_VIEWS_DATABASE_KEY),
         'user' => $this->cloudConfig->getSystemValue('dbuser'),
         'password' => $this->cloudConfig->getSystemValue('dbpassword'),
         'host' => $this->cloudConfig->getSystemValue('dbhost'),

@@ -102,8 +102,8 @@
       <NcNoteCard v-for="warning in settings.connectorStatus.warnings" :key="warning" type="warning">
         {{ warning }}
       </NcNoteCard>
-      <NcButton @click="getData">
-        {{ t(appName, 'Check connector configuration') }}
+      <NcButton :disabled="checkingConnector" @click="checkConnector">
+        {{ checkingConnector ? t(appName, 'Checking connector configuration…') : t(appName, 'Check connector configuration') }}
       </NcButton>
     </NcSettingsSection>
     <NcSettingsSection :name="t(appName, 'Project Registration Settings')">
@@ -149,7 +149,7 @@ import {
   fetchSettings,
   saveConfirmedSetting,
 } from './toolkit/util/settings-sync.ts'
-import { showError, TOAST_PERMANENT_TIMEOUT } from './toolkit/util/toasts.ts'
+import { showError, showInfo, showSuccess, TOAST_PERMANENT_TIMEOUT } from './toolkit/util/toasts.ts'
 
 interface CloudUserGroup {
   displayName: string
@@ -185,6 +185,7 @@ const syncLabel = ref('')
 const syncCounter = ref('')
 const connectorPassword = ref('')
 const savingConnectorPassword = ref(false)
+const checkingConnector = ref(false)
 
 const showSyncProgress = computed(() => synchronizing.value)
 const syncPercentage = computed(() => syncTotals.value > 0 ? syncDone.value * 100 / syncTotals.value : 0)
@@ -196,6 +197,21 @@ const getData = async () => {
   return fetchSettings({ section: 'admin', settings })
 }
 getData()
+
+const checkConnector = async () => {
+  checkingConnector.value = true
+  try {
+    if (await getData()) {
+      if (settings.connectorStatus.warnings.length > 0 || !settings.connectorStatus.actualAccount) {
+        showInfo(t(appName, 'Connector configuration checked. Review the connector diagnostics.'))
+      } else {
+        showSuccess(t(appName, 'Connector configuration checked. The personalized views connection is accessible.'))
+      }
+    }
+  } finally {
+    checkingConnector.value = false
+  }
+}
 
 const saveConnectorPassword = async () => {
   savingConnectorPassword.value = true

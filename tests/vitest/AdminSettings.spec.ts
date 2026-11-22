@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import axios from '@nextcloud/axios';
 import AdminSettings from '../../src/AdminSettings.vue';
 import { fetchSettings, saveConfirmedSetting } from '../../src/toolkit/util/settings-sync.ts';
+import { showInfo, showSuccess } from '../../src/toolkit/util/toasts.ts';
 
 vi.mock('@nextcloud/l10n', () => ({ translate: (_app: string, text: string) => text }));
 vi.mock('@nextcloud/router', () => ({ generateUrl: (url: string) => url }));
@@ -35,7 +36,9 @@ vi.mock('../../src/toolkit/util/settings-sync.ts', () => ({
   fetchSettings: vi.fn(),
   saveConfirmedSetting: vi.fn(),
 }));
-vi.mock('../../src/toolkit/util/toasts.ts', () => ({ showError: vi.fn(), TOAST_PERMANENT_TIMEOUT: -1 }));
+vi.mock('../../src/toolkit/util/toasts.ts', () => ({
+  showError: vi.fn(), showInfo: vi.fn(), showSuccess: vi.fn(), TOAST_PERMANENT_TIMEOUT: -1,
+}));
 
 describe('Connector settings', () => {
   beforeEach(() => vi.resetAllMocks());
@@ -117,5 +120,50 @@ describe('Connector settings', () => {
       { value: 'private password' },
     );
     expect((wrapper.get('input[aria-label="Password for the expected MariaDB account"]').element as HTMLInputElement).value).toBe('');
+  });
+
+  it('reports a successful connector check only after the refresh completes', async () => {
+    vi.mocked(fetchSettings).mockImplementation(async ({ settings }) => {
+      settings.connectorStatus = { database: 'views', descriptor: null, actualAccount: 'connector@localhost', warnings: [] };
+      return true;
+    });
+    const wrapper = mount(AdminSettings);
+    await flushPromises();
+    expect(showSuccess).not.toHaveBeenCalled();
+
+    let finish!: (value: boolean) => void;
+    vi.mocked(fetchSettings).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const button = wrapper.findAll('button').find(item => item.text() === 'Check connector configuration')!;
+    await button.trigger('click');
+    expect(button.attributes('disabled')).toBeDefined();
+    expect(button.text()).toContain('Checking connector configuration');
+    expect(showSuccess).not.toHaveBeenCalled();
+    finish(true);
+    await flushPromises();
+    expect(button.attributes('disabled')).toBeUndefined();
+    expect(showSuccess).toHaveBeenCalledWith('Connector configuration checked. The personalized views connection is accessible.');
+  });
+
+  it('reports warnings without claiming the connector is accessible', async () => {
+    vi.mocked(fetchSettings).mockImplementation(async ({ settings }) => {
+      settings.connectorStatus = { database: 'views', descriptor: null, actualAccount: null, warnings: ['Connection failed'] };
+      return true;
+    });
+    const wrapper = mount(AdminSettings);
+    await flushPromises();
+    await wrapper.findAll('button').find(item => item.text() === 'Check connector configuration')!.trigger('click');
+    await flushPromises();
+    expect(showInfo).toHaveBeenCalledWith('Connector configuration checked. Review the connector diagnostics.');
+    expect(showSuccess).not.toHaveBeenCalled();
+  });
+
+  it('does not report success when the settings refresh fails', async () => {
+    vi.mocked(fetchSettings).mockResolvedValue(false);
+    const wrapper = mount(AdminSettings);
+    await flushPromises();
+    await wrapper.findAll('button').find(item => item.text() === 'Check connector configuration')!.trigger('click');
+    await flushPromises();
+    expect(showInfo).not.toHaveBeenCalled();
+    expect(showSuccess).not.toHaveBeenCalled();
   });
 });

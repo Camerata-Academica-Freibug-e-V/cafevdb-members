@@ -81,7 +81,7 @@ class SettingsController extends Controller
     url: '/settings/admin/{setting}',
     verb: 'POST',
   )]
-  public function setAdmin(string $setting, ?string $value, bool $force = false):DataResponse
+  public function setAdmin(string $setting, #[\SensitiveParameter] ?string $value, bool $force = false):DataResponse
   {
     $newValue = $value;
     $oldValue = $this->config->getAppValue($this->appName, $setting);
@@ -151,6 +151,14 @@ class SettingsController extends Controller
           return self::grumble($this->l->t('Choose whether to inherit the CafeVDB views database.'));
         }
         break;
+      case ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY:
+        try {
+          $this->connectorConfiguration->saveViewsDatabasePassword($newValue);
+        } catch (Throwable) {
+          $this->logError('Unable to save the members views database password.');
+          return self::grumble($this->l->t('Unable to save the views database password. Check the CafeVDB connector account configuration.'));
+        }
+        return new DataResponse(['configured' => $newValue !== null]);
       case ConfigConstants::REGISTRATION_REPLY_TO_KEY:
         break;
       default:
@@ -227,6 +235,7 @@ class SettingsController extends Controller
   private function connectorStatus(): array
   {
     $status = $this->connectorConfiguration->resolve();
+    $status['passwordConfigured'] = $this->connectorConfiguration->hasViewsDatabasePassword();
     $actualAccount = null;
     try {
       $entityManager = $this->appContainer->get(EntityManager::class);

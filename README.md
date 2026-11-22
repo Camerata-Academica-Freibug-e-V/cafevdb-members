@@ -67,6 +67,16 @@ MariaDB server. Invalid or unreadable configured credentials are not silently
 replaced with the Nextcloud credentials. The connector account needs the
 appropriate privileges on the personalized views.
 
+To use CafeVDB's published MariaDB account with a separate password, enter that
+password in Members admin settings. Members encrypts it with Nextcloud's
+`ICrypto` service and stores it locally; it is never returned to the browser.
+The username follows CafeVDB's published connector descriptor, while the
+password is managed in Members. The MariaDB server endpoint comes from
+CafeVDB's connector settings when configured, otherwise from Nextcloud's
+`dbhost`; the descriptor's account host (such as `localhost` or `%`) is not a
+network address. Clearing the password restores the previous CafeVDB connector
+credentials or Nextcloud database credentials.
+
 After configuration, run `php occ cafevdbmembers:views:check` from the
 Nextcloud directory. The command checks the connection and queries
 `PersonalizedMusiciansView` without requiring a member login; a failure points

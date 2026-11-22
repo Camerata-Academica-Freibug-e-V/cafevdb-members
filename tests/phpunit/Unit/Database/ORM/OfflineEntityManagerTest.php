@@ -112,6 +112,35 @@ class OfflineEntityManagerTest extends TestCase
   }
 
   /** @return void */
+  public function testPublishedAccountUsesLocallyConfiguredPassword(): void
+  {
+    $params = $this->createEntityManager(
+      '11.7.0-MariaDB',
+      credentials: [
+        'host' => 'mariadb.example',
+        'port' => '3307',
+        'user' => 'legacy_user',
+        'password' => 'legacy-secret',
+      ],
+      viewsPassword: 'local-secret',
+    )->getConnection()->getParams();
+    self::assertSame('offline_metadata', $params['dbname']);
+    self::assertSame('mariadb.example', $params['host']);
+    self::assertSame(3307, $params['port']);
+    self::assertSame('published_user', $params['user']);
+    self::assertSame('local-secret', $params['password']);
+  }
+
+  /** @return void */
+  public function testPublishedAccountUsesNextcloudHostWithoutProducerCredentials(): void
+  {
+    $params = $this->createEntityManager('11.7.0-MariaDB', viewsPassword: 'local-secret')->getConnection()->getParams();
+    self::assertSame('127.0.0.1:1', $params['host']);
+    self::assertSame('published_user', $params['user']);
+    self::assertSame('local-secret', $params['password']);
+  }
+
+  /** @return void */
   public function testInheritedConnectionDatabase(): void
   {
     $descriptor = json_encode([
@@ -135,7 +164,13 @@ class OfflineEntityManagerTest extends TestCase
     $config->expects($this->never())->method('setAppValue');
     $manager = $this->createStub(IAppManager::class);
     $manager->method('isInstalled')->willReturn(true);
-    $resolver = new ConnectorConfiguration($config, $this->createStub(IL10N::class), $manager, 'cafevdbmembers');
+    $resolver = new ConnectorConfiguration(
+      $config,
+      $this->createStub(IL10N::class),
+      $manager,
+      'cafevdbmembers',
+      $this->createStub(ICrypto::class),
+    );
     $container = $this->createStub(ContainerInterface::class);
     $container->method('get')->willReturnMap([[ConnectorConfiguration::class, $resolver]]);
     $reflection = new ReflectionClass(EntityManager::class);
@@ -245,10 +280,16 @@ class OfflineEntityManagerTest extends TestCase
    * @param null|string $serverVersion
    * @param null|array $credentials
    * @param null|\Throwable $cause
+   * @param null|string $viewsPassword
    *
    * @return EntityManager
    */
-  private function createEntityManager(?string $serverVersion = null, ?array $credentials = null, ?\Throwable $cause = null): EntityManager
+  private function createEntityManager(
+    ?string $serverVersion = null,
+    ?array $credentials = null,
+    ?\Throwable $cause = null,
+    ?string $viewsPassword = null,
+  ): EntityManager
   {
     $entityManager = $this->getMockBuilder(EntityManager::class)
       ->disableOriginalConstructor()
@@ -282,7 +323,11 @@ class OfflineEntityManagerTest extends TestCase
     }
     $container = $this->createStub(ContainerInterface::class);
     $connectorConfiguration = $this->createStub(ConnectorConfiguration::class);
-    $connectorConfiguration->method('resolve')->willReturn(['database' => 'offline_metadata']);
+    $connectorConfiguration->method('resolve')->willReturn([
+      'database' => 'offline_metadata',
+      'descriptor' => ['account' => ['user' => 'published_user', 'accountHost' => 'localhost']],
+    ]);
+    $connectorConfiguration->method('viewsDatabasePassword')->willReturn($viewsPassword);
     $container->method('get')->willReturnMap([
       [ConnectorConfiguration::class, $connectorConfiguration],
       [ICrypto::class, $crypto],

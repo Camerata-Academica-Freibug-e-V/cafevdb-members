@@ -281,6 +281,37 @@ class EntityManager extends AbstractEntityManager
    */
   private function connectionParameters(array $params = []):array
   {
+    $connectorConfiguration = $this->appContainer->get(ConnectorConfiguration::class);
+    $localPassword = $connectorConfiguration->viewsDatabasePassword();
+    if ($localPassword !== null) {
+      $descriptor = $connectorConfiguration->resolve()['descriptor'];
+      $account = $descriptor['account'] ?? null;
+      if (!is_array($account) || !is_string($account['user'] ?? null) || $account['user'] === '') {
+        throw new \RuntimeException('CafeVDB connector account metadata is unavailable.');
+      }
+      $connectionParams = $this->legacyConnectionParameters();
+      unset($connectionParams['dbname']);
+      $connectionParams['user'] = $account['user'];
+      $connectionParams['password'] = $localPassword;
+    } else {
+      $connectionParams = $this->legacyConnectionParameters();
+    }
+    $connectionParams['dbname'] = $connectorConfiguration->resolve()['database'];
+    $driverParams = [
+      'driver' => 'pdo_mysql',
+      'wrapperClass' => Connection::class,
+      Connection::POST_CONNECT_KEY => $this->doEmitRowAccessTokens(...),
+    ];
+    $charSetParams = [
+      'collate' => 'utf8mb4_unicode_520_ci',
+      'charset' => 'utf8mb4',
+    ];
+    return array_merge($connectionParams, $params, $driverParams, $charSetParams);
+  }
+
+  /** @return array Legacy connector credentials or the Nextcloud database connection. */
+  private function legacyConnectionParameters(): array
+  {
     $encrypted = $this->cloudConfig->getAppValue(
       Application::getOrchestraAppName(),
       ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY,
@@ -305,17 +336,6 @@ class EntityManager extends AbstractEntityManager
         $connectionParams = array_merge($connectionParams, $parsedParams);
       }
     }
-    $connectionParams['dbname'] = $this->appContainer->get(ConnectorConfiguration::class)->resolve()['database'];
-    $driverParams = [
-      'driver' => 'pdo_mysql',
-      'wrapperClass' => Connection::class,
-      Connection::POST_CONNECT_KEY => $this->doEmitRowAccessTokens(...),
-    ];
-    $charSetParams = [
-      'collate' => 'utf8mb4_unicode_520_ci',
-      'charset' => 'utf8mb4',
-    ];
-    $connectionParams = array_merge($connectionParams, $params, $driverParams, $charSetParams);
     return $connectionParams;
   }
 

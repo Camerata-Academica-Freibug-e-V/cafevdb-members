@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import axios from '@nextcloud/axios';
 import AdminSettings from '../../src/AdminSettings.vue';
 import { fetchSettings, saveConfirmedSetting } from '../../src/toolkit/util/settings-sync.ts';
 
@@ -11,6 +12,11 @@ vi.mock('@nextcloud/vue', () => ({
   NcProgressBar: { template: '<div />' },
   NcNoteCard: { template: '<aside><slot /></aside>' },
   NcButton: { template: '<button><slot /></button>' },
+  NcPasswordField: {
+    props: ['modelValue', 'label', 'disabled'],
+    emits: ['update:modelValue'],
+    template: '<input type="password" :aria-label="label" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
+  },
   NcCheckboxRadioSwitch: {
     props: ['modelValue', 'type'],
     emits: ['update:modelValue'],
@@ -84,5 +90,32 @@ describe('Connector settings', () => {
     expect((wrapper.get('input[aria-label="Personalized Views Database"]').element as HTMLInputElement).value).toBe('legacy');
     expect(wrapper.text()).toContain('Unverified');
     expect(wrapper.text()).toContain('Metadata unavailable');
+  });
+
+  it('saves the CafeVDB-published grantee password without returning it to settings state', async () => {
+    vi.mocked(fetchSettings).mockImplementation(async ({ settings }) => {
+      Object.assign(settings, {
+        inheritViewsDatabase: 'on',
+        connectorStatus: {
+          database: 'producer',
+          descriptor: { database: 'producer', account: { user: 'cafevdb_nextcloud', accountHost: 'localhost' } },
+          passwordConfigured: false,
+          actualAccount: null,
+          warnings: [],
+        },
+      });
+      return true;
+    });
+    const wrapper = mount(AdminSettings);
+    await flushPromises();
+    await wrapper.get('input[aria-label="Password for the expected MariaDB account"]').setValue('private password');
+    await wrapper.get('form.connector-password').trigger('submit');
+    await flushPromises();
+
+    expect(axios.post).toHaveBeenCalledWith(
+      'apps/cafevdbmembers/settings/admin/viewsDatabasePassword',
+      { value: 'private password' },
+    );
+    expect((wrapper.get('input[aria-label="Password for the expected MariaDB account"]').element as HTMLInputElement).value).toBe('');
   });
 });

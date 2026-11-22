@@ -33,6 +33,7 @@ class ConfigConstants
   const CONNECTOR_DESCRIPTOR_KEY = 'cloudConnectorDescriptor';
   const CONNECTOR_STATUS_KEY = 'connectorStatus';
   const CLOUD_CONNECTOR_CREDENTIALS_KEY = 'cloudConnectorCredentials';
+  const CLOUD_CONNECTOR_MANAGED_KEY = 'cloudConnectorCredentialsManaged';
   const VIEWS_DATABASE_PASSWORD_KEY = 'viewsDatabasePassword';
   const REGISTRATION_REPLY_TO_KEY = 'registrationReplyTo';
 

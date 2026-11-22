@@ -112,7 +112,7 @@ class OfflineEntityManagerTest extends TestCase
   }
 
   /** @return void */
-  public function testPublishedAccountUsesLocallyConfiguredPassword(): void
+  public function testProducerCredentialsTakePrecedenceOverLocalPassword(): void
   {
     $params = $this->createEntityManager(
       '11.7.0-MariaDB',
@@ -127,8 +127,46 @@ class OfflineEntityManagerTest extends TestCase
     self::assertSame('offline_metadata', $params['dbname']);
     self::assertSame('mariadb.example', $params['host']);
     self::assertSame(3307, $params['port']);
-    self::assertSame('published_user', $params['user']);
-    self::assertSame('local-secret', $params['password']);
+    self::assertSame('legacy_user', $params['user']);
+    self::assertSame('legacy-secret', $params['password']);
+  }
+
+  /** @return void */
+  public function testResetDoesNotRestoreAnOldLocalPassword(): void
+  {
+    $params = $this->createEntityManager(
+      '11.7.0-MariaDB',
+      viewsPassword: 'local-secret',
+      managed: true,
+    )->getConnection()->getParams();
+    self::assertSame('offline_metadata', $params['user']);
+    self::assertSame('offline_metadata', $params['password']);
+  }
+
+  /** @return void */
+  public function testSocketOnlyProducerCredentials(): void
+  {
+    $params = $this->createEntityManager('11.7.0-MariaDB', [
+      'unix_socket' => '/tmp/views.sock', 'user' => 'restricted', 'password' => 'secret',
+    ])->getConnection()->getParams();
+    self::assertSame('/tmp/views.sock', $params['unix_socket']);
+    self::assertSame('restricted', $params['user']);
+  }
+
+  /** @return void */
+  public function testSocketOnlyConnectionCanBeMarkedConnected(): void
+  {
+    $connection = $this->createStub(DatabaseConnection::class);
+    $connection->method('getParams')->willReturn([
+      'unix_socket' => '/tmp/views.sock', 'user' => 'restricted', 'dbname' => 'views',
+    ]);
+    $connection->method('isConnected')->willReturn(true);
+    $manager = $this->getMockBuilder(EntityManager::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['getConnection'])
+      ->getMock();
+    $manager->method('getConnection')->willReturn($connection);
+    self::assertTrue($manager->connected());
   }
 
   /** @return void */
@@ -186,17 +224,16 @@ class OfflineEntityManagerTest extends TestCase
   public function testInvalidCredentialsDoNotFallBackOrExposeSecrets(): void
   {
     try {
-      $this->createEntityManager('11.7.0-MariaDB', ['password' => 'connector-secret']);
+      $this->createEntityManager('11.7.0-MariaDB', ['password' => 'connector-secret'], viewsPassword: 'local-secret');
       self::fail('Invalid credentials must be rejected');
     } catch (\RuntimeException $exception) {
       self::assertSame('Unable to configure the personalized views database. Check the connector settings.', $exception->getMessage());
-      self::assertInstanceOf(\RuntimeException::class, $exception->getPrevious());
-      self::assertSame('Invalid connector credentials.', $exception->getPrevious()->getMessage());
+      self::assertNull($exception->getPrevious());
     }
   }
 
   /** @return void */
-  public function testConstructorPreservesOriginalCause(): void
+  public function testConstructorDoesNotExposeOriginalCause(): void
   {
     $cause = new \TypeError('connector-secret');
     try {
@@ -204,7 +241,7 @@ class OfflineEntityManagerTest extends TestCase
       self::fail('The original failure must be propagated as a cause');
     } catch (\RuntimeException $exception) {
       self::assertSame('Unable to configure the personalized views database. Check the connector settings.', $exception->getMessage());
-      self::assertSame($cause, $exception->getPrevious());
+      self::assertNull($exception->getPrevious());
     }
   }
 
@@ -237,6 +274,8 @@ class OfflineEntityManagerTest extends TestCase
     yield 'integer port' => [$base + ['port' => 1], true];
     yield 'string port' => [$base + ['port' => '65535'], true];
     yield 'socket' => [$base + ['unix_socket' => '/tmp/views.sock'], true];
+    yield 'socket only' => [['unix_socket' => '/tmp/views.sock', 'user' => 'restricted', 'password' => ''], true];
+    yield 'empty socket' => [$base + ['unix_socket' => ''], false];
     yield 'non-array' => ['connector-secret', false];
     foreach (['host', 'user', 'password'] as $key) {
       $missing = $base;
@@ -289,6 +328,7 @@ class OfflineEntityManagerTest extends TestCase
     ?array $credentials = null,
     ?\Throwable $cause = null,
     ?string $viewsPassword = null,
+    bool $managed = false,
   ): EntityManager
   {
     $entityManager = $this->getMockBuilder(EntityManager::class)
@@ -304,6 +344,7 @@ class OfflineEntityManagerTest extends TestCase
       fn(string $app, string $key, string $default = '') => match ([$app, $key]) {
         ['cafevdbmembers', ConfigConstants::USER_VIEWS_DATABASE_KEY] => 'offline_metadata',
         [Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY] => $credentials === null ? '' : 'encrypted',
+        [Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_MANAGED_KEY] => $managed ? '1' : '',
         default => $default,
       },
     );

@@ -116,8 +116,8 @@ class EntityManager extends AbstractEntityManager
       parent::__construct($this->getEntityManager(
         $databaseServerVersion === null ? [] : ['serverVersion' => $databaseServerVersion],
       ));
-    } catch (Throwable $t) {
-      throw new \RuntimeException('Unable to configure the personalized views database. Check the connector settings.', 0, $t);
+    } catch (Throwable) {
+      throw new \RuntimeException('Unable to configure the personalized views database. Check the connector settings.');
     }
     $this->entityManager = $this->wrapped;
     // An explicit platform allows metadata and type registration without connecting.
@@ -282,7 +282,10 @@ class EntityManager extends AbstractEntityManager
   private function connectionParameters(array $params = []):array
   {
     $connectorConfiguration = $this->appContainer->get(ConnectorConfiguration::class);
-    $localPassword = $connectorConfiguration->viewsDatabasePassword();
+    $producer = Application::getOrchestraAppName();
+    $hasProducerCredentials = $this->cloudConfig->getAppValue($producer, ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY, '') !== '';
+    $managed = $this->cloudConfig->getAppValue($producer, ConfigConstants::CLOUD_CONNECTOR_MANAGED_KEY, '') === '1';
+    $localPassword = !$hasProducerCredentials && !$managed ? $connectorConfiguration->viewsDatabasePassword() : null;
     if ($localPassword !== null) {
       $descriptor = $connectorConfiguration->resolve()['descriptor'];
       $account = $descriptor['account'] ?? null;
@@ -349,10 +352,8 @@ class EntityManager extends AbstractEntityManager
     if (!is_array($credentials)) {
       throw new \RuntimeException('Invalid connector credentials.');
     }
-    foreach (['host', 'user'] as $key) {
-      if (!is_string($credentials[$key] ?? null) || $credentials[$key] === '') {
-        throw new \RuntimeException('Invalid connector credentials.');
-      }
+    if (!is_string($credentials['user'] ?? null) || $credentials['user'] === '') {
+      throw new \RuntimeException('Invalid connector credentials.');
     }
     if (!is_string($credentials['password'] ?? null)) {
       throw new \RuntimeException('Invalid connector credentials.');
@@ -364,7 +365,13 @@ class EntityManager extends AbstractEntityManager
         throw new \RuntimeException('Invalid connector credentials.');
       }
     }
-    if (isset($credentials['unix_socket']) && !is_string($credentials['unix_socket'])) {
+    if (isset($credentials['unix_socket']) && (!is_string($credentials['unix_socket']) || $credentials['unix_socket'] === '')) {
+      throw new \RuntimeException('Invalid connector credentials.');
+    }
+    if (isset($credentials['host']) && (!is_string($credentials['host']) || $credentials['host'] === '')) {
+      throw new \RuntimeException('Invalid connector credentials.');
+    }
+    if (!isset($credentials['host']) && !isset($credentials['unix_socket'])) {
       throw new \RuntimeException('Invalid connector credentials.');
     }
   }
@@ -382,10 +389,13 @@ class EntityManager extends AbstractEntityManager
     }
     $params = $connection->getParams();
     $impossible = false;
-    foreach ([ 'host', 'user', 'dbname' ] as $key) {
+    foreach ([ 'user', 'dbname' ] as $key) {
       if (empty($params[$key])) {
         $impossible = true;
       }
+    }
+    if (empty($params['host']) && empty($params['unix_socket'])) {
+      $impossible = true;
     }
     if ($impossible) {
       $this->logError('Unable to access database, connection parameters are unset');

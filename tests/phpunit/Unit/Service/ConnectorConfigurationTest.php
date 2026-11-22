@@ -20,59 +20,20 @@ use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 #[CoversClass(ConnectorConfiguration::class)]
 class ConnectorConfigurationTest extends TestCase
 {
-  public function testViewsPasswordIsEncryptedAndNeverReturnedAsStoredValue(): void
+  public function testLegacyViewsPasswordIsReadForUpgradeCompatibility(): void
   {
-    $values = [];
-    $descriptor = $this->descriptor('views');
-    $config = $this->createMock(IConfig::class);
-    $config->method('getAppValue')->willReturnCallback(
-      static function(string $app, string $key, string $default = '') use (&$values, &$descriptor): string {
-        return match ($key) {
-          'enabled' => 'yes',
-          ConfigConstants::CONNECTOR_DESCRIPTOR_KEY => $descriptor,
-          default => $values[$key] ?? $default,
-        };
-      },
-    );
-    $config->expects(self::once())->method('setAppValue')
-      ->with('cafevdbmembers', ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY, 'encrypted-password')
-      ->willReturnCallback(static function(string $app, string $key, string $value) use (&$values): void {
-        $values[$key] = $value;
-      });
+    $config = $this->createStub(IConfig::class);
+    $config->method('getAppValue')->willReturn('encrypted-password');
     $crypto = $this->createMock(ICrypto::class);
-    $crypto->expects(self::once())->method('encrypt')->with('private password')->willReturn('encrypted-password');
     $crypto->expects(self::once())->method('decrypt')->with('encrypted-password')->willReturn('private password');
-    $appManager = $this->createStub(IAppManager::class);
-    $appManager->method('isInstalled')->willReturn(true);
-    $service = new ConnectorConfiguration(
-      $config,
-      $this->createStub(IL10N::class),
-      $appManager,
-      'cafevdbmembers',
-      $crypto,
-    );
-
-    $service->saveViewsDatabasePassword('private password');
-
-    self::assertSame('encrypted-password', $values[ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY]);
-    self::assertTrue($service->hasViewsDatabasePassword());
-    self::assertSame('private password', $service->viewsDatabasePassword());
-  }
-
-  public function testClearingViewsPasswordDeletesTheEncryptedValue(): void
-  {
-    $config = $this->createMock(IConfig::class);
-    $config->expects(self::once())->method('deleteAppValue')
-      ->with('cafevdbmembers', ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY);
     $service = new ConnectorConfiguration(
       $config,
       $this->createStub(IL10N::class),
       $this->createStub(IAppManager::class),
       'cafevdbmembers',
-      $this->createStub(ICrypto::class),
+      $crypto,
     );
-
-    $service->saveViewsDatabasePassword(null);
+    self::assertSame('private password', $service->viewsDatabasePassword());
   }
 
   public function testInheritanceSeesProducerChanges(): void

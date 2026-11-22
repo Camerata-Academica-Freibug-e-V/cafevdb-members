@@ -152,13 +152,7 @@ class SettingsController extends Controller
         }
         break;
       case ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY:
-        try {
-          $this->connectorConfiguration->saveViewsDatabasePassword($newValue);
-        } catch (Throwable) {
-          $this->logError('Unable to save the members views database password.');
-          return self::grumble($this->l->t('Unable to save the views database password. Check the CafeVDB connector account configuration.'));
-        }
-        return new DataResponse(['configured' => $newValue !== null]);
+        return self::grumble($this->l->t('Configure the views database password in CafeVDB.'));
       case ConfigConstants::REGISTRATION_REPLY_TO_KEY:
         break;
       default:
@@ -235,7 +229,6 @@ class SettingsController extends Controller
   private function connectorStatus(): array
   {
     $status = $this->connectorConfiguration->resolve();
-    $status['passwordConfigured'] = $this->connectorConfiguration->hasViewsDatabasePassword();
     $actualAccount = null;
     try {
       $entityManager = $this->appContainer->get(EntityManager::class);

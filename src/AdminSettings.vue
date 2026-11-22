@@ -74,27 +74,7 @@
         {{ t(appName, 'Expected MariaDB account:') }}
         <code>{{ settings.connectorStatus.descriptor.account.user }}@{{ settings.connectorStatus.descriptor.account.accountHost }}</code>
       </p>
-      <form class="connector-password" @submit.prevent="saveConnectorPassword">
-        <NcPasswordField v-model="connectorPassword"
-                         :label="t(appName, 'Password for the expected MariaDB account')"
-                         autocomplete="new-password"
-                         :disabled="!settings.connectorStatus.descriptor"
-        />
-        <NcButton type="submit"
-                  variant="primary"
-                  :disabled="!settings.connectorStatus.descriptor || connectorPassword === '' || savingConnectorPassword"
-        >
-          {{ t(appName, 'Save connector password') }}
-        </NcButton>
-        <NcButton v-if="settings.connectorStatus.passwordConfigured"
-                  type="button"
-                  :disabled="savingConnectorPassword"
-                  @click="clearConnectorPassword"
-        >
-          {{ t(appName, 'Use Nextcloud database credentials') }}
-        </NcButton>
-      </form>
-      <p>{{ t(appName, 'The MariaDB server endpoint comes from CafeVDB connector settings when configured, otherwise from the Nextcloud database host. The account host above is not a server address.') }}</p>
+      <p>{{ t(appName, 'Configure the views database account and password in CafeVDB. The account host above is not a server address.') }}</p>
       <p>
         {{ t(appName, 'Connected MariaDB account:') }}
         <code>{{ settings.connectorStatus.actualAccount ?? t(appName, 'Unverified') }}</code>
@@ -132,7 +112,6 @@ import {
   NcButton,
   NcCheckboxRadioSwitch,
   NcNoteCard,
-  NcPasswordField,
   NcProgressBar,
   NcSettingsSection,
 } from '@nextcloud/vue'
@@ -168,7 +147,6 @@ const settings = reactive({
   connectorStatus: {
     database: '',
     descriptor: null as null | { database: string, account: { user: string, accountHost: string }, revision: string },
-    passwordConfigured: false,
     actualAccount: null as null | string,
     warnings: [] as string[],
   },
@@ -183,8 +161,6 @@ const syncDone = ref(0)
 const synchronizing = ref(false)
 const syncLabel = ref('')
 const syncCounter = ref('')
-const connectorPassword = ref('')
-const savingConnectorPassword = ref(false)
 const checkingConnector = ref(false)
 
 const showSyncProgress = computed(() => synchronizing.value)
@@ -210,34 +186,6 @@ const checkConnector = async () => {
     }
   } finally {
     checkingConnector.value = false
-  }
-}
-
-const saveConnectorPassword = async () => {
-  savingConnectorPassword.value = true
-  try {
-    await axios.post(generateUrl(`apps/${appName}/settings/admin/viewsDatabasePassword`), {
-      value: connectorPassword.value,
-    })
-    connectorPassword.value = ''
-    await getData()
-  } catch {
-    showError(t(appName, 'Unable to save the views database password.'))
-  } finally {
-    savingConnectorPassword.value = false
-  }
-}
-
-const clearConnectorPassword = async () => {
-  savingConnectorPassword.value = true
-  try {
-    await axios.post(generateUrl(`apps/${appName}/settings/admin/viewsDatabasePassword`), { value: null })
-    connectorPassword.value = ''
-    await getData()
-  } catch {
-    showError(t(appName, 'Unable to clear the views database password.'))
-  } finally {
-    savingConnectorPassword.value = false
   }
 }
 
@@ -333,11 +281,5 @@ const setDatabaseInheritance = async (enabled: boolean) => {
       margin-left:1ex;
     }
   }
-}
-.connector-password {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: calc(var(--default-grid-baseline) * 2);
 }
 </style>

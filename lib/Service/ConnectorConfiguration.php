@@ -31,27 +31,6 @@ class ConnectorConfiguration
   ) {
   }
 
-  /** @param null|string $password Password for the producer-published account. */
-  public function saveViewsDatabasePassword(#[\SensitiveParameter] ?string $password): void
-  {
-    if ($password === null) {
-      $this->config->deleteAppValue($this->appName, ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY);
-      return;
-    }
-    if ($password === '') {
-      throw new RuntimeException('The views database password must not be empty.');
-    }
-    $account = $this->resolve()['descriptor']['account'] ?? null;
-    if (!is_array($account) || !is_string($account['user'] ?? null) || $account['user'] === '') {
-      throw new RuntimeException('CafeVDB connector account metadata is unavailable.');
-    }
-    $this->config->setAppValue(
-      $this->appName,
-      ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY,
-      $this->crypto->encrypt($password),
-    );
-  }
-
   /** @return null|string Decrypted locally stored password, or null when unset. */
   public function viewsDatabasePassword(): ?string
   {
@@ -64,12 +43,6 @@ class ConnectorConfiguration
     } catch (Throwable $exception) {
       throw new RuntimeException('Unable to decrypt the views database password.', 0, $exception);
     }
-  }
-
-  /** @return bool Whether a local password is configured. */
-  public function hasViewsDatabasePassword(): bool
-  {
-    return $this->config->getAppValue($this->appName, ConfigConstants::VIEWS_DATABASE_PASSWORD_KEY, '') !== '';
   }
 
   /** @return bool Whether the views database is inherited. */

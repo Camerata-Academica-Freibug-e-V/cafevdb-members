@@ -1,6 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import axios from '@nextcloud/axios';
 import AdminSettings from '../../src/AdminSettings.vue';
 import { fetchSettings, saveConfirmedSetting } from '../../src/toolkit/util/settings-sync.ts';
 import { showInfo, showSuccess } from '../../src/toolkit/util/toasts.ts';
@@ -95,14 +94,13 @@ describe('Connector settings', () => {
     expect(wrapper.text()).toContain('Metadata unavailable');
   });
 
-  it('saves the CafeVDB-published grantee password without returning it to settings state', async () => {
+  it('directs password configuration to CafeVDB', async () => {
     vi.mocked(fetchSettings).mockImplementation(async ({ settings }) => {
       Object.assign(settings, {
         inheritViewsDatabase: 'on',
         connectorStatus: {
           database: 'producer',
           descriptor: { database: 'producer', account: { user: 'cafevdb_nextcloud', accountHost: 'localhost' } },
-          passwordConfigured: false,
           actualAccount: null,
           warnings: [],
         },
@@ -111,15 +109,8 @@ describe('Connector settings', () => {
     });
     const wrapper = mount(AdminSettings);
     await flushPromises();
-    await wrapper.get('input[aria-label="Password for the expected MariaDB account"]').setValue('private password');
-    await wrapper.get('form.connector-password').trigger('submit');
-    await flushPromises();
-
-    expect(axios.post).toHaveBeenCalledWith(
-      'apps/cafevdbmembers/settings/admin/viewsDatabasePassword',
-      { value: 'private password' },
-    );
-    expect((wrapper.get('input[aria-label="Password for the expected MariaDB account"]').element as HTMLInputElement).value).toBe('');
+    expect(wrapper.find('input[type="password"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('Configure the views database account and password in CafeVDB.');
   });
 
   it('reports a successful connector check only after the refresh completes', async () => {

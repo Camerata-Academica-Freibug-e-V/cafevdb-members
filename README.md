@@ -54,28 +54,23 @@ initialize its descriptor. A changed descriptor is used on subsequent requests;
 already-open connections are not migrated, and CafeVDB still removes old views
 when changing schemas, so coordinate database switches.
 
-When CafeVDB has separate cloud connector credentials configured, Members uses
-their MariaDB server endpoint (including port or socket). Unless a Members-local
-password is configured, it also uses the credentials' username and password.
+Configure the views account and password in CafeVDB. When CafeVDB has separate
+cloud connector credentials configured, Members reads the encrypted credentials
+and uses their MariaDB endpoint (including port or socket), username and password.
 This also works when Nextcloud uses PostgreSQL, SQLite, or another server.
 Changing or resetting the endpoint in CafeVDB changes the connection used by
 Members on subsequent requests.
 
-Without those credentials or a Members-local password, Members uses Nextcloud's
+If upgrading from a version that stored a Members-local password, it remains a
+fallback only until CafeVDB manages or resets the account. Producer credentials
+always take precedence. Resetting the account in CafeVDB uses Nextcloud's
+credentials and does not reactivate an old Members-local password.
+
+Without those credentials or a legacy Members-local password, Members uses Nextcloud's
 `dbhost`, `dbuser` and `dbpassword` as before; that account must be able to
 access the views on the MariaDB server. Invalid or unreadable configured
 credentials are not silently replaced with the Nextcloud credentials. The
 connector account needs the appropriate privileges on the personalized views.
-
-To use CafeVDB's published MariaDB account with a separate password, enter that
-password in Members admin settings. Members encrypts it with Nextcloud's
-`ICrypto` service and stores it locally; it is never returned to the browser.
-The username follows CafeVDB's published connector descriptor, while the
-password is managed in Members. The MariaDB server endpoint comes from
-CafeVDB's connector settings when configured, otherwise from Nextcloud's
-`dbhost`; the descriptor's account host (such as `localhost` or `%`) is not a
-network address. Clearing the password restores the previous CafeVDB connector
-credentials or Nextcloud database credentials.
 
 After configuration, run `php occ cafevdbmembers:views:check` from the
 Nextcloud directory. The command checks the connection and queries
@@ -83,9 +78,8 @@ Nextcloud directory. The command checks the connection and queries
 to the connection settings or view privileges. It does not check every view or
 verify that a member's row-access token is valid.
 Unexpected check failures log exception types and source locations in the
-Nextcloud log, without exception messages or trace arguments. Constructor
-failures retain their original cause for diagnosis; do not expose or log the
-raw exception chain, which can contain connector credentials.
+Nextcloud log, without exception messages or trace arguments. Connection setup
+errors are sanitized because underlying exceptions can contain credentials.
 
 ## Development
 

@@ -116,7 +116,7 @@ class EntityManager extends AbstractEntityManager
         $databaseServerVersion === null ? [] : ['serverVersion' => $databaseServerVersion],
       ));
     } catch (Throwable $t) {
-      throw new \RuntimeException('Unable to configure the personalized views database. Check the connector settings.');
+      throw new \RuntimeException('Unable to configure the personalized views database. Check the connector settings.', 0, $t);
     }
     $this->entityManager = $this->wrapped;
     // An explicit platform allows metadata and type registration without connecting.
@@ -287,14 +287,7 @@ class EntityManager extends AbstractEntityManager
     );
     if ($encrypted !== '') {
       $credentials = json_decode($this->appContainer->get(ICrypto::class)->decrypt($encrypted), true, flags: JSON_THROW_ON_ERROR);
-      if (!is_array($credentials)
-          || !is_string($credentials['host'] ?? null) || $credentials['host'] === ''
-          || !is_string($credentials['user'] ?? null) || $credentials['user'] === ''
-          || !is_string($credentials['password'] ?? null)
-          || (isset($credentials['port']) && ((!is_int($credentials['port']) && !(is_string($credentials['port']) && ctype_digit($credentials['port']))) || (int)$credentials['port'] < 1 || (int)$credentials['port'] > 65535))
-          || (isset($credentials['unix_socket']) && !is_string($credentials['unix_socket']))) {
-        throw new \RuntimeException('Invalid connector credentials.');
-      }
+      $this->validateConnectorCredentials($credentials);
       $connectionParams = array_intersect_key($credentials, array_flip(['host', 'port', 'unix_socket', 'user', 'password']));
       if (isset($connectionParams['port'])) {
         $connectionParams['port'] = (int)$connectionParams['port'];
@@ -326,6 +319,36 @@ class EntityManager extends AbstractEntityManager
     ];
     $connectionParams = array_merge($connectionParams, $params, $driverParams, $charSetParams);
     return $connectionParams;
+  }
+
+  /**
+   * @param mixed $credentials Decoded connector settings.
+   *
+   * @return void
+   */
+  private function validateConnectorCredentials(#[\SensitiveParameter] mixed $credentials): void
+  {
+    if (!is_array($credentials)) {
+      throw new \RuntimeException('Invalid connector credentials.');
+    }
+    foreach (['host', 'user'] as $key) {
+      if (!is_string($credentials[$key] ?? null) || $credentials[$key] === '') {
+        throw new \RuntimeException('Invalid connector credentials.');
+      }
+    }
+    if (!is_string($credentials['password'] ?? null)) {
+      throw new \RuntimeException('Invalid connector credentials.');
+    }
+    if (isset($credentials['port'])) {
+      $port = $credentials['port'];
+      if ((!is_int($port) && !(is_string($port) && ctype_digit($port)))
+          || (int)$port < 1 || (int)$port > 65535) {
+        throw new \RuntimeException('Invalid connector credentials.');
+      }
+    }
+    if (isset($credentials['unix_socket']) && !is_string($credentials['unix_socket'])) {
+      throw new \RuntimeException('Invalid connector credentials.');
+    }
   }
 
   /**

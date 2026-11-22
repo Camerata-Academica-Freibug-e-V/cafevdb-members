@@ -116,8 +116,67 @@ class OfflineEntityManagerTest extends TestCase
       self::fail('Invalid credentials must be rejected');
     } catch (\RuntimeException $exception) {
       self::assertSame('Unable to configure the personalized views database. Check the connector settings.', $exception->getMessage());
-      self::assertNull($exception->getPrevious());
+      self::assertInstanceOf(\RuntimeException::class, $exception->getPrevious());
+      self::assertSame('Invalid connector credentials.', $exception->getPrevious()->getMessage());
     }
+  }
+
+  /** @return void */
+  public function testConstructorPreservesOriginalCause(): void
+  {
+    $cause = new \TypeError('connector-secret');
+    try {
+      $this->createEntityManager('11.7.0-MariaDB', ['host' => 'localhost'], $cause);
+      self::fail('The original failure must be propagated as a cause');
+    } catch (\RuntimeException $exception) {
+      self::assertSame('Unable to configure the personalized views database. Check the connector settings.', $exception->getMessage());
+      self::assertSame($cause, $exception->getPrevious());
+    }
+  }
+
+  /**
+   * @param mixed $credentials
+   * @param bool $valid
+   *
+   * @return void
+   */
+  #[Attributes\DataProvider('credentialShapes')]
+  public function testCredentialValidation(mixed $credentials, bool $valid): void
+  {
+    $reflection = new \ReflectionClass(EntityManager::class);
+    $manager = $reflection->newInstanceWithoutConstructor();
+    if (!$valid) {
+      $this->expectException(\RuntimeException::class);
+      $this->expectExceptionMessage('Invalid connector credentials.');
+    }
+    $reflection->getMethod('validateConnectorCredentials')->invoke($manager, $credentials);
+    if ($valid) {
+      self::assertTrue(true);
+    }
+  }
+
+  /** @return iterable */
+  public static function credentialShapes(): iterable
+  {
+    $base = ['host' => 'localhost', 'user' => 'restricted', 'password' => ''];
+    yield 'empty password' => [$base, true];
+    yield 'integer port' => [$base + ['port' => 1], true];
+    yield 'string port' => [$base + ['port' => '65535'], true];
+    yield 'socket' => [$base + ['unix_socket' => '/tmp/views.sock'], true];
+    yield 'non-array' => ['connector-secret', false];
+    foreach (['host', 'user', 'password'] as $key) {
+      $missing = $base;
+      unset($missing[$key]);
+      yield 'missing ' . $key => [$missing, false];
+      yield 'wrong type ' . $key => [array_replace($base, [$key => 7]), false];
+    }
+    foreach (['host', 'user'] as $key) {
+      yield 'empty ' . $key => [array_replace($base, [$key => '']), false];
+    }
+    foreach ([0, 65536, -1, 3306.5, true, '3306x', ''] as $index => $port) {
+      yield 'invalid port ' . $index => [$base + ['port' => $port], false];
+    }
+    yield 'invalid socket' => [$base + ['unix_socket' => 7], false];
   }
 
   /** @return void */
@@ -146,10 +205,11 @@ class OfflineEntityManagerTest extends TestCase
   /**
    * @param null|string $serverVersion
    * @param null|array $credentials
+   * @param null|\Throwable $cause
    *
    * @return EntityManager
    */
-  private function createEntityManager(?string $serverVersion = null, ?array $credentials = null): EntityManager
+  private function createEntityManager(?string $serverVersion = null, ?array $credentials = null, ?\Throwable $cause = null): EntityManager
   {
     $entityManager = $this->getMockBuilder(EntityManager::class)
       ->disableOriginalConstructor()
@@ -176,7 +236,11 @@ class OfflineEntityManagerTest extends TestCase
     $l->method('getLocaleCode')->willReturn('en_US');
 
     $crypto = $this->createStub(ICrypto::class);
-    $crypto->method('decrypt')->willReturn(json_encode($credentials, JSON_THROW_ON_ERROR));
+    if ($cause !== null) {
+      $crypto->method('decrypt')->willThrowException($cause);
+    } else {
+      $crypto->method('decrypt')->willReturn(json_encode($credentials, JSON_THROW_ON_ERROR));
+    }
     $container = $this->createStub(ContainerInterface::class);
     $container->method('get')->willReturnMap([
       [ICrypto::class, $crypto],

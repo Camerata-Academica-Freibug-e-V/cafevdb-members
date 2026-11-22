@@ -52,6 +52,10 @@ Nextcloud directory. The command checks the connection and queries
 `PersonalizedMusiciansView` without requiring a member login; a failure points
 to the connection settings or view privileges. It does not check every view or
 verify that a member's row-access token is valid.
+Unexpected check failures log exception types and source locations in the
+Nextcloud log, without exception messages or trace arguments. Constructor
+failures retain their original cause for diagnosis; do not expose or log the
+raw exception chain, which can contain connector credentials.
 
 ## Development
 

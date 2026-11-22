@@ -8,6 +8,7 @@ namespace OCA\CAFeVDBMembers\Command;
 
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -16,8 +17,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 class CheckPersonalizedViews extends Command
 {
   /** {@inheritdoc} */
-  public function __construct(private string $appName, private ContainerInterface $appContainer)
-  {
+  public function __construct(
+    private string $appName,
+    private ContainerInterface $appContainer,
+    private LoggerInterface $logger,
+  ) {
     parent::__construct();
   }
 
@@ -34,7 +38,21 @@ class CheckPersonalizedViews extends Command
     try {
       $error = $this->appContainer->get(EntityManager::class)->validatePersonalizedViews();
     } catch (\Throwable $exception) {
-      $error = 'Unable to configure the personalized views database. Check the connector settings and database name.';
+      // Do not log exception messages, arguments or traces: they may contain credentials.
+      $causes = [];
+      do {
+        $causes[] = [
+          'type' => get_class($exception),
+          'file' => $exception->getFile(),
+          'line' => $exception->getLine(),
+        ];
+        $exception = $exception->getPrevious();
+      } while ($exception !== null);
+      $this->logger->error('Personalized views check failed unexpectedly.', [
+        'app' => $this->appName,
+        'causes' => $causes,
+      ]);
+      $error = 'Unable to complete the personalized views check. Check the connector settings and database name, and consult the Nextcloud log for diagnostic locations.';
     }
     if ($error !== null) {
       $output->writeln('<error>' . $error . '</error>');

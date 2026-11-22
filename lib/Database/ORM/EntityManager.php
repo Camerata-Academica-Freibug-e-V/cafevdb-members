@@ -283,21 +283,21 @@ class EntityManager extends AbstractEntityManager
   {
     $connectorConfiguration = $this->appContainer->get(ConnectorConfiguration::class);
     $producer = Application::getOrchestraAppName();
-    $hasProducerCredentials = $this->cloudConfig->getAppValue($producer, ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY, '') !== '';
+    $encrypted = $this->cloudConfig->getAppValue($producer, ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY, '');
     $managed = $this->cloudConfig->getAppValue($producer, ConfigConstants::CLOUD_CONNECTOR_MANAGED_KEY, '') === '1';
-    $localPassword = !$hasProducerCredentials && !$managed ? $connectorConfiguration->viewsDatabasePassword() : null;
+    $localPassword = $encrypted === '' && !$managed ? $connectorConfiguration->viewsDatabasePassword() : null;
     if ($localPassword !== null) {
       $descriptor = $connectorConfiguration->resolve()['descriptor'];
       $account = $descriptor['account'] ?? null;
       if (!is_array($account) || !is_string($account['user'] ?? null) || $account['user'] === '') {
         throw new \RuntimeException('CafeVDB connector account metadata is unavailable.');
       }
-      $connectionParams = $this->legacyConnectionParameters();
+      $connectionParams = $this->legacyConnectionParameters($encrypted);
       unset($connectionParams['dbname']);
       $connectionParams['user'] = $account['user'];
       $connectionParams['password'] = $localPassword;
     } else {
-      $connectionParams = $this->legacyConnectionParameters();
+      $connectionParams = $this->legacyConnectionParameters($encrypted);
     }
     $connectionParams['dbname'] = $connectorConfiguration->resolve()['database'];
     $driverParams = [
@@ -312,14 +312,13 @@ class EntityManager extends AbstractEntityManager
     return array_merge($connectionParams, $params, $driverParams, $charSetParams);
   }
 
-  /** @return array Legacy connector credentials or the Nextcloud database connection. */
-  private function legacyConnectionParameters(): array
+  /**
+   * @param string $encrypted Encrypted producer credentials, or an empty string.
+   *
+   * @return array Producer credentials or the Nextcloud database connection.
+   */
+  private function legacyConnectionParameters(#[\SensitiveParameter] string $encrypted): array
   {
-    $encrypted = $this->cloudConfig->getAppValue(
-      Application::getOrchestraAppName(),
-      ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY,
-      '',
-    );
     if ($encrypted !== '') {
       $credentials = json_decode($this->appContainer->get(ICrypto::class)->decrypt($encrypted), true, flags: JSON_THROW_ON_ERROR);
       $this->validateConnectorCredentials($credentials);

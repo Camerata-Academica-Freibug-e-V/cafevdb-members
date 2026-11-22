@@ -132,6 +132,19 @@ class OfflineEntityManagerTest extends TestCase
   }
 
   /** @return void */
+  public function testCredentialSelectionUsesOneProducerSnapshot(): void
+  {
+    $params = $this->createEntityManager(
+      '11.7.0-MariaDB',
+      credentials: ['host' => 'mariadb', 'user' => 'restricted', 'password' => 'producer-secret'],
+      viewsPassword: 'local-secret',
+      disappearAfterFirstRead: true,
+    )->getConnection()->getParams();
+    self::assertSame('restricted', $params['user']);
+    self::assertSame('producer-secret', $params['password']);
+  }
+
+  /** @return void */
   public function testResetDoesNotRestoreAnOldLocalPassword(): void
   {
     $params = $this->createEntityManager(
@@ -329,6 +342,7 @@ class OfflineEntityManagerTest extends TestCase
     ?\Throwable $cause = null,
     ?string $viewsPassword = null,
     bool $managed = false,
+    bool $disappearAfterFirstRead = false,
   ): EntityManager
   {
     $entityManager = $this->getMockBuilder(EntityManager::class)
@@ -340,12 +354,16 @@ class OfflineEntityManagerTest extends TestCase
       ->willReturn(false);
 
     $cloudConfig = $this->createStub(IConfig::class);
+    $credentialReads = 0;
     $cloudConfig->method('getAppValue')->willReturnCallback(
-      fn(string $app, string $key, string $default = '') => match ([$app, $key]) {
-        ['cafevdbmembers', ConfigConstants::USER_VIEWS_DATABASE_KEY] => 'offline_metadata',
-        [Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY] => $credentials === null ? '' : 'encrypted',
-        [Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_MANAGED_KEY] => $managed ? '1' : '',
-        default => $default,
+      function(string $app, string $key, string $default = '') use ($credentials, $managed, $disappearAfterFirstRead, &$credentialReads): string {
+        return match ([$app, $key]) {
+          ['cafevdbmembers', ConfigConstants::USER_VIEWS_DATABASE_KEY] => 'offline_metadata',
+          [Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_CREDENTIALS_KEY] =>
+            $credentials === null || ($disappearAfterFirstRead && $credentialReads++ > 0) ? '' : 'encrypted',
+          [Application::getOrchestraAppName(), ConfigConstants::CLOUD_CONNECTOR_MANAGED_KEY] => $managed ? '1' : '',
+          default => $default,
+        };
       },
     );
     $cloudConfig->method('getSystemValue')->willReturnMap([

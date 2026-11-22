@@ -54,18 +54,18 @@ initialize its descriptor. A changed descriptor is used on subsequent requests;
 already-open connections are not migrated, and CafeVDB still removes old views
 when changing schemas, so coordinate database switches.
 
-When CafeVDB has separate
-cloud connector credentials configured, Members reads those encrypted
-credentials (including the MariaDB server and port or socket) from CafeVDB.
+When CafeVDB has separate cloud connector credentials configured, Members uses
+their MariaDB server endpoint (including port or socket). Unless a Members-local
+password is configured, it also uses the credentials' username and password.
 This also works when Nextcloud uses PostgreSQL, SQLite, or another server.
-Changing or resetting the credentials in CafeVDB also changes the connection
-used by Members on subsequent requests.
+Changing or resetting the endpoint in CafeVDB changes the connection used by
+Members on subsequent requests.
 
-Without those credentials, Members uses Nextcloud's `dbhost`, `dbuser` and
-`dbpassword` as before; that account must be able to access the views on the
-MariaDB server. Invalid or unreadable configured credentials are not silently
-replaced with the Nextcloud credentials. The connector account needs the
-appropriate privileges on the personalized views.
+Without those credentials or a Members-local password, Members uses Nextcloud's
+`dbhost`, `dbuser` and `dbpassword` as before; that account must be able to
+access the views on the MariaDB server. Invalid or unreadable configured
+credentials are not silently replaced with the Nextcloud credentials. The
+connector account needs the appropriate privileges on the personalized views.
 
 To use CafeVDB's published MariaDB account with a separate password, enter that
 password in Members admin settings. Members encrypts it with Nextcloud's

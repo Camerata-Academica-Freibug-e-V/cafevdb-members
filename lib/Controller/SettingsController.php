@@ -61,7 +61,7 @@ class SettingsController extends Controller
     private GroupFoldersService $groupFoldersService,
     private ProjectGroupService $projectGroupService,
     private ConnectorConfiguration $connectorConfiguration,
-    private ContainerInterface $appContainer,
+    protected ContainerInterface $appContainer,
   ) {
     parent::__construct($appName, $request);
   }

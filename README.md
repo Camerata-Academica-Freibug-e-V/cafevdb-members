@@ -33,8 +33,28 @@ instance the members app can be installed, but it is of no use.
 
 ## Personalized views connection
 
-Set the personalized views database name in the Members admin settings and
-enable/regenerate the personalized views in CafeVDB. When CafeVDB has separate
+Enable/regenerate the personalized views in CafeVDB. New installations use
+**Use CafeVDB views database** in Members admin settings by default. Members reads
+CafeVDB's versioned, non-secret `cloudConnectorDescriptor` on each request:
+the effective database, expected MariaDB account, personalized-view enablement
+and configuration revision. This does not copy passwords or overwrite settings.
+Existing non-empty Members database names remain explicit overrides; disable
+inheritance to edit an override, or enable it to follow CafeVDB without erasing
+the old value. No setting is automatically written back to CafeVDB.
+
+Admin settings show the effective and producer database names, expected and
+authenticated MariaDB accounts (`CURRENT_USER()`), and configuration/access
+warnings. **Check connector configuration** refreshes these diagnostics.
+The account host is an authentication identity, not the database server address.
+When the connection fails, account comparison is explicitly unverified.
+Older, disabled or unavailable CafeVDB versions retain the existing Members
+database setting with a warning. With no usable database, configuration is
+reported as incomplete. Open CafeVDB sharing settings once after upgrading to
+initialize its descriptor. A changed descriptor is used on subsequent requests;
+already-open connections are not migrated, and CafeVDB still removes old views
+when changing schemas, so coordinate database switches.
+
+When CafeVDB has separate
 cloud connector credentials configured, Members reads those encrypted
 credentials (including the MariaDB server and port or socket) from CafeVDB.
 This also works when Nextcloud uses PostgreSQL, SQLite, or another server.

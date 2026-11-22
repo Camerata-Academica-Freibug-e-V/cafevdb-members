@@ -13,10 +13,12 @@ use PHPUnit\Framework\Attributes;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use ReflectionClass;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use OCP\IConfig;
+use OCP\App\IAppManager;
 use OCP\IL10N;
 use OCP\ISession;
 use OCP\Security\ICrypto;
@@ -27,6 +29,7 @@ use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Database\ORM\Listeners;
 use OCA\CAFeVDBMembers\L10N\IBidirectionalTranslator;
 use OCA\CAFeVDBMembers\Service\AuthenticationService;
+use OCA\CAFeVDBMembers\Service\ConnectorConfiguration;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 use OCA\CAFeVDBMembers\Wrapped\Carbon;
 use OCA\CAFeVDBMembers\Wrapped\Doctrine\DBAL\Platforms\MariaDBPlatform;
@@ -106,6 +109,42 @@ class OfflineEntityManagerTest extends TestCase
     self::assertSame('connector-secret', $params['password']);
     self::assertArrayNotHasKey('accountHost', $params);
     self::assertSame('pdo_mysql', $params['driver']);
+  }
+
+  /** @return void */
+  public function testInheritedConnectionDatabase(): void
+  {
+    $descriptor = json_encode([
+      'version' => 1,
+      'database' => 'producer_views',
+      'account' => ['user' => 'connector', 'accountHost' => '%'],
+      'personalizedViewsEnabled' => true,
+      'revision' => 'revision',
+    ], JSON_THROW_ON_ERROR);
+    $config = $this->createMock(IConfig::class);
+    $config->method('getAppValue')->willReturnCallback(
+      static fn(string $app, string $key, string $default = '') => match ($key) {
+        'enabled' => 'yes',
+        ConfigConstants::USER_VIEWS_DATABASE_KEY => 'stored_override',
+        ConfigConstants::INHERIT_VIEWS_DATABASE_KEY => 'on',
+        ConfigConstants::CONNECTOR_DESCRIPTOR_KEY => $descriptor,
+        default => $default,
+      },
+    );
+    $config->method('getSystemValue')->willReturnArgument(1);
+    $config->expects($this->never())->method('setAppValue');
+    $manager = $this->createStub(IAppManager::class);
+    $manager->method('isInstalled')->willReturn(true);
+    $resolver = new ConnectorConfiguration($config, $this->createStub(IL10N::class), $manager, 'cafevdbmembers');
+    $container = $this->createStub(ContainerInterface::class);
+    $container->method('get')->willReturnMap([[ConnectorConfiguration::class, $resolver]]);
+    $reflection = new ReflectionClass(EntityManager::class);
+    $entityManager = $reflection->newInstanceWithoutConstructor();
+    $reflection->getProperty('appName')->setValue($entityManager, 'cafevdbmembers');
+    $reflection->getProperty('cloudConfig')->setValue($entityManager, $config);
+    $reflection->getProperty('appContainer')->setValue($entityManager, $container);
+    $params = $reflection->getMethod('connectionParameters')->invoke($entityManager);
+    self::assertSame('producer_views', $params['dbname']);
   }
 
   /** @return void */
@@ -242,7 +281,10 @@ class OfflineEntityManagerTest extends TestCase
       $crypto->method('decrypt')->willReturn(json_encode($credentials, JSON_THROW_ON_ERROR));
     }
     $container = $this->createStub(ContainerInterface::class);
+    $connectorConfiguration = $this->createStub(ConnectorConfiguration::class);
+    $connectorConfiguration->method('resolve')->willReturn(['database' => 'offline_metadata']);
     $container->method('get')->willReturnMap([
+      [ConnectorConfiguration::class, $connectorConfiguration],
       [ICrypto::class, $crypto],
       [Listeners\Encryption::class, $this->createStub(Listeners\Encryption::class)],
       [Listeners\GedmoTranslatableListener::class, new Listeners\GedmoTranslatableListener(

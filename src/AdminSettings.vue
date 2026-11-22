@@ -55,11 +55,35 @@
       >
         {{ t(appName, 'Synchronize Folder-Structure') }}
       </button>
-      <TextField v-model="settings.cloudUserViewsDatabase"
+      <NcCheckboxRadioSwitch :modelValue="settings.inheritViewsDatabase === 'on'"
+                             type="switch"
+                             @update:modelValue="setDatabaseInheritance"
+      >
+        {{ t(appName, 'Use CafeVDB views database') }}
+      </NcCheckboxRadioSwitch>
+      <TextField v-if="settings.inheritViewsDatabase !== 'on'"
+                 v-model="settings.cloudUserViewsDatabase"
                  :label="t(appName, 'Personalized Views Database')"
                  :hint="t(appName, 'The name of the data-base which holds the personalized single-row views which contain the data for the currently logged-on user.')"
                  @submit="saveTextInput('cloudUserViewsDatabase')"
       />
+      <p>{{ t(appName, 'Effective views database:') }} <code>{{ settings.connectorStatus.database }}</code></p>
+      <p v-if="settings.connectorStatus.descriptor">
+        {{ t(appName, 'CafeVDB views database:') }} <code>{{ settings.connectorStatus.descriptor.database }}</code>
+        <br>
+        {{ t(appName, 'Expected MariaDB account:') }}
+        <code>{{ settings.connectorStatus.descriptor.account.user }}@{{ settings.connectorStatus.descriptor.account.accountHost }}</code>
+      </p>
+      <p>
+        {{ t(appName, 'Connected MariaDB account:') }}
+        <code>{{ settings.connectorStatus.actualAccount ?? t(appName, 'Unverified') }}</code>
+      </p>
+      <NcNoteCard v-for="warning in settings.connectorStatus.warnings" :key="warning" type="warning">
+        {{ warning }}
+      </NcNoteCard>
+      <NcButton @click="getData">
+        {{ t(appName, 'Check connector configuration') }}
+      </NcButton>
     </NcSettingsSection>
     <NcSettingsSection :name="t(appName, 'Project Registration Settings')">
       <TextField v-model="settings.registrationReplyTo"
@@ -84,6 +108,9 @@ import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
+  NcButton,
+  NcCheckboxRadioSwitch,
+  NcNoteCard,
   NcProgressBar,
   NcSettingsSection,
 } from '@nextcloud/vue'
@@ -115,6 +142,13 @@ const initialState = getInitialState<InitialState>()
 const settings = reactive({
   memberRootFolder: '',
   cloudUserViewsDatabase: '',
+  inheritViewsDatabase: 'off',
+  connectorStatus: {
+    database: '',
+    descriptor: null as null | { database: string, account: { user: string, accountHost: string }, revision: string },
+    actualAccount: null as null | string,
+    warnings: [] as string[],
+  },
   memberFolderGroups: [] as CloudUserGroup[],
   registrationReplyTo: '',
 })
@@ -183,7 +217,21 @@ const saveTextInput = async (settingsKey: string, value?: string, force?: boolea
   if (value === undefined) {
     value = settings[settingsKey] || ''
   }
-  return saveConfirmedSetting({ value, section: 'admin', settingsKey, force, settings })
+  const result = await saveConfirmedSetting({ value, section: 'admin', settingsKey, force, settings })
+  if (settingsKey === 'cloudUserViewsDatabase') {
+    await getData()
+  }
+  return result
+}
+
+const setDatabaseInheritance = async (enabled: boolean) => {
+  await saveConfirmedSetting({
+    value: enabled ? 'on' : 'off',
+    section: 'admin',
+    settingsKey: 'inheritViewsDatabase',
+    settings,
+  })
+  await getData()
 }
 
 </script>

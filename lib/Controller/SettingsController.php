@@ -27,6 +27,7 @@ use Throwable;
 use Spatie\TypeScriptTransformer\Attributes as TSAttributes;
 
 use Psr\Log\LoggerInterface;
+use Psr\Container\ContainerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute as CoreAttributes;
 use OCP\AppFramework\Http\DataResponse;
@@ -36,6 +37,8 @@ use OCP\IL10N;
 
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Service\GroupFoldersService;
 use OCA\CAFeVDBMembers\Service\ProjectGroupService;
+use OCA\CAFeVDBMembers\Service\ConnectorConfiguration;
+use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 
 /** AJAX end-points for admin and personal settings. */
@@ -57,6 +60,8 @@ class SettingsController extends Controller
     private IConfig $config,
     private GroupFoldersService $groupFoldersService,
     private ProjectGroupService $projectGroupService,
+    private ConnectorConfiguration $connectorConfiguration,
+    private ContainerInterface $appContainer,
   ) {
     parent::__construct($appName, $request);
   }
@@ -137,6 +142,15 @@ class SettingsController extends Controller
           return self::grumble($this->l->t('Synchronizing the shared-folder structure failed: %s', $t->getMessage()));
         }
       case ConfigConstants::USER_VIEWS_DATABASE_KEY:
+        if ($this->connectorConfiguration->inheritsDatabase()) {
+          return self::grumble($this->l->t('Disable CafeVDB database inheritance before changing the members database override.'));
+        }
+        break;
+      case ConfigConstants::INHERIT_VIEWS_DATABASE_KEY:
+        if (!in_array($newValue, ['on', 'off'], true)) {
+          return self::grumble($this->l->t('Choose whether to inherit the CafeVDB views database.'));
+        }
+        break;
       case ConfigConstants::REGISTRATION_REPLY_TO_KEY:
         break;
       default:
@@ -172,6 +186,12 @@ class SettingsController extends Controller
     $results = [];
     foreach ($allSettings as $oneSetting) {
       switch ($oneSetting) {
+        case ConfigConstants::INHERIT_VIEWS_DATABASE_KEY:
+          $value = $this->connectorConfiguration->inheritsDatabase() ? 'on' : 'off';
+          break;
+        case ConfigConstants::CONNECTOR_STATUS_KEY:
+          $value = $this->connectorStatus();
+          break;
         case ConfigConstants::USER_VIEWS_DATABASE_KEY:
           // fall through
         case ConfigConstants::REGISTRATION_REPLY_TO_KEY:
@@ -201,6 +221,30 @@ class SettingsController extends Controller
     } else {
       return new DataResponse([ 'value' => $results[$setting] ]);
     }
+  }
+
+  /** @return array Connector consistency and consumer access diagnostics. */
+  private function connectorStatus(): array
+  {
+    $status = $this->connectorConfiguration->resolve();
+    $actualAccount = null;
+    try {
+      $entityManager = $this->appContainer->get(EntityManager::class);
+      $error = $entityManager->validatePersonalizedViews();
+      if ($error !== null) {
+        $status['warnings'][] = $error;
+      }
+      if ($entityManager->connected()) {
+        $account = $entityManager->getConnection()->fetchOne('SELECT CURRENT_USER()');
+        if (is_string($account)) {
+          $actualAccount = $account;
+        }
+      }
+    } catch (Throwable) {
+      $this->logError('Unable to check the members connector connection.');
+      $status['warnings'][] = $this->l->t('Cannot check the members connector. Verify its database and connection credentials.');
+    }
+    return $this->connectorConfiguration->compareAccount($status, $actualAccount);
   }
 
 

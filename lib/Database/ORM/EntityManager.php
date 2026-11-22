@@ -38,6 +38,7 @@ use OCA\CAFeVDBMembers\Database\ORM\Mapping\ReservedWordQuoteStrategy;
 use OCA\CAFeVDBMembers\Database\ORM\Repositories;
 use OCA\CAFeVDBMembers\Exceptions;
 use OCA\CAFeVDBMembers\Service\AuthenticationService;
+use OCA\CAFeVDBMembers\Service\ConnectorConfiguration;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\AbstractEntityManager;
 use OCA\CAFeVDBMembers\Wrapped\Carbon;
@@ -305,9 +306,7 @@ class EntityManager extends AbstractEntityManager
         $connectionParams = array_merge($connectionParams, $parsedParams);
       }
     }
-    if ($encrypted !== '') {
-      $connectionParams['dbname'] = $this->cloudConfig->getAppValue($this->appName, ConfigConstants::USER_VIEWS_DATABASE_KEY);
-    }
+    $connectionParams['dbname'] = $this->appContainer->get(ConnectorConfiguration::class)->resolve()['database'];
     $driverParams = [
       'driver' => 'pdo_mysql',
       'wrapperClass' => Connection::class,

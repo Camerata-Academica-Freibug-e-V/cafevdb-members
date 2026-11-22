@@ -98,6 +98,13 @@ Both `vendor/` and `vendor-wrapped/` are required at runtime and included in
 release archives. The unscoped dependencies in `build/vendor-wrapped/` are
 build inputs, not runtime files. `make distclean` removes both vendor trees.
 
+Run the frontend unit tests independently of Nextcloud with Node.js 24:
+
+```sh
+npm ci
+npm test
+```
+
 `make ts-types-files` uses `rotdrop/php-to-typescript` from its isolated
 `vendor-bin/php-to-typescript/` environment. Toolkit modules are generated
 under `build/ts-types/php-modules/Wrapped/OCA/RotDrop/Toolkit/`.
@@ -121,6 +128,7 @@ frontend assets with Vite before running the test suites.
 CI installs JavaScript dependencies with `npm ci` and checks `make realclean`
 on both a bare checkout and after the full build and tests, including repeated
 cleanup. Cleanup preserves the tracked `package-lock.json`.
+CI also runs the frontend Vitest suite independently of the Nextcloud build.
 
 The build regressions can also run without Nextcloud after `make dev-setup-php`
 (PHP's `intl` extension is required):

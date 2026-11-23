@@ -50,6 +50,7 @@ import type { ViewDetailsEventData } from '../App.vue'
 import type { ProjectParticipant } from '../stores/memberData.ts'
 
 import axios from '@nextcloud/axios'
+import { showError, TOAST_PERMANENT_TIMEOUT } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import {
   NcActionButton,
@@ -67,7 +68,6 @@ import { useAppDataStore } from '../stores/appData.ts'
 import { useMemberDataStore } from '../stores/memberData.ts'
 import { isAxiosErrorResponse } from '../toolkit/types/axios-type-guards.ts'
 import generateAppUrl from '../toolkit/util/generate-url.ts'
-import { showError, TOAST_PERMANENT_TIMEOUT } from '../toolkit/util/toasts.ts'
 
 const viewName = 'Projects'
 

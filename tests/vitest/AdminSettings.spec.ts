@@ -1,8 +1,8 @@
+import { showInfo, showSuccess } from '@nextcloud/dialogs';
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AdminSettings from '../../src/AdminSettings.vue';
 import { fetchSettings, saveConfirmedSetting } from '../../src/toolkit/util/settings-sync.ts';
-import { showInfo, showSuccess } from '../../src/toolkit/util/toasts.ts';
 
 vi.mock('@nextcloud/l10n', () => ({ translate: (_app: string, text: string) => text }));
 vi.mock('@nextcloud/router', () => ({ generateUrl: (url: string) => url }));
@@ -35,7 +35,7 @@ vi.mock('../../src/toolkit/util/settings-sync.ts', () => ({
   fetchSettings: vi.fn(),
   saveConfirmedSetting: vi.fn(),
 }));
-vi.mock('../../src/toolkit/util/toasts.ts', () => ({
+vi.mock('@nextcloud/dialogs', () => ({
   showError: vi.fn(), showInfo: vi.fn(), showSuccess: vi.fn(), TOAST_PERMANENT_TIMEOUT: -1,
 }));
 

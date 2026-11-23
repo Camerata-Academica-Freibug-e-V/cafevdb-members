@@ -42,6 +42,8 @@ class Storage extends AbstractStorage
   private EntityManager $entityManager;
   private string $userId;
   private IL10N $l;
+  /** @var array<array{path: list<string>, root: DatabaseStorageFolder}>|null */
+  private ?array $sources = null;
 
   public function __construct(array $parameters)
   {
@@ -69,6 +71,13 @@ class Storage extends AbstractStorage
   /** @return array<array{path: list<string>, root: DatabaseStorageFolder}> */
   private function getSources(): array
   {
+    if ($this->sources !== null) {
+      return $this->sources;
+    }
+
+    // This entity manager belongs to this storage instance. Clearing its
+    // identity map refreshes the personalized view without detaching entities
+    // managed by unrelated application services.
     $this->entityManager->clear();
     $storages = $this->entityManager->getRepository(DatabaseStorage::class)->findAll();
     $sources = [];
@@ -85,7 +94,7 @@ class Storage extends AbstractStorage
       }
     }
 
-    return $sources;
+    return $this->sources = $sources;
   }
 
   /** @return list<string>|false */
@@ -159,7 +168,12 @@ class Storage extends AbstractStorage
   {
     $folders = [];
     $synthetic = $path === [];
+    $files = [];
+    $directories = [];
     foreach ($sources as $source) {
+      for ($depth = 1; $depth <= count($source['path']); ++$depth) {
+        $directories[implode('/', array_slice($source['path'], 0, $depth))] = true;
+      }
       if (self::isPrefix($path, $source['path']) && count($path) < count($source['path'])) {
         $synthetic = true;
         continue;
@@ -169,7 +183,7 @@ class Storage extends AbstractStorage
       }
 
       $nodes = [ $source['root'] ];
-      foreach (array_slice($path, count($source['path'])) as $name) {
+      foreach (array_slice($path, count($source['path'])) as $index => $name) {
         $matches = [];
         foreach ($nodes as $node) {
           foreach ($node->getDirectoryEntries() as $entry) {
@@ -178,13 +192,42 @@ class Storage extends AbstractStorage
             }
           }
         }
-        if ($matches === [] || array_filter($matches, static fn($entry) => !($entry instanceof DatabaseStorageFolder))) {
+        if ($matches === []) {
           $nodes = [];
           break;
         }
-        $nodes = $matches;
+        $matchingFolders = array_values(array_filter(
+          $matches,
+          static fn($entry) => $entry instanceof DatabaseStorageFolder,
+        ));
+        $matchingFiles = array_values(array_filter(
+          $matches,
+          static fn($entry) => !($entry instanceof DatabaseStorageFolder),
+        ));
+        $componentPath = implode('/', [
+          ...$source['path'],
+          ...array_slice($path, count($source['path']), $index + 1),
+        ]);
+        if ($matchingFolders !== []) {
+          $directories[$componentPath] = true;
+        }
+        if ($matchingFiles !== []) {
+          $files[$componentPath] = true;
+        }
+        if ($matchingFolders !== [] && $matchingFiles !== []) {
+          throw new RuntimeException('Ambiguous database-storage entry: ' . $componentPath);
+        }
+        $nodes = $matchingFolders;
+        if ($nodes === []) {
+          break;
+        }
       }
       array_push($folders, ...$nodes);
+    }
+
+    $collisions = array_intersect_key($files, $directories);
+    if ($collisions !== []) {
+      throw new RuntimeException('Ambiguous database-storage entry: ' . array_key_first($collisions));
     }
 
     if ($folders !== []) {
@@ -446,6 +489,7 @@ class Storage extends AbstractStorage
   public function hasUpdated(string $path, int $time): bool
   {
     if ($this->is_dir($path)) {
+      $this->sources = null;
       return true;
     }
     $mtime = $this->filemtime($path);

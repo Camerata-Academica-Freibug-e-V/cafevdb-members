@@ -28,14 +28,18 @@ use PHPUnit\Framework\TestCase;
 
 use OCP\Constants;
 use OCP\IL10N;
+
+use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFile;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorage;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFolder;
 use OCA\CAFeVDBMembers\Database\ORM\Repositories\EntityRepository;
 use OCA\CAFeVDBMembers\Storage\Database\Storage;
+use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
 
 #[CoversClass(Storage::class)]
 #[UsesClass(DatabaseStorage::class)]
+#[UsesClass(DatabaseStorageFile::class)]
 #[UsesClass(DatabaseStorageFolder::class)]
 class StorageTest extends TestCase
 {
@@ -85,6 +89,7 @@ class StorageTest extends TestCase
 
     self::assertTrue($storage->file_exists('Projects'));
     $sources = [];
+    self::assertTrue($storage->hasUpdated('', 1));
     self::assertFalse($storage->file_exists('Projects'));
     self::assertFalse($storage->stat('Projects'));
     self::assertFalse($storage->opendir('Projects'));
@@ -102,11 +107,75 @@ class StorageTest extends TestCase
       (new DatabaseStorage())->setStorageId('project/participant/ProjectName/member-id/')
         ->setRoot(new DatabaseStorageFolder()),
     ];
+    self::assertTrue($storage->hasUpdated('', 1));
     self::assertSame(['Projects'], $this->directoryNames($storage, ''));
     self::assertTrue($storage->hasUpdated('Projects', PHP_INT_MAX));
     $sources = [];
+    self::assertTrue($storage->hasUpdated('', 1));
     self::assertSame([], $this->directoryNames($storage, ''));
     self::assertTrue($storage->hasUpdated('Projects', PHP_INT_MAX));
+  }
+
+  public function testSourcesAreMemoizedUntilDirectoryChangeCheck(): void
+  {
+    $sources = [
+      (new DatabaseStorage())->setStorageId('finance/invoices/')
+        ->setRoot(new DatabaseStorageFolder()),
+    ];
+    $repository = $this->getMockBuilder(EntityRepository::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['findAll'])
+      ->getMock();
+    $repository->expects($this->exactly(2))->method('findAll')
+      ->willReturnCallback(static function() use (&$sources): array {
+        return $sources;
+      });
+    $entityManager = $this->getMockBuilder(EntityManager::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['getRepository', 'clear'])
+      ->getMock();
+    $entityManager->expects($this->exactly(2))->method('clear');
+    $entityManager->method('getRepository')->with(DatabaseStorage::class)->willReturn($repository);
+    $storage = new Storage([
+      'entityManager' => $entityManager,
+      'userId' => 'member-id',
+      'l10n' => $this->translator(),
+    ]);
+
+    self::assertTrue($storage->file_exists('Finance'));
+    self::assertSame(['Finance'], $this->directoryNames($storage, ''));
+    self::assertSame(['Invoices'], $this->directoryNames($storage, 'Finance'));
+    self::assertTrue($storage->hasUpdated('', 1));
+    self::assertTrue($storage->file_exists('Finance'));
+    self::assertSame(['Finance'], $this->directoryNames($storage, ''));
+  }
+
+  public function testFileFolderCollisionsAreRejectedForListingsAndDirectTraversal(): void
+  {
+    $file = $this->createStub(DatabaseStorageFile::class);
+    $file->method('getName')->willReturn('Shared');
+    $folder = $this->createStub(DatabaseStorageFolder::class);
+    $folder->method('getName')->willReturn('Shared');
+    $folder->method('getDirectoryEntries')->willReturn(new ArrayCollection());
+
+    $fileRoot = $this->createStub(DatabaseStorageFolder::class);
+    $fileRoot->method('getDirectoryEntries')->willReturn(new ArrayCollection([$file]));
+    $folderRoot = $this->createStub(DatabaseStorageFolder::class);
+    $folderRoot->method('getDirectoryEntries')->willReturn(new ArrayCollection([$folder]));
+    $sources = [
+      (new DatabaseStorage())->setStorageId('finance/invoices/')->setRoot($fileRoot),
+      (new DatabaseStorage())->setStorageId('finance/invoices/')->setRoot($folderRoot),
+    ];
+    $storage = $this->storageForSources($sources);
+
+    foreach (['Finance/Invoices', 'Finance/Invoices/Shared'] as $path) {
+      try {
+        $storage->opendir($path);
+        self::fail('A file/folder collision must not expose a partial directory.');
+      } catch (\RuntimeException $e) {
+        self::assertStringContainsString('Ambiguous database-storage entry', $e->getMessage());
+      }
+    }
   }
 
   /** @param list<DatabaseStorage> $sources */

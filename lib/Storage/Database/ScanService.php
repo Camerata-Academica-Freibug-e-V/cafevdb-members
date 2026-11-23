@@ -53,10 +53,6 @@ class ScanService
       return 'busy';
     }
     try {
-      $lastScan = (int)$this->config->getUserValue($uid, Application::getAppName(), self::LAST_SCAN_KEY, '0');
-      if ($lastScan > 0 && time() - $lastScan < self::INTERVAL) {
-        return 'throttled';
-      }
       $this->setupManager->setupForUser($user);
       $matches = [];
       foreach ($this->mountManager->findIn('/' . $uid . '/files/') as $mount) {
@@ -78,6 +74,10 @@ class ScanService
       $storage = $matches[0]->getStorage();
       if (!$storage instanceof CloudStorage || !$storage->instanceOfStorage(Storage::class)) {
         throw new RuntimeException('The database-storage mount is unavailable or has an invalid storage.');
+      }
+      $lastScan = (int)$this->config->getUserValue($uid, Application::getAppName(), self::LAST_SCAN_KEY, '0');
+      if ($lastScan > 0 && time() - $lastScan < self::INTERVAL) {
+        return 'throttled';
       }
       $this->scanner->scan($storage);
       $this->config->setUserValue($uid, Application::getAppName(), self::LAST_SCAN_KEY, (string)time());

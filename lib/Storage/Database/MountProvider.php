@@ -233,8 +233,7 @@ class MountProvider implements IMountProvider
           || in_array('..', $parts, true)
           || $cachedMount->getRootInternalPath() !== ''
           || $cachedMount->getStorageId() <= 0
-          || $cachedMount->getRootId() <= 0
-          || $mounts !== []) {
+          || $cachedMount->getRootId() <= 0) {
         throw new StorageNotAvailableException('Invalid cached database-storage mount.');
       }
 

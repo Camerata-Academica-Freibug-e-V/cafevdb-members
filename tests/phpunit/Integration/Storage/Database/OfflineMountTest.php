@@ -170,6 +170,52 @@ class OfflineMountTest extends TestCase
     self::assertSame($before, $this->snapshot());
   }
 
+  public function testOfflineSetupPreservesDuplicateProviderMountsWithoutFailing(): void
+  {
+    $this->factory->expects($this->never())->method('create');
+    $storage = new Storage([
+      'entityManager' => $this->createStub(EntityManager::class),
+      'userId' => $this->user->getUID(),
+      'l10n' => $this->createStub(IL10N::class),
+    ]);
+    $duplicatePath = $this->mountPath . 'LegacyLocation/';
+    $this->mountCache()->registerMounts($this->user, [
+      new MountPoint(
+        $storage,
+        $this->mountPath,
+        null,
+        $this->loader,
+        ['readonly' => true, 'authenticated' => true],
+        null,
+        MountProvider::class,
+      ),
+      new MountPoint(
+        $storage,
+        $duplicatePath,
+        null,
+        $this->loader,
+        ['readonly' => true, 'authenticated' => true],
+        null,
+        MountProvider::class,
+      ),
+    ], [MountProvider::class]);
+
+    $mounts = $this->provider()->getMountsForUser($this->user, $this->loader);
+    self::assertCount(2, $mounts);
+    self::assertEqualsCanonicalizing(
+      [$this->mountPath, $duplicatePath],
+      array_map(static fn($mount) => $mount->getMountPoint(), $mounts),
+    );
+    foreach ($mounts as $mount) {
+      self::assertInstanceOf(UnavailableMount::class, $mount);
+      self::assertSame($this->storageId, $mount->getNumericStorageId());
+      self::assertSame($this->rootId, $mount->getStorageRootId());
+    }
+
+    $this->mountCache()->registerMounts($this->user, $mounts, [MountProvider::class]);
+    self::assertCount(2, $this->provider()->getMountsForUser($this->user, $this->loader));
+  }
+
   public function testCronScannerRetainsMountsWithoutOpeningTheDatabase(): void
   {
     $this->factory->expects($this->never())->method('create');

@@ -57,11 +57,11 @@ class ScanServiceTest extends TestCase
   {
     $session = $this->session();
     $setup = $this->createMock(ISetupManager::class);
-    $setup->expects($this->once())->method('setupForUser')->with($session->getUser());
+    $setup->expects($this->exactly(2))->method('setupForUser')->with($session->getUser());
     $storage = $this->createStub(CloudStorage::class);
     $storage->method('instanceOfStorage')->willReturn(true);
     $mounts = $this->createMock(IMountManager::class);
-    $mounts->expects($this->once())->method('findIn')->with('/' . self::UID . '/files/')->willReturn([
+    $mounts->expects($this->exactly(2))->method('findIn')->with('/' . self::UID . '/files/')->willReturn([
       $this->mount('another-user', $storage),
       $this->mount(self::UID, $storage),
     ]);
@@ -136,16 +136,19 @@ class ScanServiceTest extends TestCase
 
   public function testMissingMountIsNotScannedOrThrottled(): void
   {
+    $session = $this->session();
+    $setup = $this->createMock(ISetupManager::class);
+    $setup->expects($this->once())->method('setupForUser')->with($session->getUser());
     $mounts = $this->createStub(IMountManager::class);
     $mounts->method('findIn')->willReturn([]);
     $config = $this->createMock(IConfig::class);
-    $config->method('getUserValue')->willReturn('0');
+    $config->expects($this->never())->method('getUserValue');
     $config->expects($this->never())->method('setUserValue');
     $scanner = $this->createMock(AuthenticatedScanner::class);
     $scanner->expects($this->never())->method('scan');
     $service = new ScanService(
-      $this->session(),
-      $this->createStub(ISetupManager::class),
+      $session,
+      $setup,
       $mounts,
       $this->createStub(ILockingProvider::class),
       $config,

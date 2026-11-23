@@ -32,9 +32,11 @@ through the Members catalogue using the orchestra's configured language.
 Project names, database directory-entry names, and the mount path are not
 translated.
 
-While authenticated, directory listings are rechecked against the authorized
-database view when accessed, so cached folders can reflect added or removed
-sources even when their timestamps do not change.
+While authenticated, database-storage sources are cached for the lifetime of a
+storage instance and refreshed whenever Nextcloud checks a directory for
+changes. This keeps repeated metadata lookups from re-querying the full
+personalized storage view while allowing cached folders to reflect added or
+removed authorized sources even when their timestamps do not change.
 
 When a user opens an authenticated Nextcloud page, the browser also requests a
 recursive scan of that user's database mount, including a mount moved to another

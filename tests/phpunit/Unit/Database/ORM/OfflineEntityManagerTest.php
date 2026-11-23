@@ -188,7 +188,7 @@ class OfflineEntityManagerTest extends TestCase
       ->disableOriginalConstructor()
       ->onlyMethods(['getConnection'])
       ->getMock();
-    $manager->method('getConnection')->willReturn($connection);
+    $manager->expects($this->once())->method('getConnection')->willReturn($connection);
     self::assertTrue($manager->connected());
   }
 

@@ -18,16 +18,19 @@ each member can see, but not change:
 - their instrument insurances,
 - authorized files from CAFeVDB's database-backed storages.
 
-Database-backed files appear under the movable `cafevdb/` folder in the
-member's Files area. Project participant storage roots are presented as
-`cafevdb/Projects/PROJECT_NAME/` before localization; other database storage
-identifiers retain their hierarchy beneath `cafevdb/`. The view is read-only
-and uses the personalized database views to limit entries to those authorized
-for the logged-in member.
+Database-backed files initially appear under the movable
+`MEMBER_ROOT_FOLDER/USER_ID/` mount in the member's Files area, where
+`MEMBER_ROOT_FOLDER` is the configured member-data team-folder (for example,
+`orchestra-members`). Project participant storage roots are presented as
+`MEMBER_ROOT_FOLDER/USER_ID/Projects/PROJECT_NAME/` before localization; other
+database storage identifiers retain their hierarchy beneath the mount. The
+member root folder must be configured and accessible to the user. The view is
+read-only and uses the personalized database views to limit entries to those
+authorized for the logged-in member. A user-moved mount keeps its saved path.
 Generated folder labels, such as `Projects` and `Finance`, are translatable
 through the Members catalogue using the orchestra's configured language.
-Project names and database directory-entry names are not translated; neither
-is the movable `cafevdb/` mount name.
+Project names, database directory-entry names, and the mount path are not
+translated.
 
 When a user's authorization credentials are unavailable (for example during
 cron scans), an already registered mount is retained as unavailable. Nextcloud's

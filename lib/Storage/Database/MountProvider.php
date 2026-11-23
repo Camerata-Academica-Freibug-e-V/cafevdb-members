@@ -45,7 +45,6 @@ use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 class MountProvider implements IMountProvider
 {
   public const MOUNT_TYPE = 'cafevdb-database';
-  public const DEFAULT_MOUNT_PATH = 'cafevdb';
   public const MOUNT_PATH_CONFIG_KEY = 'databaseStorageMountPath';
 
   public function __construct(
@@ -90,17 +89,25 @@ class MountProvider implements IMountProvider
         $user->getUID(),
         Application::getAppName(),
         self::MOUNT_PATH_CONFIG_KEY,
-        self::DEFAULT_MOUNT_PATH,
       );
-      $pathParts = explode('/', trim($relativePath, '/'));
-      if ($relativePath === ''
-          || in_array('', $pathParts, true)
-          || in_array('.', $pathParts, true)
-          || in_array('..', $pathParts, true)) {
+      if ($relativePath !== '' && !self::validRelativePath($relativePath)) {
         $this->logger->warning('Ignoring invalid database-storage mount path.', [
           'userId' => $user->getUID(),
         ]);
-        $relativePath = self::DEFAULT_MOUNT_PATH;
+        $relativePath = '';
+      }
+      if ($relativePath === '') {
+        $root = $this->config->getAppValue(
+          Application::getAppName(),
+          ConfigConstants::MEMBER_ROOT_FOLDER_KEY,
+        );
+        $userId = $user->getUID();
+        if (!self::validRelativePath($root)
+            || !self::validRelativePath($userId)
+            || str_contains($userId, '/')) {
+          throw new StorageNotAvailableException('The member root folder or user ID is not a valid mount path.');
+        }
+        $relativePath = trim($root, '/') . '/' . $userId;
       }
       $mountPath = '/' . $user->getUID() . '/files/' . trim($relativePath, '/') . '/';
 
@@ -189,6 +196,14 @@ class MountProvider implements IMountProvider
       ]);
       return $this->unavailableMounts($user, $loader);
     }
+  }
+
+  private static function validRelativePath(string $path): bool
+  {
+    $parts = explode('/', trim($path, '/'));
+    return !in_array('', $parts, true)
+      && !in_array('.', $parts, true)
+      && !in_array('..', $parts, true);
   }
 
   /**

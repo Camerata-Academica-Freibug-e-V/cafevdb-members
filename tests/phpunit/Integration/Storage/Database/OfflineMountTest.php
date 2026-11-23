@@ -46,6 +46,7 @@ use Psr\Log\LoggerInterface;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Exceptions\RowAccessTokenInvalidException;
 use OCA\CAFeVDBMembers\Exceptions\RowAccessTokenMissingException;
+use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 use OCA\CAFeVDBMembers\Storage\Database\EntityManagerFactory;
 use OCA\CAFeVDBMembers\Storage\Database\MountProvider;
 use OCA\CAFeVDBMembers\Storage\Database\Storage;
@@ -231,12 +232,77 @@ class OfflineMountTest extends TestCase
     $mount = $mounts[0];
     self::assertInstanceOf(Storage::class, $mount->getStorage());
     self::assertInstanceOf(IMovableMount::class, $mount);
+    self::assertSame($this->mountPath, $mount->getMountPoint());
     $cache = $mount->getStorage()->getCache();
     self::assertSame($this->fileId, $cache->getId(self::FILE_PATH));
     self::assertSame(self::FILE_PATH, $cache->getPathById($this->fileId));
     self::assertSame($this->rootId, $mount->getStorageRootId());
     $this->mountCache()->registerMounts($this->user, $mounts, [MountProvider::class]);
     self::assertSame($before, $this->snapshot());
+  }
+
+  public static function initialMountPaths(): array
+  {
+    return [
+      'team folder' => ['orchestra-members', '', 'orchestra-members'],
+      'nested team folder' => ['/shared/orchestra-members/', '', 'shared/orchestra-members'],
+      'invalid saved path' => ['orchestra-members', '../invalid', 'orchestra-members'],
+    ];
+  }
+
+  #[DataProvider('initialMountPaths')]
+  public function testInitialMountUsesConfiguredMemberRoot(string $root, string $savedPath, string $expectedRoot): void
+  {
+    $this->config = $this->createStub(IConfig::class);
+    $this->config->method('getUserValue')->willReturn($savedPath);
+    $this->config->method('getAppValue')->willReturnCallback(
+      static fn($app, $key, $default = '') => $key === ConfigConstants::MEMBER_ROOT_FOLDER_KEY ? $root : $default,
+    );
+    $this->session->method('isLoggedIn')->willReturn(true);
+    $this->session->method('getUser')->willReturn($this->user);
+    $entityManager = $this->createStub(EntityManager::class);
+    $entityManager->method('connected')->willReturn(true);
+    $this->factory->expects($this->once())->method('create')->willReturn($entityManager);
+
+    $mounts = $this->provider()->getMountsForUser($this->user, $this->loader);
+    self::assertCount(1, $mounts);
+    self::assertInstanceOf(Storage::class, $mounts[0]->getStorage());
+    self::assertSame(
+      '/' . $this->user->getUID() . '/files/' . $expectedRoot . '/' . $this->user->getUID() . '/',
+      $mounts[0]->getMountPoint(),
+    );
+  }
+
+  public static function invalidMemberRoots(): array
+  {
+    return [
+      'not configured' => [''],
+      'empty component' => ['orchestra//members'],
+      'parent traversal' => ['orchestra/../members'],
+    ];
+  }
+
+  #[DataProvider('invalidMemberRoots')]
+  public function testInvalidMemberRootPreservesExistingMount(string $root): void
+  {
+    $this->config = $this->createStub(IConfig::class);
+    $this->config->method('getUserValue')->willReturn('');
+    $this->config->method('getAppValue')->willReturnCallback(
+      static fn($app, $key, $default = '') => $key === ConfigConstants::MEMBER_ROOT_FOLDER_KEY ? $root : $default,
+    );
+    $this->session->method('isLoggedIn')->willReturn(true);
+    $this->session->method('getUser')->willReturn($this->user);
+    $entityManager = $this->createStub(EntityManager::class);
+    $entityManager->method('connected')->willReturn(true);
+    $this->factory->expects($this->once())->method('create')->willReturn($entityManager);
+    $logger = $this->createMock(LoggerInterface::class);
+    $logger->expects($this->once())->method('error');
+    $this->logger = $logger;
+
+    $mounts = $this->provider()->getMountsForUser($this->user, $this->loader);
+    self::assertCount(1, $mounts);
+    self::assertInstanceOf(UnavailableMount::class, $mounts[0]);
+    self::assertSame($this->mountPath, $mounts[0]->getMountPoint());
   }
 
   public function testAnotherUsersSessionDoesNotOpenTheDatabase(): void

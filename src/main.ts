@@ -25,6 +25,7 @@ import App from './App.vue';
 import { appName } from './config.ts';
 import router from './router/app-router.ts';
 
+import '@nextcloud/dialogs/style.css';
 import 'core-js/actual';
 
 const pinia = createPinia();

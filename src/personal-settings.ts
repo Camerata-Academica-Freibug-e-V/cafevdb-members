@@ -22,6 +22,8 @@
 import { createApp } from 'vue';
 import PersonalSettings from './PersonalSettings.vue';
 
+import '@nextcloud/dialogs/style.css';
+
 const app = createApp(PersonalSettings);
 app.config.performance = !!(import.meta?.env?.DEV);
 app.mount('#personal-settings');

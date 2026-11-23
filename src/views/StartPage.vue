@@ -46,6 +46,7 @@ import type { OCSResponse } from '@nextcloud/typings/ocs'
 
 import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
+import { showError, showInfo, TOAST_PERMANENT_TIMEOUT } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateOcsUrl } from '@nextcloud/router'
 import { NcEmptyContent } from '@nextcloud/vue'
@@ -57,7 +58,6 @@ import { appName as appId } from '../config.ts'
 import { useAppDataStore } from '../stores/appData.ts'
 import { useMemberDataStore } from '../stores/memberData.ts'
 import { isAxiosErrorResponse } from '../toolkit/types/axios-type-guards.ts'
-import { showError, showInfo, TOAST_PERMANENT_TIMEOUT } from '../toolkit/util/toasts.ts'
 
 const appData = useAppDataStore()
 const memberData = useMemberDataStore()

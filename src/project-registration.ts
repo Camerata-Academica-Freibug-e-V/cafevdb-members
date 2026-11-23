@@ -24,6 +24,8 @@ import { createApp } from 'vue';
 import ProjectRegistation from './ProjectRegistration.vue';
 import router from './router/app-router.ts';
 
+import '@nextcloud/dialogs/style.css';
+
 const pinia = createPinia();
 
 const app = createApp(ProjectRegistation);

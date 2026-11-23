@@ -36,6 +36,13 @@ While authenticated, directory listings are rechecked against the authorized
 database view when accessed, so cached folders can reflect added or removed
 sources even when their timestamps do not change.
 
+When a user opens an authenticated Nextcloud page, the browser also requests a
+recursive scan of that user's database mount, including a mount moved to another
+path. Successful scans are limited to one every ten minutes per user and
+concurrent requests are serialized. Failed or unavailable scans are retried.
+File locking must be enabled for this automatic scan. WebDAV-only clients do
+not trigger it, although directory listings are still checked when accessed.
+
 When a user's authorization credentials are unavailable (for example during
 cron scans), an already registered mount is retained as unavailable. Nextcloud's
 standard scanner skips this placeholder: the existing mount/root/storage IDs

@@ -179,6 +179,7 @@ const appConfig = createAppConfig(
   {
     // entry points: {name: script}
     'admin-settings': path.resolve(path.join('src', 'admin-settings.ts')),
+    'database-storage-scan': path.resolve(path.join('src', 'database-storage-scan.ts')),
     'personal-settings': path.resolve(path.join('src', 'personal-settings.ts')),
     'project-registration': path.resolve(path.join('src', 'project-registration.ts')),
     main: path.resolve(path.join('src', 'main.ts')),

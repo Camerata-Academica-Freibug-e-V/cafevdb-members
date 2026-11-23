@@ -17,6 +17,34 @@ env:
 jobs:
   phpunit:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, mysql, pgsql]
+    services:
+      mariadb:
+        image: ${{ matrix.database == 'mysql' && 'mariadb:11.4' || '' }}
+        env:
+          MARIADB_DATABASE: nextcloud
+          MARIADB_USER: nextcloud
+          MARIADB_PASSWORD: nextcloud
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 13306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      postgres:
+        image: ${{ matrix.database == 'pgsql' && 'postgres:16' || '' }}
+        env:
+          POSTGRES_DB: nextcloud
+          POSTGRES_USER: nextcloud
+          POSTGRES_PASSWORD: nextcloud
+        ports:
+          - 15432:5432
+        options: >-
+          --health-cmd="pg_isready -U nextcloud -d nextcloud"
+          --health-interval=10s --health-timeout=5s --health-retries=12
     env:
       PHP_VERSION: '8.5'
       MARIADB_MAJOR: '12'
@@ -68,17 +96,27 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: ctype, curl, dom, gd, iconv, intl, json, mbstring, openssl, pdo_sqlite, posix, sqlite3, xml, zip, apcu, bcmath, gmp, imagick, fileinfo
+          extensions: ctype, curl, dom, gd, iconv, intl, json, mbstring, openssl, pdo_mysql, pdo_pgsql, pdo_sqlite, posix, sqlite3, xml, zip, apcu, bcmath, gmp, imagick, fileinfo
           coverage: xdebug
           tools: composer:v2
           ini-values: apc.enable_cli=1, memory_limit=1G
 
-      - name: Install Nextcloud (sqlite)
+      - name: Install Nextcloud (${{ matrix.database }})
         working-directory: server
+        env:
+          DATABASE: ${{ matrix.database }}
+          # The service containers already provision the database and user.
+          NC_setup_create_db_user: 'false'
         run: |
           composer install --no-interaction --no-progress
-          php occ maintenance:install --database=sqlite \
-            --admin-user=admin --admin-pass=admin --no-interaction
+          db_args=(--database="$DATABASE")
+          if [ "$DATABASE" != sqlite ]; then
+            port=13306
+            if [ "$DATABASE" = pgsql ]; then port=15432; fi
+            db_args+=(--database-host=127.0.0.1 --database-port="$port"
+              --database-name=nextcloud --database-user=nextcloud --database-pass=nextcloud)
+          fi
+          php occ maintenance:install "${db_args[@]}" --admin-user=admin --admin-pass=admin --no-interaction
           php occ config:system:set debug --value=true --type=boolean
 
       - name: Install app PHP dependencies
@@ -119,6 +157,6 @@ jobs:
       - name: Upload PHPUnit coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: phpunit-coverage
+          name: phpunit-coverage-${{ matrix.database }}
           path: server/apps/${{ env.APP_NAME }}/build/artifacts/tests/phpunit/code-coverage/
           if-no-files-found: error

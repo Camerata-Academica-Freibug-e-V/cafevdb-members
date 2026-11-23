@@ -80,7 +80,7 @@ class OfflineMountTest extends TestCase
     $this->connection->beginTransaction();
     // Exercise Nextcloud's hashed storage IDs as well as a moved mount path.
     $this->user = $this->createStub(IUser::class);
-    $this->user->method('getUID')->willReturn('offline-mount-test-' . bin2hex(random_bytes(24)));
+    $this->user->method('getUID')->willReturn('offline-mount-test-' . bin2hex(random_bytes(22)));
     $this->userManager = $this->createStub(IUserManager::class);
     $this->userManager->method('userExists')->willReturn(true);
     $this->userManager->method('get')->willReturn($this->user);
@@ -509,7 +509,7 @@ class OfflineMountTest extends TestCase
       'storage_mtime' => 123456,
       'mimetype' => $mimes->getId($mimeType),
       'mimepart' => $mimes->getId(explode('/', $mimeType)[0]),
-      'etag' => 'original-etag-' . md5($path),
+      'etag' => md5('original-etag-' . $path),
       'permissions' => \OCP\Constants::PERMISSION_READ,
     ]);
   }

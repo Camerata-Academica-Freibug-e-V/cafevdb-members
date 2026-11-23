@@ -131,6 +131,10 @@ make dev-setup-php
 make phpunit
 ```
 
+The PHPUnit workflow runs the server suite with Nextcloud backed by SQLite,
+MariaDB, and PostgreSQL. The app's fixture databases use a separate temporary
+MariaDB server in all three jobs.
+
 `rotdrop/nextcloud-app-toolkit` is installed with the wrapped Composer
 dependencies and scoped into `OCA\CAFeVDBMembers\Wrapped` in `vendor-wrapped/`.
 Both `vendor/` and `vendor-wrapped/` are required at runtime and included in

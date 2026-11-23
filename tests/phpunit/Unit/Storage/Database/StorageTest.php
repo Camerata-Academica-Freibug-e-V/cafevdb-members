@@ -135,7 +135,8 @@ class StorageTest extends TestCase
       ->onlyMethods(['getRepository', 'clear'])
       ->getMock();
     $entityManager->expects($this->exactly(2))->method('clear');
-    $entityManager->method('getRepository')->with(DatabaseStorage::class)->willReturn($repository);
+    $entityManager->expects($this->exactly(2))->method('getRepository')
+      ->with(DatabaseStorage::class)->willReturn($repository);
     $storage = new Storage([
       'entityManager' => $entityManager,
       'userId' => 'member-id',

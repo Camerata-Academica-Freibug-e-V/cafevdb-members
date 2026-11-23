@@ -32,6 +32,10 @@ through the Members catalogue using the orchestra's configured language.
 Project names, database directory-entry names, and the mount path are not
 translated.
 
+While authenticated, directory listings are rechecked against the authorized
+database view when accessed, so cached folders can reflect added or removed
+sources even when their timestamps do not change.
+
 When a user's authorization credentials are unavailable (for example during
 cron scans), an already registered mount is retained as unavailable. Nextcloud's
 standard scanner skips this placeholder: the existing mount/root/storage IDs

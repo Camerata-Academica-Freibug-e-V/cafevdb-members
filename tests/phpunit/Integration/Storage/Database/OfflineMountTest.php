@@ -12,6 +12,7 @@
 namespace OCA\CAFeVDBMembers\Tests\Integration\Storage\Database;
 
 use OC\Files\Cache\Storage as StorageCache;
+use OC\Files\Cache\Watcher;
 use OC\Files\Config\UserMountCache;
 use OC\Files\Filesystem;
 use OC\Files\Mount\Manager;
@@ -44,6 +45,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
+use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorage;
+use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFolder;
+use OCA\CAFeVDBMembers\Database\ORM\Repositories\EntityRepository;
 use OCA\CAFeVDBMembers\Exceptions\RowAccessTokenInvalidException;
 use OCA\CAFeVDBMembers\Exceptions\RowAccessTokenMissingException;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
@@ -239,6 +243,53 @@ class OfflineMountTest extends TestCase
     self::assertSame($this->rootId, $mount->getStorageRootId());
     $this->mountCache()->registerMounts($this->user, $mounts, [MountProvider::class]);
     self::assertSame($before, $this->snapshot());
+  }
+
+  public function testAuthenticatedWatcherRefreshesCachedDirectorySources(): void
+  {
+    $sources = [
+      (new DatabaseStorage())->setStorageId('finance/invoices/')
+        ->setRoot(new DatabaseStorageFolder()),
+    ];
+    $repository = $this->getMockBuilder(EntityRepository::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['findAll'])
+      ->getMock();
+    $repository->expects($this->atLeastOnce())->method('findAll')->willReturnCallback(
+      static function() use (&$sources): array {
+        return $sources;
+      },
+    );
+    $entityManager = $this->getMockBuilder(EntityManager::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['clear', 'connected', 'getRepository'])
+      ->getMock();
+    $entityManager->method('connected')->willReturn(true);
+    $entityManager->expects($this->atLeastOnce())->method('getRepository')
+      ->with(DatabaseStorage::class)->willReturn($repository);
+    $this->session->method('isLoggedIn')->willReturn(true);
+    $this->session->method('getUser')->willReturn($this->user);
+    $this->factory->expects($this->once())->method('create')->willReturn($entityManager);
+    $l10n = $this->createStub(IL10N::class);
+    $l10n->method('t')->willReturnArgument(0);
+    $l10nFactory = $this->createStub(IFactory::class);
+    $l10nFactory->method('get')->willReturn($l10n);
+    $provider = new MountProvider($this->factory, $this->config, $this->session, $this->logger, $l10nFactory, $this->mountCache(), $this->connection);
+    $mounts = $provider->getMountsForUser($this->user, $this->loader);
+    self::assertCount(1, $mounts);
+    $storage = $mounts[0]->getStorage();
+    self::assertInstanceOf(Storage::class, $storage);
+    $cache = $storage->getCache();
+    $watcher = $storage->getWatcher();
+    $watcher->setPolicy(Watcher::CHECK_ALWAYS);
+
+    $watcher->checkUpdate('', $cache->get(''));
+    self::assertSame(['Finance'], array_map(static fn($entry) => $entry->getName(), $cache->getFolderContents('')));
+    self::assertFalse($cache->get('Projects'));
+
+    $sources = [];
+    $watcher->checkUpdate('', $cache->get(''));
+    self::assertSame([], $cache->getFolderContents(''));
   }
 
   public static function initialMountPaths(): array

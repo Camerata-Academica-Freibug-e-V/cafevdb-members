@@ -158,7 +158,7 @@ class Storage extends AbstractStorage
   private function resolveDirectory(array $path, array $sources): ?array
   {
     $folders = [];
-    $synthetic = false;
+    $synthetic = $path === [];
     foreach ($sources as $source) {
       if (self::isPrefix($path, $source['path']) && count($path) < count($source['path'])) {
         $synthetic = true;
@@ -445,6 +445,9 @@ class Storage extends AbstractStorage
 
   public function hasUpdated(string $path, int $time): bool
   {
+    if ($this->is_dir($path)) {
+      return true;
+    }
     $mtime = $this->filemtime($path);
     return $mtime === false || $mtime > $time;
   }

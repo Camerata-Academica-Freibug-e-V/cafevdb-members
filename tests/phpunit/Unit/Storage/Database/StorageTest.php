@@ -90,6 +90,25 @@ class StorageTest extends TestCase
     self::assertFalse($storage->opendir('Projects'));
   }
 
+  public function testEmptyRootRemainsListableAndDirectoriesAreRechecked(): void
+  {
+    $sources = [];
+    $storage = $this->storageForSources($sources);
+
+    self::assertSame([], $this->directoryNames($storage, ''));
+    self::assertTrue($storage->hasUpdated('', 1));
+
+    $sources = [
+      (new DatabaseStorage())->setStorageId('project/participant/ProjectName/member-id/')
+        ->setRoot(new DatabaseStorageFolder()),
+    ];
+    self::assertSame(['Projects'], $this->directoryNames($storage, ''));
+    self::assertTrue($storage->hasUpdated('Projects', PHP_INT_MAX));
+    $sources = [];
+    self::assertSame([], $this->directoryNames($storage, ''));
+    self::assertTrue($storage->hasUpdated('Projects', PHP_INT_MAX));
+  }
+
   /** @param list<DatabaseStorage> $sources */
   private function storageForSources(array &$sources, ?IL10N $l = null): Storage
   {

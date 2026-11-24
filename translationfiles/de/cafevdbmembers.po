@@ -269,9 +269,8 @@ msgid ""
 "Destination \"%1$s\" already exists and is configured as shared folder, "
 "delete it?"
 msgstr ""
-"Das Ziel \"%1$s\" existiert bereits und ist als gemeinsamer Ordner "
-"eingestellt und steht im Weg. Soll es gelöscht werden?\n"
-"\n"
+"Das Ziel \"%1$s\" existiert bereits und ist als gemeinsamer Ordner\n"
+"eingestellt und steht im Weg. Soll es gelöscht werden?"
 
 #: lib/Controller/SettingsController.php:138
 msgid "Successfully synchronized the shared-folder structure."

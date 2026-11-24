@@ -137,7 +137,7 @@ class ConnectorConfigurationTest extends TestCase
    */
   private function service(array &$values, string &$descriptor, bool $enabled = true): ConnectorConfiguration
   {
-    $config = $this->createMock(IConfig::class);
+    $config = $this->createStub(IConfig::class);
     $config->method('getAppValue')->willReturnCallback(
       static function(string $app, string $key, string $default = '') use (&$values, &$descriptor): string {
         if ($key === 'enabled') {

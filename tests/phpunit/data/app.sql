@@ -196,19 +196,22 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `DoctrineMigrationsVersions` WRITE;
 /*!40000 ALTER TABLE `DoctrineMigrationsVersions` DISABLE KEYS */;
 INSERT INTO `DoctrineMigrationsVersions` VALUES
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version19700101000001','2026-10-25 17:29:51.119935',802),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version19700101000002','2026-10-25 17:29:51.988843',292),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version19700101000003','2026-10-25 17:29:52.309066',15),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260108084800','2026-10-25 17:29:52.350950',90),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260108115432','2026-10-25 17:29:52.469341',5),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260130130553','2026-10-25 17:29:52.500709',13),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260131090857','2026-10-25 17:29:52.539498',28),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260206193722','2026-10-25 17:29:52.594158',7),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260207000624','2026-10-25 17:29:52.628261',3),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260819094146','2026-10-25 17:29:52.659129',12),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260819094422','2026-10-25 17:29:52.698764',10),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260819105948','2026-10-25 17:29:52.737178',30),
-('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20261009150233','2026-10-25 17:29:52.795009',8);
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version19700101000001','2026-11-23 10:43:22.874442',457),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version19700101000002','2026-11-23 10:43:23.380234',225),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version19700101000003','2026-11-23 10:43:23.621324',9),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260108084800','2026-11-23 10:43:23.644140',55),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260108115432','2026-11-23 10:43:23.713020',3),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260130130553','2026-11-23 10:43:23.729523',7),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260131090857','2026-11-23 10:43:23.750591',65),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260206193722','2026-11-23 10:43:23.830744',4),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260207000624','2026-11-23 10:43:23.849397',2),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260819094146','2026-11-23 10:43:23.864880',9),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260819094422','2026-11-23 10:43:23.888884',6),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20260819105948','2026-11-23 10:43:23.910926',18),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20261009150233','2026-11-23 10:43:23.944330',5),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20261031220000','2026-11-23 10:43:23.963506',11),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20261101120000','2026-11-23 10:43:23.989242',22),
+('OCA\\CAFEVDB\\Maintenance\\Migrations\\Version20261118191044','2026-11-23 10:43:24.025735',5);
 /*!40000 ALTER TABLE `DoctrineMigrationsVersions` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -338,7 +341,7 @@ CREATE TABLE `EmailTemplates` (
   `updated_by` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_51BDDDC389B783` (`tag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -348,6 +351,13 @@ CREATE TABLE `EmailTemplates` (
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `EmailTemplates` WRITE;
 /*!40000 ALTER TABLE `EmailTemplates` DISABLE KEYS */;
+INSERT INTO `EmailTemplates` VALUES
+('BankTransferAnnouncement','Bank transfer announcement template','<p><strong>This is a starting point only, not a ready-to-send email. Please refine it before use.</strong></p>\n<p>${MEMBER::SALUTATION:FORMAL}</p>\n<p>${MEMBER::BANK_TRANSACTION_AMOUNT}</p>\n<p>${MEMBER::BANK_TRANSACTION_PURPOSE}</p>\n<p>${MEMBER::BANK_TRANSACTION_PARTS}</p>\n<p>${MEMBER::SEPA_MANDATE_REFERENCE}</p>\n<p>${MEMBER::SEPA_MANDATE_DATE}</p>\n<p>${MEMBER::BANK_ACCOUNT_IBAN}</p>\n<p>${MEMBER::BANK_ACCOUNT_BIC}</p>\n<p>${MEMBER::BANK_ACCOUNT_BANK}</p>\n<p>${MEMBER::BANK_ACCOUNT_OWNER}</p>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DATE}</p>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DAYS}</p>\n<p>${GLOBAL::BANK_TRANSACTION_SUBMIT_DATE}</p>\n<p>${GLOBAL::BANK_TRANSACTION_SUBMIT_DAYS}</p>\n<p>${GLOBAL::SENDER}</p>',1,'2026-11-23 11:43:23.000000','2026-11-23 11:43:23.000000',NULL,NULL),
+('DebitNoteAnnouncement','Debit note announcement template','<p><strong>This is a starting point only, not a ready-to-send email. Please refine it before use.</strong></p>\n<p>${MEMBER::SALUTATION:FORMAL}</p>\n<p>${MEMBER::BANK_TRANSACTION_AMOUNT}</p>\n<p>${MEMBER::BANK_TRANSACTION_PURPOSE}</p>\n<p>${MEMBER::BANK_TRANSACTION_PARTS}</p>\n<p>${MEMBER::SEPA_MANDATE_REFERENCE}</p>\n<p>${MEMBER::SEPA_MANDATE_DATE}</p>\n<p>${MEMBER::BANK_ACCOUNT_IBAN}</p>\n<p>${MEMBER::BANK_ACCOUNT_BIC}</p>\n<p>${MEMBER::BANK_ACCOUNT_BANK}</p>\n<p>${MEMBER::BANK_ACCOUNT_OWNER}</p>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DATE}</p>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DAYS}</p>\n<p>${GLOBAL::BANK_TRANSACTION_SUBMIT_DATE}</p>\n<p>${GLOBAL::BANK_TRANSACTION_SUBMIT_DAYS}</p>\n<p>${GLOBAL::SENDER}</p>',2,'2026-11-23 11:43:23.000000','2026-11-23 11:43:23.000000',NULL,NULL),
+('DonationReceiptNotification','Donation receipt notification template','<p><strong>This is a starting point only, not a ready-to-send email. Please refine it before use.</strong></p>\n<p>${MEMBER::SALUTATION:FORMAL}</p>\n<p>${MEMBER::BANK_TRANSACTION_AMOUNT}</p>\n<p>${MEMBER::BANK_TRANSACTION_PURPOSE}</p>\n<p>${MEMBER::BANK_TRANSACTION_PARTS}</p>\n<p>${MEMBER::SEPA_MANDATE_REFERENCE}</p>\n<p>${MEMBER::SEPA_MANDATE_DATE}</p>\n<p>${MEMBER::BANK_ACCOUNT_IBAN}</p>\n<p>${MEMBER::BANK_ACCOUNT_BIC}</p>\n<p>${MEMBER::BANK_ACCOUNT_BANK}</p>\n<p>${MEMBER::BANK_ACCOUNT_OWNER}</p>\n<p>${MEMBER::DONATION_AMOUNT}</p>\n<p>${MEMBER::WAIVED_AMOUNT}</p>\n<p>${MEMBER::WAIVING_OF_REIMBURSEMENT}</p>\n<p>${MEMBER::DONATION_RECEIPT_DATE}</p>\n<p>${MEMBER::DONATION_PARTS}</p>\n<p>${GLOBAL::SENDER}</p>',3,'2026-11-23 11:43:23.000000','2026-11-23 11:43:23.000000',NULL,NULL),
+('InvoiceNotification','Invoice notification template','<p><strong>This is a starting point only, not a ready-to-send email. Please refine it before use.</strong></p>\n<p>${MEMBER::SALUTATION:FORMAL}</p>\n<p>${MEMBER::BANK_TRANSACTION_AMOUNT}</p>\n<p>${MEMBER::BANK_TRANSACTION_PURPOSE}</p>\n<p>${MEMBER::BANK_TRANSACTION_PARTS}</p>\n<p>${MEMBER::SEPA_MANDATE_REFERENCE}</p>\n<p>${MEMBER::SEPA_MANDATE_DATE}</p>\n<p>${MEMBER::BANK_ACCOUNT_IBAN}</p>\n<p>${MEMBER::BANK_ACCOUNT_BIC}</p>\n<p>${MEMBER::BANK_ACCOUNT_BANK}</p>\n<p>${MEMBER::BANK_ACCOUNT_OWNER}</p>\n<p>${MEMBER::INVOICE_NUMBER}</p>\n<p>${MEMBER::INVOICE_DATE}</p>\n<p>${MEMBER::INVOICE_DUE_DATE}</p>\n<p>${MEMBER::INVOICE_AMOUNT}</p>\n<p>${MEMBER::INVOICE_SUBJECT}</p>\n<p>${MEMBER::INVOICE_PURPOSE}</p>\n<p>${MEMBER::INVOICE_ITEMS}</p>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DATE}</p>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DAYS}</p>\n<p>${GLOBAL::SENDER}</p>',4,'2026-11-23 11:43:23.000000','2026-11-23 11:43:23.000000',NULL,NULL),
+('AllVariables','Substitutions reference','<p><strong>This template lists all available substitutions. It is meant as a reference, not as a ready-to-send email.</strong></p>\n<h2>GLOBAL substitutions</h2>\n<h3>General</h3>\n<p>${GLOBAL::ORGANIZER}</p>\n<p>${GLOBAL::SENDER}</p>\n<p>${GLOBAL::PRESIDENT:NAME}</p>\n<p>${GLOBAL::TREASURER:NAME}</p>\n<p>${GLOBAL::SECRETARY:NAME}</p>\n<p>${GLOBAL::ADDRESS}</p>\n<p>${GLOBAL::BANK_ACCOUNT}</p>\n<p>${GLOBAL::CREDITOR_IDENTIFIER}</p>\n<p>${GLOBAL::DATE:now:long}</p>\n<p>${GLOBAL::TIME:now:short}</p>\n<p>${GLOBAL::DATETIME:now:medium}</p>\n<h3>Projects</h3>\n<p>${GLOBAL::PROJECT}</p>\n<p>${GLOBAL::PROJECT_MUSIC_SHEETS_SHARE}</p>\n<p>${GLOBAL::PROJECT_MUSIC_SHEETS_SHARE_EXPIRATION}</p>\n<p>${GLOBAL::PROJECT_MUSIC_SHEETS_SHARE_EXPIRATION:phrase}</p>\n<p>${GLOBAL::POST_PROJECT_MEDIA_SHARE}</p>\n<p>${GLOBAL::POST_PROJECT_MEDIA_FOLDER}</p>\n<h3>Debit notes, bank transfers and invoices</h3>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DATE}</p>\n<p>${GLOBAL::BANK_TRANSACTION_DUE_DAYS}</p>\n<h3>Debit notes and bank transfers</h3>\n<p>${GLOBAL::BANK_TRANSACTION_SUBMIT_DATE}</p>\n<p>${GLOBAL::BANK_TRANSACTION_SUBMIT_DAYS}</p>\n<h2>MEMBER substitutions</h2>\n<h3>General</h3>\n<p>${MEMBER::SALUTATION:FORMAL}</p>\n<p>${MEMBER::SALUTATION:INFORMAL}</p>\n<p>${MEMBER::FIRST_NAME}</p>\n<p>${MEMBER::SUR_NAME}</p>\n<p>${MEMBER::NICK_NAME}</p>\n<p>${MEMBER::DISPLAY_NAME}</p>\n<p>${MEMBER::GENDER}</p>\n<p>${MEMBER::EMAIL}</p>\n<p>${MEMBER::MOBILE_PHONE}</p>\n<p>${MEMBER::FIXED_LINE_PHONE}</p>\n<p>${MEMBER::STREET}</p>\n<p>${MEMBER::STREET_NUMBER}</p>\n<p>${MEMBER::STREET_AND_NUMBER}</p>\n<p>${MEMBER::POSTAL_CODE}</p>\n<p>${MEMBER::CITY}</p>\n<p>${MEMBER::COUNTRY}</p>\n<p>${MEMBER::LANGUAGE}</p>\n<p>${MEMBER::BIRTHDAY}</p>\n<p>${MEMBER::DATE:BIRTHDAY:long}</p>\n<h3>Projects</h3>\n<p>${MEMBER::TOTAL_FEES}</p>\n<p>${MEMBER::AMOUNT_PAID}</p>\n<p>${MEMBER::MISSING_AMOUNT}</p>\n<p>${MEMBER::PROJECT_DATA}</p>\n<h3>Debit notes, bank transfers, donation receipts and invoices</h3>\n<p>${MEMBER::BANK_TRANSACTION_AMOUNT}</p>\n<p>${MEMBER::BANK_TRANSACTION_PURPOSE}</p>\n<p>${MEMBER::BANK_TRANSACTION_PARTS}</p>\n<p>${MEMBER::BANK_ACCOUNT_IBAN}</p>\n<p>${MEMBER::BANK_ACCOUNT_BIC}</p>\n<p>${MEMBER::BANK_ACCOUNT_BANK}</p>\n<p>${MEMBER::BANK_ACCOUNT_OWNER}</p>\n<h3>Debit notes</h3>\n<p>${MEMBER::SEPA_MANDATE_REFERENCE}</p>\n<p>${MEMBER::SEPA_MANDATE_DATE}</p>\n<h3>Donation receipts</h3>\n<p>${MEMBER::DONATION_AMOUNT}</p>\n<p>${MEMBER::WAIVED_AMOUNT}</p>\n<p>${MEMBER::WAIVING_OF_REIMBURSEMENT}</p>\n<p>${MEMBER::DONATION_RECEIPT_DATE}</p>\n<p>${MEMBER::DONATION_PARTS}</p>\n<h3>Invoices</h3>\n<p>${MEMBER::INVOICE_NUMBER}</p>\n<p>${MEMBER::INVOICE_DATE}</p>\n<p>${MEMBER::INVOICE_DUE_DATE}</p>\n<p>${MEMBER::INVOICE_AMOUNT}</p>\n<p>${MEMBER::INVOICE_SUBJECT}</p>\n<p>${MEMBER::INVOICE_PURPOSE}</p>\n<p>${MEMBER::INVOICE_ITEMS}</p>',5,'2026-11-23 11:43:24.000000','2026-11-23 11:43:24.000000',NULL,NULL),
+('AlleVariablen','Ersetzungs-Referenz','<p><strong>Diese Emailvorlage listet alle möglichen Ersetzungen auf. Es ist als\nReferenz gedacht, nicht als echte Emailvorlage.</strong></p>\n<h2>GLOBAL Ersetzungen</h2>\n<h3>Allgemeines</h3>\n<p>${GLOBAL::ORGANISATOREN}</p>\n<p>${GLOBAL::ABSENDER}</p>\n<p>${GLOBAL::VORSITZ:NAME}</p>\n<p>${GLOBAL::KASSENFÜHRUNG:NAME}</p>\n<p>${GLOBAL::SCHRIFTFÜHRUNG:NAME}</p>\n<p>${GLOBAL::ADRESSE}</p>\n<p>${GLOBAL::BANK_KONTO}</p>\n<p>${GLOBAL::GLÄUBIGER_IDENTIFIKATION}</p>\n<p>${GLOBAL::DATUM:now:long}</p>\n<p>${GLOBAL::ZEIT:now:short}</p>\n<p>${GLOBAL::DATUMZEIT:now:medium}</p>\n<h3>Projekte</h3>\n<p>${GLOBAL::PROJEKT}</p>\n<p>${GLOBAL::PROJEKT_NOTEN_FREIGABE}</p>\n<p>${GLOBAL::PROJEKT_NOTEN_FREIGABE_ABLAUF}</p>\n<p>${GLOBAL::PROJEKT_NOTEN_FREIGABE_ABLAUF:Phrase}</p>\n<p>${GLOBAL::POST_PROJEKT_MEDIEN_FREIGABE}</p>\n<p>${GLOBAL::POST_PROJEKT_MEDIEN_ORDNER}</p>\n<h3>Lastschriften, Überweisungen und Rechnungen</h3>\n<p>${GLOBAL::BANK_AUFTRAG_FÄLLIGKEIT_DATUM}</p>\n<p>${GLOBAL::BANK_AUFTRAG_FÄLLIGKEIT_TAGE}</p>\n<h3>Lastschriften und Überweisungen</h3>\n<p>${GLOBAL::BANK_AUFTRAG_EINREICHUNG_DATUM}</p>\n<p>${GLOBAL::BANK_AUFTRAG_EINREICHUNG_TAGE}</p>\n<h2>MITGLIED Ersetzungen</h2>\n<h3>Allgemeines</h3>\n<p>${MITGLIED::GRUSSFORMEL:FÖRMLICH}</p>\n<p>${MITGLIED::GRUSSFORMEL:INFORMELL}</p>\n<p>${MITGLIED::VORNAME}</p>\n<p>${MITGLIED::NACHNAME}</p>\n<p>${MITGLIED::RUFNAME}</p>\n<p>${MITGLIED::ANZEIGENAME}</p>\n<p>${MITGLIED::GESCHLECHT}</p>\n<p>${MITGLIED::EMAIL}</p>\n<p>${MITGLIED::MOBILFUNK}</p>\n<p>${MITGLIED::FESTNETZ}</p>\n<p>${MITGLIED::STRASSE}</p>\n<p>${MITGLIED::HAUSNUMMER}</p>\n<p>${MITGLIED::STRASSE_UND_NUMMER}</p>\n<p>${MITGLIED::PLZ}</p>\n<p>${MITGLIED::STADT}</p>\n<p>${MITGLIED::LAND}</p>\n<p>${MITGLIED::SPRACHE}</p>\n<p>${MITGLIED::GEBURTSTAG}</p>\n<p>${MITGLIED::DATUM:GEBURTSTAG:long}</p>\n<h3>Projekte</h3>\n<p>${MITGLIED::GESAMTKOSTEN}</p>\n<p>${MITGLIED::ZAHLUNGSSUMME}</p>\n<p>${MITGLIED::FEHLBETRAG}</p>\n<p>${MITGLIED::PROJEKT_DATEN}</p>\n<h3>Lastschriften, Überweisungen, Zuwendungsbestätigungen und Rechnungen</h3>\n<p>${MITGLIED::BANK_AUFTRAG_BETRAG}</p>\n<p>${MITGLIED::BANK_AUFTRAG_ZWECK}</p>\n<p>${MITGLIED::BANK_AUFTRAG_POSTEN}</p>\n<p>${MITGLIED::BANK_KONTO_IBAN}</p>\n<p>${MITGLIED::BANK_KONTO_BIC}</p>\n<p>${MITGLIED::BANK_KONTO_BANK}</p>\n<p>${MITGLIED::BANK_KONTO_INHABER}</p>\n<h3>Lastschriften</h3>\n<p>${MITGLIED::SEPA_MANDAT_REFERENZ}</p>\n<p>${MITGLIED::SEPA_MANDAT_DATUM}</p>\n<h3>Zuwendungsbestätigungen</h3>\n<p>${MITGLIED::SPENDENBETRAG}</p>\n<p>${MITGLIED::VERZICHTSBETRAG}</p>\n<p>${MITGLIED::ERSTATTUNGSVERZICHT}</p>\n<p>${MITGLIED::SPENDENBESICHEINIGUNG_DATUM}</p>\n<p>${MITGLIED::SPENDENPOSTEN}</p>\n<h3>Rechnungen</h3>\n<p>${MITGLIED::RECHNUNGSNUMMER}</p>\n<p>${MITGLIED::RECHNUNGSDATUM}</p>\n<p>${MITGLIED::RECHUNGSFÄLLIGKEIT}</p>\n<p>${MITGLIED::RECHNUNGSBETRAG}</p>\n<p>${MITGLIED::RECHNUNGSBETREFF}</p>\n<p>${MITGLIED::RECHNUNGSZWECK}</p>\n<p>${MITGLIED::RECHNUNGSPOSTEN}</p>',6,'2026-11-23 11:43:24.000000','2026-11-23 11:43:24.000000',NULL,NULL);
 /*!40000 ALTER TABLE `EmailTemplates` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -420,68 +430,68 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `ExtLogEntries` WRITE;
 /*!40000 ALTER TABLE `ExtLogEntries` DISABLE KEYS */;
 INSERT INTO `ExtLogEntries` VALUES
-(1,'create','2026-10-25 17:29:52.124668','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:7:\"strings\";s:7:\"deleted\";N;}','john.doe','','1'),
-(2,'create','2026-10-25 17:29:52.125316','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:6:\"string\";s:7:\"deleted\";N;}','john.doe','','2'),
-(3,'create','2026-10-25 17:29:52.125726','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:7:\"plucked\";s:7:\"deleted\";N;}','john.doe','','3'),
-(4,'create','2026-10-25 17:29:52.126111','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:4:\"wind\";s:7:\"deleted\";N;}','john.doe','','4'),
-(5,'create','2026-10-25 17:29:52.126501','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:4:\"wood\";s:7:\"deleted\";N;}','john.doe','','5'),
-(6,'create','2026-10-25 17:29:52.126875','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:5:\"brass\";s:7:\"deleted\";N;}','john.doe','','6'),
-(7,'create','2026-10-25 17:29:52.127269','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:10:\"percussion\";s:7:\"deleted\";N;}','john.doe','','7'),
-(8,'create','2026-10-25 17:29:52.127650','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:8:\"keyboard\";s:7:\"deleted\";N;}','john.doe','','8'),
-(9,'create','2026-10-25 17:29:52.128023','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:13:\"miscellaneous\";s:7:\"deleted\";N;}','john.doe','','9'),
-(10,'create','2026-10-25 17:29:52.128417','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:17:\"not an instrument\";s:7:\"deleted\";N;}','john.doe','','10'),
-(11,'create','2026-10-25 17:29:52.128846','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:6:\"violin\";s:9:\"sortOrder\";i:1;s:7:\"deleted\";N;}','john.doe','','1'),
-(12,'create','2026-10-25 17:29:52.129229','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"viola\";s:9:\"sortOrder\";i:2;s:7:\"deleted\";N;}','john.doe','','2'),
-(13,'create','2026-10-25 17:29:52.129642','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:11:\"violoncello\";s:9:\"sortOrder\";i:3;s:7:\"deleted\";N;}','john.doe','','3'),
-(14,'create','2026-10-25 17:29:52.130019','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:11:\"double bass\";s:9:\"sortOrder\";i:4;s:7:\"deleted\";N;}','john.doe','','4'),
-(15,'create','2026-10-25 17:29:52.130409','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"flute\";s:9:\"sortOrder\";i:10;s:7:\"deleted\";N;}','john.doe','','5'),
-(16,'create','2026-10-25 17:29:52.130779','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"piccolo\";s:9:\"sortOrder\";i:11;s:7:\"deleted\";N;}','john.doe','','6'),
-(17,'create','2026-10-25 17:29:52.131156','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"oboe\";s:9:\"sortOrder\";i:20;s:7:\"deleted\";N;}','john.doe','','7'),
-(18,'create','2026-10-25 17:29:52.131675','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:12:\"English horn\";s:9:\"sortOrder\";i:25;s:7:\"deleted\";N;}','john.doe','','8'),
-(19,'create','2026-10-25 17:29:52.132071','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:8:\"clarinet\";s:9:\"sortOrder\";i:30;s:7:\"deleted\";N;}','john.doe','','9'),
-(20,'create','2026-10-25 17:29:52.132472','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:13:\"bass clarinet\";s:9:\"sortOrder\";i:35;s:7:\"deleted\";N;}','john.doe','','10'),
-(21,'create','2026-10-25 17:29:52.132854','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"bassoon\";s:9:\"sortOrder\";i:40;s:7:\"deleted\";N;}','john.doe','','11'),
-(22,'create','2026-10-25 17:29:52.133223','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:12:\"natural horn\";s:9:\"sortOrder\";i:50;s:7:\"deleted\";N;}','john.doe','','12'),
-(23,'create','2026-10-25 17:29:52.133642','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"trumpet\";s:9:\"sortOrder\";i:60;s:7:\"deleted\";N;}','john.doe','','13'),
-(24,'create','2026-10-25 17:29:52.134032','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:8:\"trombone\";s:9:\"sortOrder\";i:70;s:7:\"deleted\";N;}','john.doe','','14'),
-(25,'create','2026-10-25 17:29:52.134435','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:13:\"bass trombone\";s:9:\"sortOrder\";i:71;s:7:\"deleted\";N;}','john.doe','','15'),
-(26,'create','2026-10-25 17:29:52.134819','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"tuba\";s:9:\"sortOrder\";i:80;s:7:\"deleted\";N;}','john.doe','','16'),
-(27,'create','2026-10-25 17:29:52.135215','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"harp\";s:9:\"sortOrder\";i:90;s:7:\"deleted\";N;}','john.doe','','17'),
-(28,'create','2026-10-25 17:29:52.135591','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:6:\"guitar\";s:9:\"sortOrder\";i:95;s:7:\"deleted\";N;}','john.doe','','18'),
-(29,'create','2026-10-25 17:29:52.135958','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"timpani\";s:9:\"sortOrder\";i:100;s:7:\"deleted\";N;}','john.doe','','19'),
-(30,'create','2026-10-25 17:29:52.136333','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"drum\";s:9:\"sortOrder\";i:105;s:7:\"deleted\";N;}','john.doe','','20'),
-(31,'create','2026-10-25 17:29:52.136699','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"bass drum\";s:9:\"sortOrder\";i:110;s:7:\"deleted\";N;}','john.doe','','21'),
-(32,'create','2026-10-25 17:29:52.137065','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"cymbals\";s:9:\"sortOrder\";i:201;s:7:\"deleted\";N;}','john.doe','','22'),
-(33,'create','2026-10-25 17:29:52.137478','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:12:\"glockenspiel\";s:9:\"sortOrder\";i:203;s:7:\"deleted\";N;}','john.doe','','23'),
-(34,'create','2026-10-25 17:29:52.137849','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"xylophone\";s:9:\"sortOrder\";i:400;s:7:\"deleted\";N;}','john.doe','','24'),
-(35,'create','2026-10-25 17:29:52.138232','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"piano\";s:9:\"sortOrder\";i:5000;s:7:\"deleted\";N;}','john.doe','','25'),
-(36,'create','2026-10-25 17:29:52.138609','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"organ\";s:9:\"sortOrder\";i:5010;s:7:\"deleted\";N;}','john.doe','','26'),
-(37,'create','2026-10-25 17:29:52.138979','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:11:\"harpsichord\";s:9:\"sortOrder\";i:5015;s:7:\"deleted\";N;}','john.doe','','27'),
-(38,'create','2026-10-25 17:29:52.139382','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"celesta\";s:9:\"sortOrder\";i:5020;s:7:\"deleted\";N;}','john.doe','','28'),
-(39,'create','2026-10-25 17:29:52.139763','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"bandoneon\";s:9:\"sortOrder\";i:5025;s:7:\"deleted\";N;}','john.doe','','29'),
-(40,'create','2026-10-25 17:29:52.140132','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"accordion\";s:9:\"sortOrder\";i:5030;s:7:\"deleted\";N;}','john.doe','','30'),
-(41,'create','2026-10-25 17:29:52.140523','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"associate\";s:9:\"sortOrder\";i:2147483647;s:7:\"deleted\";N;}','john.doe','','31'),
-(42,'create','2026-10-25 17:29:52.140894','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:16:\"business partner\";s:9:\"sortOrder\";i:2147483647;s:7:\"deleted\";N;}','john.doe','','32'),
-(43,'create','2026-10-25 17:29:53.035442','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Project',1,'a:9:{s:4:\"year\";i:2099;s:4:\"name\";s:15:\"TestProject2099\";s:4:\"type\";s:9:\"temporary\";s:13:\"mailingListId\";N;s:21:\"registrationStartDate\";N;s:20:\"registrationDeadline\";N;s:7:\"deleted\";N;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.816239\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.814794\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
-(44,'create','2026-10-25 17:29:53.035957','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Musician',1,'a:30:{s:7:\"surName\";s:12:\"Musterperson\";s:9:\"firstName\";s:3:\"Max\";s:8:\"nickName\";N;s:11:\"displayName\";N;s:6:\"gender\";N;s:10:\"userIdSlug\";s:16:\"lieschen.mueller\";s:14:\"userPassphrase\";N;s:4:\"city\";s:8:\"Nirgends\";s:6:\"street\";s:15:\"Unauffindbarweg\";s:12:\"streetNumber\";s:2:\"42\";s:17:\"addressSupplement\";s:8:\"Igloo 13\";s:5:\"poBox\";N;s:7:\"country\";s:2:\"AQ\";s:10:\"postalCode\";s:3:\"Z-7\";s:8:\"language\";N;s:11:\"mobilePhone\";s:4:\"0815\";s:14:\"fixedLinePhone\";s:4:\"4711\";s:8:\"birthday\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.874038\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:5:\"email\";s:20:\"john.doe@nowhere.tld\";s:26:\"defaultParticipationStatus\";s:7:\"regular\";s:7:\"remarks\";N;s:23:\"cloudAccountDeactivated\";N;s:20:\"cloudAccountDisabled\";b:1;s:14:\"addressBookUri\";N;s:12:\"organization\";N;s:8:\"jobTitle\";N;s:7:\"deleted\";N;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.874038\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.874038\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:4:\"uuid\";O:55:\"OCA\\CAFEVDB\\Wrapped\\Ramsey\\Uuid\\Lazy\\LazyUuidFromString\":1:{s:6:\"string\";s:36:\"00000000-0000-0000-0000-000000000000\";}}','john.doe','','1'),
-(45,'create','2026-10-25 17:29:53.036488','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianEmailAddress',1,'a:3:{s:7:\"address\";s:20:\"john.doe@nowhere.tld\";s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.874038\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.874038\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','john.doe@nowhere.tld 1'),
-(46,'create','2026-10-25 17:29:53.036892','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\SepaBankAccount',1,'a:8:{s:8:\"sequence\";i:1;s:4:\"iban\";s:22:\"DE02700100800030876808\";s:3:\"bic\";s:11:\"PBNKDEFFXXX\";s:3:\"blz\";s:8:\"70010080\";s:16:\"bankAccountOwner\";s:17:\"Musterperson, Max\";s:7:\"deleted\";N;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.913152\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.912906\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1 1'),
-(47,'create','2026-10-25 17:29:53.083675','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectParticipant',1,'a:5:{s:12:\"registration\";b:0;s:19:\"participationStatus\";s:7:\"regular\";s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.874038\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:52.874038\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"deleted\";N;}','john.doe','','1 1'),
-(48,'create','2026-10-25 17:29:53.146296','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianInstrument',1,'a:4:{s:7:\"ranking\";i:1;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.124101\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.123897\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"deleted\";N;}','john.doe','','1 1'),
-(49,'create','2026-10-25 17:29:53.146753','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianInstrument',1,'a:4:{s:7:\"ranking\";i:1;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.127424\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.127277\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"deleted\";N;}','john.doe','','1 4'),
-(50,'create','2026-10-25 17:29:53.147274','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrumentationNumber',1,'a:2:{s:5:\"voice\";i:0;s:8:\"quantity\";i:0;}','john.doe','',NULL),
-(51,'create','2026-10-25 17:29:53.147645','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrumentationNumber',1,'a:2:{s:5:\"voice\";i:1;s:8:\"quantity\";i:1;}','john.doe','','1 1 1'),
-(52,'create','2026-10-25 17:29:53.148000','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrumentationNumber',1,'a:2:{s:5:\"voice\";i:2;s:8:\"quantity\";i:2;}','john.doe','','1 1 2'),
-(53,'create','2026-10-25 17:29:53.148555','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrument',1,'a:2:{s:5:\"voice\";i:0;s:13:\"sectionLeader\";b:0;}','john.doe','',NULL),
-(54,'update','2026-10-25 17:29:53.148964','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',2,'a:1:{s:4:\"name\";s:7:\"Violine\";}','john.doe','','1'),
-(55,'update','2026-10-25 17:29:53.158393','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',2,'a:1:{s:4:\"name\";s:10:\"Kontrabass\";}','john.doe','','4'),
-(56,'update','2026-10-25 17:29:53.159499','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',2,'a:1:{s:6:\"family\";s:9:\"Streicher\";}','john.doe','','1'),
-(57,'update','2026-10-25 17:29:53.160437','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',2,'a:1:{s:6:\"family\";s:6:\"Saiten\";}','john.doe','','2'),
-(58,'create','2026-10-25 17:29:53.227104','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\EncryptedFile',1,'a:6:{s:8:\"fileName\";s:7:\"file.md\";s:8:\"mimeType\";s:13:\"text/markdown\";s:4:\"size\";i:9;s:8:\"dataHash\";N;s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.196375\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.196596\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
-(59,'create','2026-10-25 17:29:53.248035','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianRowAccessToken',1,'a:4:{s:6:\"userId\";s:8:\"john.doe\";s:15:\"accessTokenHash\";s:128:\"d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db\";s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.240260\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-10-25 17:29:53.240080\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
-(60,'update','2026-10-25 17:29:53.248494','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Project',2,'a:2:{s:21:\"registrationStartDate\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2099-01-01 00:00:00.000000\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:20:\"registrationDeadline\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2099-12-31 00:00:00.000000\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
-(61,'update','2026-10-25 17:29:53.249798','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Musician',2,'a:1:{s:10:\"userIdSlug\";s:8:\"john.doe\";}','john.doe','','1'),
-(62,'create','2026-10-25 17:29:53.494749','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectEvent',1,'a:9:{s:10:\"calendarId\";i:3;s:11:\"calendarUri\";s:5:\"other\";s:8:\"eventUid\";s:36:\"0c826812-96d1-48a4-95d2-e43c537b8461\";s:9:\"seriesUid\";N;s:8:\"eventUri\";s:40:\"B079DF16-D099-11F1-B470-E7E02CD0D418.ics\";s:12:\"recurrenceId\";i:0;s:8:\"sequence\";i:0;s:4:\"type\";s:6:\"VEVENT\";s:7:\"deleted\";N;}','john.doe','','1');
+(1,'create','2026-11-23 10:43:23.519336','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:7:\"strings\";s:7:\"deleted\";N;}','john.doe','','1'),
+(2,'create','2026-11-23 10:43:23.519612','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:6:\"string\";s:7:\"deleted\";N;}','john.doe','','2'),
+(3,'create','2026-11-23 10:43:23.519795','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:7:\"plucked\";s:7:\"deleted\";N;}','john.doe','','3'),
+(4,'create','2026-11-23 10:43:23.519970','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:4:\"wind\";s:7:\"deleted\";N;}','john.doe','','4'),
+(5,'create','2026-11-23 10:43:23.520141','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:4:\"wood\";s:7:\"deleted\";N;}','john.doe','','5'),
+(6,'create','2026-11-23 10:43:23.520317','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:5:\"brass\";s:7:\"deleted\";N;}','john.doe','','6'),
+(7,'create','2026-11-23 10:43:23.520488','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:10:\"percussion\";s:7:\"deleted\";N;}','john.doe','','7'),
+(8,'create','2026-11-23 10:43:23.520662','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:8:\"keyboard\";s:7:\"deleted\";N;}','john.doe','','8'),
+(9,'create','2026-11-23 10:43:23.520835','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:13:\"miscellaneous\";s:7:\"deleted\";N;}','john.doe','','9'),
+(10,'create','2026-11-23 10:43:23.521005','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',1,'a:2:{s:6:\"family\";s:17:\"not an instrument\";s:7:\"deleted\";N;}','john.doe','','10'),
+(11,'create','2026-11-23 10:43:23.521208','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:6:\"violin\";s:9:\"sortOrder\";i:1;s:7:\"deleted\";N;}','john.doe','','1'),
+(12,'create','2026-11-23 10:43:23.521382','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"viola\";s:9:\"sortOrder\";i:2;s:7:\"deleted\";N;}','john.doe','','2'),
+(13,'create','2026-11-23 10:43:23.521554','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:11:\"violoncello\";s:9:\"sortOrder\";i:3;s:7:\"deleted\";N;}','john.doe','','3'),
+(14,'create','2026-11-23 10:43:23.521732','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:11:\"double bass\";s:9:\"sortOrder\";i:4;s:7:\"deleted\";N;}','john.doe','','4'),
+(15,'create','2026-11-23 10:43:23.521905','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"flute\";s:9:\"sortOrder\";i:10;s:7:\"deleted\";N;}','john.doe','','5'),
+(16,'create','2026-11-23 10:43:23.522079','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"piccolo\";s:9:\"sortOrder\";i:11;s:7:\"deleted\";N;}','john.doe','','6'),
+(17,'create','2026-11-23 10:43:23.522251','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"oboe\";s:9:\"sortOrder\";i:20;s:7:\"deleted\";N;}','john.doe','','7'),
+(18,'create','2026-11-23 10:43:23.522424','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:12:\"English horn\";s:9:\"sortOrder\";i:25;s:7:\"deleted\";N;}','john.doe','','8'),
+(19,'create','2026-11-23 10:43:23.522596','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:8:\"clarinet\";s:9:\"sortOrder\";i:30;s:7:\"deleted\";N;}','john.doe','','9'),
+(20,'create','2026-11-23 10:43:23.522772','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:13:\"bass clarinet\";s:9:\"sortOrder\";i:35;s:7:\"deleted\";N;}','john.doe','','10'),
+(21,'create','2026-11-23 10:43:23.522944','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"bassoon\";s:9:\"sortOrder\";i:40;s:7:\"deleted\";N;}','john.doe','','11'),
+(22,'create','2026-11-23 10:43:23.523119','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:12:\"natural horn\";s:9:\"sortOrder\";i:50;s:7:\"deleted\";N;}','john.doe','','12'),
+(23,'create','2026-11-23 10:43:23.523291','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"trumpet\";s:9:\"sortOrder\";i:60;s:7:\"deleted\";N;}','john.doe','','13'),
+(24,'create','2026-11-23 10:43:23.523468','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:8:\"trombone\";s:9:\"sortOrder\";i:70;s:7:\"deleted\";N;}','john.doe','','14'),
+(25,'create','2026-11-23 10:43:23.523645','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:13:\"bass trombone\";s:9:\"sortOrder\";i:71;s:7:\"deleted\";N;}','john.doe','','15'),
+(26,'create','2026-11-23 10:43:23.523817','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"tuba\";s:9:\"sortOrder\";i:80;s:7:\"deleted\";N;}','john.doe','','16'),
+(27,'create','2026-11-23 10:43:23.523988','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"harp\";s:9:\"sortOrder\";i:90;s:7:\"deleted\";N;}','john.doe','','17'),
+(28,'create','2026-11-23 10:43:23.524166','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:6:\"guitar\";s:9:\"sortOrder\";i:95;s:7:\"deleted\";N;}','john.doe','','18'),
+(29,'create','2026-11-23 10:43:23.524339','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"timpani\";s:9:\"sortOrder\";i:100;s:7:\"deleted\";N;}','john.doe','','19'),
+(30,'create','2026-11-23 10:43:23.524511','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:4:\"drum\";s:9:\"sortOrder\";i:105;s:7:\"deleted\";N;}','john.doe','','20'),
+(31,'create','2026-11-23 10:43:23.524687','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"bass drum\";s:9:\"sortOrder\";i:110;s:7:\"deleted\";N;}','john.doe','','21'),
+(32,'create','2026-11-23 10:43:23.524860','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"cymbals\";s:9:\"sortOrder\";i:201;s:7:\"deleted\";N;}','john.doe','','22'),
+(33,'create','2026-11-23 10:43:23.525032','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:12:\"glockenspiel\";s:9:\"sortOrder\";i:203;s:7:\"deleted\";N;}','john.doe','','23'),
+(34,'create','2026-11-23 10:43:23.525204','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"xylophone\";s:9:\"sortOrder\";i:400;s:7:\"deleted\";N;}','john.doe','','24'),
+(35,'create','2026-11-23 10:43:23.525376','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"piano\";s:9:\"sortOrder\";i:5000;s:7:\"deleted\";N;}','john.doe','','25'),
+(36,'create','2026-11-23 10:43:23.525551','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:5:\"organ\";s:9:\"sortOrder\";i:5010;s:7:\"deleted\";N;}','john.doe','','26'),
+(37,'create','2026-11-23 10:43:23.525728','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:11:\"harpsichord\";s:9:\"sortOrder\";i:5015;s:7:\"deleted\";N;}','john.doe','','27'),
+(38,'create','2026-11-23 10:43:23.525900','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:7:\"celesta\";s:9:\"sortOrder\";i:5020;s:7:\"deleted\";N;}','john.doe','','28'),
+(39,'create','2026-11-23 10:43:23.526071','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"bandoneon\";s:9:\"sortOrder\";i:5025;s:7:\"deleted\";N;}','john.doe','','29'),
+(40,'create','2026-11-23 10:43:23.526244','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"accordion\";s:9:\"sortOrder\";i:5030;s:7:\"deleted\";N;}','john.doe','','30'),
+(41,'create','2026-11-23 10:43:23.526415','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:9:\"associate\";s:9:\"sortOrder\";i:2147483647;s:7:\"deleted\";N;}','john.doe','','31'),
+(42,'create','2026-11-23 10:43:23.526588','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',1,'a:3:{s:4:\"name\";s:16:\"business partner\";s:9:\"sortOrder\";i:2147483647;s:7:\"deleted\";N;}','john.doe','','32'),
+(43,'create','2026-11-23 10:43:24.293679','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Project',1,'a:9:{s:4:\"year\";i:2099;s:4:\"name\";s:15:\"TestProject2099\";s:4:\"type\";s:9:\"temporary\";s:13:\"mailingListId\";N;s:21:\"registrationStartDate\";N;s:20:\"registrationDeadline\";N;s:7:\"deleted\";N;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.038250\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.037318\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
+(44,'create','2026-11-23 10:43:24.293946','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Musician',1,'a:30:{s:7:\"surName\";s:12:\"Musterperson\";s:9:\"firstName\";s:3:\"Max\";s:8:\"nickName\";N;s:11:\"displayName\";N;s:6:\"gender\";N;s:10:\"userIdSlug\";s:16:\"lieschen.mueller\";s:14:\"userPassphrase\";N;s:4:\"city\";s:8:\"Nirgends\";s:6:\"street\";s:15:\"Unauffindbarweg\";s:12:\"streetNumber\";s:2:\"42\";s:17:\"addressSupplement\";s:8:\"Igloo 13\";s:5:\"poBox\";N;s:7:\"country\";s:2:\"AQ\";s:10:\"postalCode\";s:3:\"Z-7\";s:8:\"language\";N;s:11:\"mobilePhone\";s:4:\"0815\";s:14:\"fixedLinePhone\";s:4:\"4711\";s:8:\"birthday\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.085451\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:5:\"email\";s:20:\"john.doe@nowhere.tld\";s:26:\"defaultParticipationStatus\";s:7:\"regular\";s:7:\"remarks\";N;s:23:\"cloudAccountDeactivated\";N;s:20:\"cloudAccountDisabled\";b:1;s:14:\"addressBookUri\";N;s:12:\"organization\";N;s:8:\"jobTitle\";N;s:7:\"deleted\";N;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.085451\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.085451\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:4:\"uuid\";O:55:\"OCA\\CAFEVDB\\Wrapped\\Ramsey\\Uuid\\Lazy\\LazyUuidFromString\":1:{s:6:\"string\";s:36:\"00000000-0000-0000-0000-000000000000\";}}','john.doe','','1'),
+(45,'create','2026-11-23 10:43:24.294201','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianEmailAddress',1,'a:3:{s:7:\"address\";s:20:\"john.doe@nowhere.tld\";s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.085451\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.085451\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','john.doe@nowhere.tld 1'),
+(46,'create','2026-11-23 10:43:24.294408','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\SepaBankAccount',1,'a:8:{s:8:\"sequence\";i:1;s:4:\"iban\";s:22:\"DE02700100800030876808\";s:3:\"bic\";s:11:\"PBNKDEFFXXX\";s:3:\"blz\";s:8:\"70010080\";s:16:\"bankAccountOwner\";s:17:\"Musterperson, Max\";s:7:\"deleted\";N;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.122616\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.122491\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1 1'),
+(47,'create','2026-11-23 10:43:24.330988','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectParticipant',1,'a:5:{s:12:\"registration\";b:0;s:19:\"participationStatus\";s:7:\"regular\";s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.085451\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.085451\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"deleted\";N;}','john.doe','','1 1'),
+(48,'create','2026-11-23 10:43:24.378083','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianInstrument',1,'a:4:{s:7:\"ranking\";i:1;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.363558\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.363459\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"deleted\";N;}','john.doe','','1 1'),
+(49,'create','2026-11-23 10:43:24.378295','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianInstrument',1,'a:4:{s:7:\"ranking\";i:1;s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.365699\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.365614\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"deleted\";N;}','john.doe','','1 4'),
+(50,'create','2026-11-23 10:43:24.378781','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrumentationNumber',1,'a:2:{s:5:\"voice\";i:0;s:8:\"quantity\";i:0;}','john.doe','',NULL),
+(51,'create','2026-11-23 10:43:24.378970','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrumentationNumber',1,'a:2:{s:5:\"voice\";i:1;s:8:\"quantity\";i:1;}','john.doe','','1 1 1'),
+(52,'create','2026-11-23 10:43:24.379141','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrumentationNumber',1,'a:2:{s:5:\"voice\";i:2;s:8:\"quantity\";i:2;}','john.doe','','1 1 2'),
+(53,'create','2026-11-23 10:43:24.379631','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectInstrument',1,'a:2:{s:5:\"voice\";i:0;s:13:\"sectionLeader\";b:0;}','john.doe','',NULL),
+(54,'update','2026-11-23 10:43:24.379826','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',2,'a:1:{s:4:\"name\";s:7:\"Violine\";}','john.doe','','1'),
+(55,'update','2026-11-23 10:43:24.385520','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Instrument',2,'a:1:{s:4:\"name\";s:10:\"Kontrabass\";}','john.doe','','4'),
+(56,'update','2026-11-23 10:43:24.386057','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',2,'a:1:{s:6:\"family\";s:9:\"Streicher\";}','john.doe','','1'),
+(57,'update','2026-11-23 10:43:24.386555','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\InstrumentFamily',2,'a:1:{s:6:\"family\";s:6:\"Saiten\";}','john.doe','','2'),
+(58,'create','2026-11-23 10:43:24.468700','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\EncryptedFile',1,'a:6:{s:8:\"fileName\";s:7:\"file.md\";s:8:\"mimeType\";s:13:\"text/markdown\";s:4:\"size\";i:9;s:8:\"dataHash\";N;s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.409450\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.409552\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
+(59,'create','2026-11-23 10:43:24.482876','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\MusicianRowAccessToken',1,'a:4:{s:6:\"userId\";s:8:\"john.doe\";s:15:\"accessTokenHash\";s:128:\"d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db\";s:7:\"created\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.479176\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:7:\"updated\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2026-11-23 10:43:24.479092\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
+(60,'update','2026-11-23 10:43:24.483082','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Project',2,'a:2:{s:21:\"registrationStartDate\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2099-01-01 00:00:00.000000\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}s:20:\"registrationDeadline\";O:42:\"OCA\\CAFEVDB\\Wrapped\\Carbon\\CarbonImmutable\":3:{s:4:\"date\";s:26:\"2099-12-31 00:00:00.000000\";s:13:\"timezone_type\";i:3;s:8:\"timezone\";s:3:\"UTC\";}}','john.doe','','1'),
+(61,'update','2026-11-23 10:43:24.483713','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\Musician',2,'a:1:{s:10:\"userIdSlug\";s:8:\"john.doe\";}','john.doe','','1'),
+(62,'create','2026-11-23 10:43:24.649300','OCA\\CAFEVDB\\Database\\Doctrine\\ORM\\Entities\\ProjectEvent',1,'a:9:{s:10:\"calendarId\";i:3;s:11:\"calendarUri\";s:5:\"other\";s:8:\"eventUid\";s:36:\"8b8588d2-0767-46a0-a304-0da2b48a191b\";s:9:\"seriesUid\";N;s:8:\"eventUri\";s:40:\"B594309E-E72A-11F1-BAEB-433862DC6371.ics\";s:12:\"recurrenceId\";i:0;s:8:\"sequence\";i:0;s:4:\"type\";s:6:\"VEVENT\";s:7:\"deleted\";N;}','john.doe','','1');
 /*!40000 ALTER TABLE `ExtLogEntries` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -551,7 +561,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `Files` WRITE;
 /*!40000 ALTER TABLE `Files` DISABLE KEYS */;
 INSERT INTO `Files` VALUES
-('file.md','text/markdown',9,'d554528e77584bdcc1d29a2c230a7d2a','2026-10-25 17:29:53.196375',1,'2026-10-25 17:29:53.196596','encrypted',-1,-1);
+('file.md','text/markdown',9,'d554528e77584bdcc1d29a2c230a7d2a','2026-11-23 10:43:24.409450',1,'2026-11-23 10:43:24.409552','encrypted',-1,-1);
 /*!40000 ALTER TABLE `Files` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1328,7 +1338,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `MusicianEmailAddresses` WRITE;
 /*!40000 ALTER TABLE `MusicianEmailAddresses` DISABLE KEYS */;
 INSERT INTO `MusicianEmailAddresses` VALUES
-('john.doe@nowhere.tld','2026-10-25 17:29:52.874038','2026-10-25 17:29:52.874038',1);
+('john.doe@nowhere.tld','2026-11-23 10:43:24.085451','2026-11-23 10:43:24.085451',1);
 /*!40000 ALTER TABLE `MusicianEmailAddresses` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1364,8 +1374,8 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `MusicianInstruments` WRITE;
 /*!40000 ALTER TABLE `MusicianInstruments` DISABLE KEYS */;
 INSERT INTO `MusicianInstruments` VALUES
-(1,'2026-10-25 17:29:53.124101','2026-10-25 17:29:53.123897',NULL,1,1),
-(1,'2026-10-25 17:29:53.127424','2026-10-25 17:29:53.127277',NULL,1,4);
+(1,'2026-11-23 10:43:24.363558','2026-11-23 10:43:24.363459',NULL,1,1),
+(1,'2026-11-23 10:43:24.365699','2026-11-23 10:43:24.365614',NULL,1,4);
 /*!40000 ALTER TABLE `MusicianInstruments` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1399,7 +1409,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `MusicianRowAccessTokens` WRITE;
 /*!40000 ALTER TABLE `MusicianRowAccessTokens` DISABLE KEYS */;
 INSERT INTO `MusicianRowAccessTokens` VALUES
-('john.doe','d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db','2026-10-25 17:29:53.240260','2026-10-25 17:29:53.240080',1);
+('john.doe','d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db','2026-11-23 10:43:24.479176','2026-11-23 10:43:24.479092',1);
 /*!40000 ALTER TABLE `MusicianRowAccessTokens` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1459,7 +1469,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `Musicians` WRITE;
 /*!40000 ALTER TABLE `Musicians` DISABLE KEYS */;
 INSERT INTO `Musicians` VALUES
-('Musterperson','Max',NULL,NULL,NULL,'john.doe',NULL,'Nirgends','Unauffindbarweg','42','Igloo 13',NULL,'AQ','Z-7',NULL,'0815','4711','2026-10-25 17:29:52.874038','john.doe@nowhere.tld','regular',NULL,NULL,1,'2026-10-25 17:29:53.251169',NULL,NULL,NULL,1,'2026-10-25 17:29:52.874038',NULL,'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0');
+('Musterperson','Max',NULL,NULL,NULL,'john.doe',NULL,'Nirgends','Unauffindbarweg','42','Igloo 13',NULL,'AQ','Z-7',NULL,'0815','4711','2026-11-23 10:43:24.085451','john.doe@nowhere.tld','regular',NULL,NULL,1,'2026-11-23 10:43:24.484405',NULL,NULL,NULL,1,'2026-11-23 10:43:24.085451',NULL,'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0');
 /*!40000 ALTER TABLE `Musicians` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1541,7 +1551,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `ProjectEvents` WRITE;
 /*!40000 ALTER TABLE `ProjectEvents` DISABLE KEYS */;
 INSERT INTO `ProjectEvents` VALUES
-(3,'other','0c826812-96d1-48a4-95d2-e43c537b8461',NULL,'B079DF16-D099-11F1-B470-E7E02CD0D418.ics',0,0,'VEVENT',1,NULL,1,NULL);
+(3,'other','8b8588d2-0767-46a0-a304-0da2b48a191b',NULL,'B594309E-E72A-11F1-BAEB-433862DC6371.ics',0,0,'VEVENT',1,NULL,1,NULL);
 /*!40000 ALTER TABLE `ProjectEvents` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1790,7 +1800,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `ProjectParticipants` WRITE;
 /*!40000 ALTER TABLE `ProjectParticipants` DISABLE KEYS */;
 INSERT INTO `ProjectParticipants` VALUES
-(0,'regular','2026-10-25 17:29:52.874038','2026-10-25 17:29:52.874038',NULL,1,1,NULL);
+(0,'regular','2026-11-23 10:43:24.085451','2026-11-23 10:43:24.085451',NULL,1,1,NULL);
 /*!40000 ALTER TABLE `ProjectParticipants` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1915,7 +1925,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `Projects` WRITE;
 /*!40000 ALTER TABLE `Projects` DISABLE KEYS */;
 INSERT INTO `Projects` VALUES
-(2099,'TestProject2099','temporary',NULL,'2099-01-01 00:00:00.000000','2099-12-31 00:00:00.000000',1,NULL,'2026-10-25 17:29:52.816239','2026-10-25 17:29:53.495398',NULL,1);
+(2099,'TestProject2099','temporary',NULL,'2099-01-01 00:00:00.000000','2099-12-31 00:00:00.000000',1,NULL,'2026-11-23 10:43:24.038250','2026-11-23 10:43:24.649649',NULL,1);
 /*!40000 ALTER TABLE `Projects` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1996,7 +2006,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `SepaBankAccounts` WRITE;
 /*!40000 ALTER TABLE `SepaBankAccounts` DISABLE KEYS */;
 INSERT INTO `SepaBankAccounts` VALUES
-(1,'DE02700100800030876808','PBNKDEFFXXX','70010080','Musterperson, Max',NULL,'2026-10-25 17:29:52.913152','2026-10-25 17:29:52.912906',1);
+(1,'DE02700100800030876808','PBNKDEFFXXX','70010080','Musterperson, Max',NULL,'2026-11-23 10:43:24.122616','2026-11-23 10:43:24.122491',1);
 /*!40000 ALTER TABLE `SepaBankAccounts` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -2471,6 +2481,34 @@ COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 
 --
+-- Table structure for table `WopiCredentials`
+--
+
+DROP TABLE IF EXISTS `WopiCredentials`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `WopiCredentials` (
+  `token_hash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `encrypted_key` longtext NOT NULL,
+  `expires` bigint(20) NOT NULL,
+  PRIMARY KEY (`token_hash`),
+  KEY `IDX_WOPI_CREDENTIAL_EXPIRY` (`expires`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `WopiCredentials`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `WopiCredentials` WRITE;
+/*!40000 ALTER TABLE `WopiCredentials` DISABLE KEYS */;
+/*!40000 ALTER TABLE `WopiCredentials` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
 -- Table structure for table `instrument_instrument_family`
 --
 
@@ -2694,4 +2732,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-10-25 18:29:53
+-- Dump completed on 2026-11-23 11:43:24

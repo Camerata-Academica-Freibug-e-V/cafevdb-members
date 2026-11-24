@@ -60,7 +60,7 @@ class EventsServiceTest extends TestCase
       ->method('getCalendarsForPrincipal')
       ->with('principals/users/orchestra', $calendarUris)
       ->willReturn(array_map(function(string $uri):ICalendar {
-        $calendar = $this->createMock(ICalendar::class);
+        $calendar = $this->createStub(ICalendar::class);
         $calendar->method('getUri')->willReturn($uri);
         $calendar->method('getDisplayName')->willReturn($uri);
         return $calendar;

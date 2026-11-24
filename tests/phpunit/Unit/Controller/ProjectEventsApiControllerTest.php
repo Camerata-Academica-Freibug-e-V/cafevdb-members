@@ -34,10 +34,10 @@ class ProjectEventsApiControllerTest extends TestCase
   /** @return void */
   public function testByWebPageForwardsCalendarAndReturnsProjectEvents():void
   {
-    $project = $this->createMock(Entities\Project::class);
+    $project = $this->createStub(Entities\Project::class);
     $project->method('getName')->willReturn('Spring concert');
 
-    $article = $this->createMock(Entities\ProjectWebPage::class);
+    $article = $this->createStub(Entities\ProjectWebPage::class);
     $article->method('getProject')->willReturn($project);
 
     $repository = $this->getMockBuilder(EntityRepository::class)

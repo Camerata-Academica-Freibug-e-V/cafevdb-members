@@ -42,6 +42,12 @@ class DatabaseStorageFolder extends DatabaseStorageDirEntry
   #[ORM\OneToMany(targetEntity: DatabaseStorageDirEntry::class, mappedBy: 'parent')]
   protected $directoryEntries;
 
+  /**
+   * @var DatabaseStorage
+   */
+  #[ORM\OneToOne(targetEntity: DatabaseStorage::class, mappedBy: 'root')]
+  protected $storage;
+
   // phpcs:disable Squiz.Commenting.FunctionComment.Missing
   public function __construct()
   {
@@ -66,6 +72,12 @@ class DatabaseStorageFolder extends DatabaseStorageDirEntry
   public function getDirectoryEntries():Collection
   {
     return $this->directoryEntries;
+  }
+
+  /** @return null|DatabaseStorage */
+  public function getStorage():?DatabaseStorage
+  {
+    return $this->storage;
   }
 
   /**

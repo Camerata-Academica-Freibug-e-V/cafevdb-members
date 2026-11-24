@@ -15,7 +15,55 @@ each member can see, but not change:
 
 - their contact information,
 - their project participation,
-- their instrument insurances.
+- their instrument insurances,
+- authorized files from CAFeVDB's database-backed storages.
+
+Database-backed files initially appear under the movable
+`MEMBER_ROOT_FOLDER/USER_ID/` mount in the member's Files area, where
+`MEMBER_ROOT_FOLDER` is the configured member-data team-folder (for example,
+`orchestra-members`). Project participant storage roots are presented as
+`MEMBER_ROOT_FOLDER/USER_ID/Projects/PROJECT_NAME/` before localization; other
+database storage identifiers retain their hierarchy beneath the mount. The
+member root folder must be configured and accessible to the user. The view is
+read-only and uses the personalized database views to limit entries to those
+authorized for the logged-in member. A user-moved mount keeps its saved path.
+Generated folder labels, such as `Projects` and `Finance`, are translatable
+through the Members catalogue using the orchestra's configured language.
+Project names, database directory-entry names, and the mount path are not
+translated.
+
+While authenticated, database-storage sources are cached for the lifetime of a
+storage instance and refreshed whenever Nextcloud checks a directory for
+changes. This keeps repeated metadata lookups from re-querying the full
+personalized storage view while allowing cached folders to reflect added or
+removed authorized sources even when their timestamps do not change.
+
+When a user opens an authenticated Nextcloud page, the browser also requests a
+recursive scan of that user's database mount, including a mount moved to another
+path. Successful scans are limited to one every ten minutes per user and
+concurrent requests are serialized. Failed or unavailable scans are retried.
+File locking must be enabled for this automatic scan. WebDAV-only clients do
+not trigger it, although directory listings are still checked when accessed.
+
+When a user's authorization credentials are unavailable (for example during
+cron scans), an already registered mount is retained as unavailable. Nextcloud's
+standard scanner skips this placeholder: the existing mount/root/storage IDs
+and file-cache rows, including file IDs used by links in Markdown, are preserved.
+Cached directories and file contents are not exposed offline, and the mount
+cannot be moved in that state. Its previously saved path is retained verbatim,
+without regenerating localized directory names.
+
+Authenticated access reconnects the real storage to the same cache. A missing
+row-access token during authenticated setup intentionally removes the mount;
+temporary decryption or database failures retain the unavailable placeholder.
+No placeholder is created for a user without a previous mount. Incomplete cache
+entries remain incomplete until authenticated scanning resumes, so Nextcloud's
+background job may continue reporting that the user has unscanned files.
+
+This preservation-only approach does not reconstruct or refresh the filesystem
+offline. The companion app's related discussion is tracked in
+[cafevdb#123](https://github.com/Camerata-Academica-Freibug-e-V/cafevdb/issues/123);
+its provider would need its own integration before retiring the server workaround.
 
 ## Relation to CAFeVDB
 
@@ -95,6 +143,10 @@ The Makefile requires PHP, Composer, npm and `xpath` (provided by
 make dev-setup-php
 make phpunit
 ```
+
+The PHPUnit workflow runs the server suite with Nextcloud backed by SQLite,
+MariaDB, and PostgreSQL. The app's fixture databases use a separate temporary
+MariaDB server in all three jobs.
 
 `rotdrop/nextcloud-app-toolkit` is installed with the wrapped Composer
 dependencies and scoped into `OCA\CAFeVDBMembers\Wrapped` in `vendor-wrapped/`.

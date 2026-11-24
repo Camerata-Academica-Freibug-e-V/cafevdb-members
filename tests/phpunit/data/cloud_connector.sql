@@ -1,4 +1,4 @@
-/*M!999999\- enable the sandbox mode */
+/*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.20-12.3.3-MariaDB, for Linux (x86_64)
 --
 -- Host: localhost    Database: cafevdb_cloud_connector
@@ -109,6 +109,20 @@ SET character_set_client = utf8mb4;
 SET character_set_client = @saved_cs_client;
 
 --
+-- Temporary table structure for view `PersonalizedDatabaseStoragesView`
+--
+
+DROP TABLE IF EXISTS `PersonalizedDatabaseStoragesView`;
+/*!50001 DROP VIEW IF EXISTS `PersonalizedDatabaseStoragesView`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8mb4;
+/*!50001 CREATE VIEW `PersonalizedDatabaseStoragesView` AS SELECT
+ NULL AS `storage_id`,
+ NULL AS `id`,
+ NULL AS `root_id` */;
+SET character_set_client = @saved_cs_client;
+
+--
 -- Temporary table structure for view `PersonalizedEncryptedFileOwnersView`
 --
 
@@ -119,6 +133,22 @@ SET character_set_client = utf8mb4;
 /*!50001 CREATE VIEW `PersonalizedEncryptedFileOwnersView` AS SELECT
  NULL AS `musician_id`,
  NULL AS `encrypted_file_id` */;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary table structure for view `PersonalizedFileDataView`
+--
+
+DROP TABLE IF EXISTS `PersonalizedFileDataView`;
+/*!50001 DROP VIEW IF EXISTS `PersonalizedFileDataView`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8mb4;
+/*!50001 CREATE VIEW `PersonalizedFileDataView` AS SELECT
+ NULL AS `data_hash`,
+ NULL AS `data`,
+ NULL AS `file_id`,
+ NULL AS `type`,
+ NULL AS `lazy_file_data_dummy` */;
 SET character_set_client = @saved_cs_client;
 
 --
@@ -140,22 +170,6 @@ SET character_set_client = utf8mb4;
  NULL AS `type`,
  NULL AS `width`,
  NULL AS `height` */;
-SET character_set_client = @saved_cs_client;
-
---
--- Temporary table structure for view `PersonalizedFileDataView`
---
-
-DROP TABLE IF EXISTS `PersonalizedFileDataView`;
-/*!50001 DROP VIEW IF EXISTS `PersonalizedFileDataView`*/;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8mb4;
-/*!50001 CREATE VIEW `PersonalizedFileDataView` AS SELECT
- NULL AS `data_hash`,
- NULL AS `data`,
- NULL AS `file_id`,
- NULL AS `type`,
- NULL AS `lazy_file_data_dummy` */;
 SET character_set_client = @saved_cs_client;
 
 --
@@ -702,6 +716,19 @@ SET character_set_client = utf8mb4;
 SET character_set_client = @saved_cs_client;
 
 --
+-- Temporary table structure for view `WopiCredentialsView`
+--
+
+DROP TABLE IF EXISTS `WopiCredentialsView`;
+/*!50001 DROP VIEW IF EXISTS `WopiCredentialsView`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8mb4;
+/*!50001 CREATE VIEW `WopiCredentialsView` AS SELECT
+ NULL AS `encrypted_key`,
+ NULL AS `expires` */;
+SET character_set_client = @saved_cs_client;
+
+--
 -- Dumping routines for database 'cafevdb_cloud_connector'
 --
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
@@ -719,11 +746,11 @@ CREATE DEFINER=`phpunit`@`%` FUNCTION `AUTHORIZED_MUSICIAN_ID`() RETURNS int(11)
     SQL SECURITY INVOKER
 BEGIN
   DECLARE musician_id INT;
-  SET musician_id = cafevdb_cloud_connector.CLOUD_USER_MUSICIAN_ID();
+  SET musician_id = `cafevdb_cloud_connector`.CLOUD_USER_MUSICIAN_ID();
   IF musician_id > 0 THEN
     RETURN musician_id;
   END IF;
-  RETURN cafevdb_cloud_connector.PROJECT_APPLICATION_MUSICIAN_ID();
+  RETURN `cafevdb_cloud_connector`.PROJECT_APPLICATION_MUSICIAN_ID();
 END
 ;;
 DELIMITER ;
@@ -826,8 +853,8 @@ BEGIN
   SELECT t.musician_id INTO musician_id FROM
       `cafevdb`.MusicianRowAccessTokens t
   WHERE
-    (t.user_id = cafevdb_cloud_connector.CLOUD_USER_ID()
-      AND t.access_token_hash = cafevdb_cloud_connector.ROW_ACCESS_TOKEN());
+    (t.user_id = `cafevdb_cloud_connector`.CLOUD_USER_ID()
+      AND t.access_token_hash = `cafevdb_cloud_connector`.ROW_ACCESS_TOKEN());
   RETURN musician_id;
 END
 ;;
@@ -854,8 +881,8 @@ BEGIN
   SELECT t.musician_id INTO musician_id FROM
       `cafevdb`.ProjectApplications t
     WHERE
-      (FIND_IN_SET(SHA2(t.email, 256), cafevdb_cloud_connector.PROJECT_APPLICATION_SHARE_TOKENS()) > 0
-        AND t.password_hash = cafevdb_cloud_connector.PROJECT_APPLICATION_ROW_ACCESS_TOKEN());
+      (FIND_IN_SET(SHA2(t.email, 256), `cafevdb_cloud_connector`.PROJECT_APPLICATION_SHARE_TOKENS()) > 0
+        AND t.password_hash = `cafevdb_cloud_connector`.PROJECT_APPLICATION_ROW_ACCESS_TOKEN());
   RETURN musician_id;
 END
 ;;
@@ -884,7 +911,7 @@ BEGIN
   SELECT p.id INTO project_id FROM
     `cafevdb`.Projects p
   WHERE
-    p.name = cafevdb_cloud_connector.PROJECT_APPLICATION_PROJECT_NAME();
+    p.name = `cafevdb_cloud_connector`.PROJECT_APPLICATION_PROJECT_NAME();
   RETURN project_id;
 END
 ;;
@@ -1037,6 +1064,26 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 DROP FUNCTION IF EXISTS `WOPI_TOKEN_HASH` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_uca1400_ai_ci */ ;
+DELIMITER ;;
+CREATE DEFINER=`phpunit`@`%` FUNCTION `WOPI_TOKEN_HASH`() RETURNS varbinary(64)
+    NO SQL
+    SQL SECURITY INVOKER
+RETURN IF(OCTET_LENGTH(@WOPI_TOKEN_HASH) = 64, @WOPI_TOKEN_HASH, NULL)
+;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Final view structure for view `NextcloudGroupView`
@@ -1126,7 +1173,26 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_uca1400_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`phpunit`@`%` SQL SECURITY DEFINER */
-/*!50001 VIEW `PersonalizedDatabaseStorageDirEntriesView` AS select `t`.`name` AS `name`,`t`.`id` AS `id`,`t`.`created` AS `created`,`t`.`updated` AS `updated`,`t`.`parent_id` AS `parent_id`,`t`.`type` AS `type`,`t`.`file_id` AS `file_id` from `cafevdb`.`DatabaseStorageDirEntries` `t` where `t`.`file_id` is null or `t`.`file_id` in (select `efov`.`encrypted_file_id` AS `file_id` from `cafevdb_cloud_connector`.`PersonalizedEncryptedFileOwnersView` `efov`) */
+/*!50001 VIEW `PersonalizedDatabaseStorageDirEntriesView` AS with recursive authorized_entries as (select `t`.`id` AS `id`,`t`.`parent_id` AS `parent_id` from (`cafevdb`.`DatabaseStorageDirEntries` `t` join `cafevdb_cloud_connector`.`PersonalizedFilesView` `fv` on(`t`.`file_id` = `fv`.`id`)) union select `t`.`id` AS `id`,`t`.`parent_id` AS `parent_id` from (`cafevdb`.`DatabaseStorageDirEntries` `t` join `authorized_entries` `ae` on(`t`.`id` = `ae`.`parent_id`)))select `t`.`name` AS `name`,`t`.`id` AS `id`,`t`.`created` AS `created`,`t`.`updated` AS `updated`,`t`.`parent_id` AS `parent_id`,`t`.`type` AS `type`,`t`.`file_id` AS `file_id` from (`cafevdb`.`DatabaseStorageDirEntries` `t` join `authorized_entries` `ae` on(`t`.`id` = `ae`.`id`)) */
+/*!50002 WITH CASCADED CHECK OPTION */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `PersonalizedDatabaseStoragesView`
+--
+
+/*!50001 DROP VIEW IF EXISTS `PersonalizedDatabaseStoragesView`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_uca1400_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`phpunit`@`%` SQL SECURITY DEFINER */
+/*!50001 VIEW `PersonalizedDatabaseStoragesView` AS select `t`.`storage_id` AS `storage_id`,`t`.`id` AS `id`,`t`.`root_id` AS `root_id` from (`cafevdb`.`DatabaseStorages` `t` join `cafevdb_cloud_connector`.`PersonalizedDatabaseStorageDirEntriesView` `dsev` on(`t`.`root_id` = `dsev`.`id`)) where `dsev`.`parent_id` is null */
 /*!50002 WITH CASCADED CHECK OPTION */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -1717,6 +1783,24 @@ DELIMITER ;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `WopiCredentialsView`
+--
+
+/*!50001 DROP VIEW IF EXISTS `WopiCredentialsView`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_uca1400_ai_ci */;
+/*!50001 CREATE ALGORITHM=TEMPTABLE */
+/*!50013 DEFINER=`phpunit`@`%` SQL SECURITY DEFINER */
+/*!50001 VIEW `WopiCredentialsView` AS select `cafevdb`.`WopiCredentials`.`encrypted_key` AS `encrypted_key`,`cafevdb`.`WopiCredentials`.`expires` AS `expires` from `cafevdb`.`WopiCredentials` where `cafevdb`.`WopiCredentials`.`token_hash` = `cafevdb_cloud_connector`.`WOPI_TOKEN_HASH`() and `cafevdb`.`WopiCredentials`.`expires` > unix_timestamp() */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -1727,4 +1811,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-10-25 18:29:53
+-- Dump completed on 2026-11-23 11:43:24

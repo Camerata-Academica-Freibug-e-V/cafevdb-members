@@ -34,6 +34,7 @@ class Registration
   {
     self::registerListener($context, ProjectUpdatedEventListener::class);
     self::registerListener($context, ProjectDeletedEventListener::class);
+    self::registerListener($context, DatabaseStorageScanScriptListener::class);
   }
 
   /**

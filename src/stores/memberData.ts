@@ -24,6 +24,7 @@ import type { Instrument, Project } from './appData.ts';
 
 import { getCurrentUser, getGuestUser } from '@nextcloud/auth';
 import axios from '@nextcloud/axios';
+import { showError, TOAST_PERMANENT_TIMEOUT } from '@nextcloud/dialogs';
 import { translate as t } from '@nextcloud/l10n';
 import { generateOcsUrl } from '@nextcloud/router';
 import { defineStore } from 'pinia';
@@ -39,7 +40,6 @@ import logger from '../logger.ts';
 import { loadMemberData } from '../services/member-data.ts';
 import { isAxiosErrorResponse } from '../toolkit/types/axios-type-guards.ts';
 import getInitialState from '../toolkit/util/initial-state.ts';
-import { showError, TOAST_PERMANENT_TIMEOUT } from '../toolkit/util/toasts.ts';
 import { useAppDataStore } from './appData.ts';
 
 export interface SepaDebitMandate {

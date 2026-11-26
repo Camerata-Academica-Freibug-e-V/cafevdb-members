@@ -107,7 +107,7 @@
     <div class="input-row">
       <InputText v-model:value="registrationData.email"
                  :label="t(appName, 'Email')"
-                 :placeholder="t(appName, 'e.g. me@you.tld')"
+                 :placeholder="emailPlaceholder"
                  :readonly="readonly"
                  :required="true"
                  icon="email"
@@ -234,6 +234,9 @@ import { useMemberDataStore } from '../../stores/memberData.ts'
 //     token: undefined,
 //   },
 // )
+
+// xgettext: no-email-check
+const emailPlaceholder = t(appName, 'e.g. me@you.tld')
 
 const registrationData = useMemberDataStore()
 const appData = useAppDataStore()

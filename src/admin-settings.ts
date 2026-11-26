@@ -22,6 +22,8 @@
 import { createApp } from 'vue';
 import AdminSettings from './AdminSettings.vue';
 
+import '@nextcloud/dialogs/style.css';
+
 const app = createApp(AdminSettings);
 app.config.performance = !!(import.meta?.env?.DEV);
 app.mount('#admin-settings');

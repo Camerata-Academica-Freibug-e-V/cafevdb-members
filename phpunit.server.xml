@@ -21,6 +21,7 @@
   <testsuites>
     <testsuite name="server">
       <directory>tests/phpunit/Unit</directory>
+      <directory>tests/phpunit/Integration</directory>
     </testsuite>
   </testsuites>
   <source ignoreIndirectDeprecations="true" restrictNotices="true" restrictWarnings="true">

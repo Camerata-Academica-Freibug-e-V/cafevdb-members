@@ -7,10 +7,10 @@
 namespace OCA\CAFeVDBMembers\Tests\Unit\Storage\Database;
 
 use OC\Files\Cache\Storage as StorageCache;
-use OC\Files\Storage\Storage as CloudStorage;
 use OCP\Files\ISetupManager;
 use OCP\Files\Mount\IMountManager;
 use OCP\Files\Mount\IMountPoint;
+use OCP\Files\Storage\IStorage;
 use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -43,7 +43,7 @@ class ScanServiceTest extends TestCase
     return $session;
   }
 
-  private function mount(string $uid, CloudStorage $storage): IMountPoint
+  private function mount(string $uid, IStorage $storage): IMountPoint
   {
     $mount = $this->createStub(IMountPoint::class);
     $mount->method('getMountProvider')->willReturn(MountProvider::class);
@@ -58,7 +58,7 @@ class ScanServiceTest extends TestCase
     $session = $this->session();
     $setup = $this->createMock(ISetupManager::class);
     $setup->expects($this->exactly(2))->method('setupForUser')->with($session->getUser());
-    $storage = $this->createStub(CloudStorage::class);
+    $storage = $this->createStub(IStorage::class);
     $storage->method('instanceOfStorage')->willReturn(true);
     $mounts = $this->createMock(IMountManager::class);
     $mounts->expects($this->exactly(2))->method('findIn')->with('/' . self::UID . '/files/')->willReturn([
@@ -89,7 +89,7 @@ class ScanServiceTest extends TestCase
 
   public function testFailedScanReleasesLockAndCanBeRetried(): void
   {
-    $storage = $this->createStub(CloudStorage::class);
+    $storage = $this->createStub(IStorage::class);
     $storage->method('instanceOfStorage')->willReturn(true);
     $mounts = $this->createStub(IMountManager::class);
     $mounts->method('findIn')->willReturn([$this->mount(self::UID, $storage)]);

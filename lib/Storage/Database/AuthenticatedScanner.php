@@ -7,9 +7,9 @@
 namespace OCA\CAFeVDBMembers\Storage\Database;
 
 use OC\Files\Cache\Scanner;
-use OC\Files\Storage\Storage as CloudStorage;
 use OCP\Files\Cache\IScanner;
 use OCP\Files\IMimeTypeLoader;
+use OCP\Files\Storage\IStorage;
 use OCP\IDBConnection;
 use OCP\Server;
 use RuntimeException;
@@ -22,7 +22,7 @@ class AuthenticatedScanner
   {
   }
 
-  public function scan(CloudStorage $storage): void
+  public function scan(IStorage $storage): void
   {
     if ($this->connection->inTransaction()) {
       throw new RuntimeException('Cannot scan database storage inside an existing transaction.');

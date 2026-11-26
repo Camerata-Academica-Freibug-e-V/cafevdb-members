@@ -30,7 +30,6 @@ use OCP\Files\Cache\ICacheEntry;
 use OCP\Files\Node;
 use OCP\Share\IAttributes;
 use OCP\Share\IShare;
-use OC\Share20\ShareAttributes;
 
 use OCA\CAFeVDBMembers\Constants;
 use OCA\CAFeVDBMembers\Database\ORM\Entities;
@@ -179,7 +178,7 @@ class ApplicationShare implements IShare
   public function getPermissions() { return CoreConstants::PERMISSION_READ; }
 
   /** {@inheritdoc} */
-  public function newAttributes(): IAttributes { return new ShareAttributes ; }
+  public function newAttributes(): IAttributes { return new ApplicationShareAttributes(); }
 
   /** {@inheritdoc} */
   public function setAttributes(?IAttributes $attributes) {}

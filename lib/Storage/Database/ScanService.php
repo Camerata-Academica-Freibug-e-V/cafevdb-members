@@ -6,11 +6,11 @@
 
 namespace OCA\CAFeVDBMembers\Storage\Database;
 
-use OC\Files\Storage\Storage as CloudStorage;
 use OC\Files\Cache\Storage as StorageCache;
 use OC\Lock\NoopLockingProvider;
 use OCP\Files\ISetupManager;
 use OCP\Files\Mount\IMountManager;
+use OCP\Files\Storage\IStorage;
 use OCP\IConfig;
 use OCP\IUserSession;
 use OCP\Lock\ILockingProvider;
@@ -72,7 +72,7 @@ class ScanService
         return 'unavailable';
       }
       $storage = $matches[0]->getStorage();
-      if (!$storage instanceof CloudStorage || !$storage->instanceOfStorage(Storage::class)) {
+      if (!$storage instanceof IStorage || !$storage->instanceOfStorage(Storage::class)) {
         throw new RuntimeException('The database-storage mount is unavailable or has an invalid storage.');
       }
       $lastScan = (int)$this->config->getUserValue($uid, Application::getAppName(), self::LAST_SCAN_KEY, '0');

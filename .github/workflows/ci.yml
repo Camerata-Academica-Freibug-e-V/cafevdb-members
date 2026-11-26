@@ -39,3 +39,4 @@ jobs:
       build-server: true
       signing-server-ref: stable35
       composer-use-github-api: false
+      verify-script: .github/scripts/verify-build.sh

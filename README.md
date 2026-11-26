@@ -147,7 +147,7 @@ The Makefile requires PHP, Composer, npm and `xpath` (provided by
 
 ```
 make composer
-make phpunit
+make phpunit-server
 ```
 
 The PHPUnit workflow runs the server suite with Nextcloud backed by SQLite,
@@ -201,9 +201,12 @@ The server tests run inside a Nextcloud checkout; see
 with Node.js 24, runs the frontend tests independently, and checks
 `make realclean` through the shared build-system workflow.
 
-The PHPUnit build integration regressions can also run without Nextcloud
-(PHP's `intl` extension is required):
+The shared CI archive build runs `.github/scripts/verify-build.sh` once after
+building the app. It checks the archive contents, toolkit build and translation
+catalogue, generated TypeScript module, and Vite configuration isolation.
+After a full `make appstore APPSTORE_SIGN=0` build, the checks can also be run
+locally with the archive path:
 
 ```sh
-make phpunitfilter PHPUNITTEST=ToolkitBuildTest PHPCOVERAGE=
+APP_ID=cafevdbmembers ARCHIVE="$PWD/path/to/archive.tar.gz" bash .github/scripts/verify-build.sh
 ```

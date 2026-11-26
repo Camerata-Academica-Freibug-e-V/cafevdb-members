@@ -146,6 +146,11 @@ jobs:
         working-directory: server/apps/${{ env.APP_NAME }}
         run: make build
 
+      - name: Test frontend configuration isolation
+        if: matrix.database == 'sqlite'
+        working-directory: server/apps/${{ env.APP_NAME }}
+        run: npm run test:build-config
+
       - name: Run PHPUnit standalone suite
         working-directory: server/apps/${{ env.APP_NAME }}
         run: make phpunit PHPCOVERAGE='-d xdebug.mode=coverage'

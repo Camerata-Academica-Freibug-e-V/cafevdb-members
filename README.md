@@ -146,7 +146,7 @@ The Makefile requires PHP, Composer, npm and `xpath` (provided by
 `libxml-xpath-perl` on Debian/Ubuntu). PHP dependencies are installed with:
 
 ```
-make dev-setup-php
+make composer
 make phpunit
 ```
 
@@ -196,18 +196,14 @@ toolkit's strings to the translation tool, which cannot scan vendor trees.
 strings. Neither catalogue is executed, and `l10n-sources/` is excluded from
 release archives.
 
-The tests run inside a Nextcloud server checkout, see
-`.github/workflows/ci.yml` for the exact setup. CI also runs `make build` with
-Node.js 24 to generate the PHP-derived TypeScript modules and build production
-frontend assets with Vite before running the test suites.
-CI installs JavaScript dependencies with `npm ci` and checks `make realclean`
-on both a bare checkout and after the full build and tests, including repeated
-cleanup. Cleanup preserves the tracked `package-lock.json`.
-CI also runs the frontend Vitest suite independently of the Nextcloud build.
+The server tests run inside a Nextcloud checkout; see
+`.github/workflows/phpunit.yml` for the setup. CI also builds the frontend
+with Node.js 24, runs the frontend tests independently, and checks
+`make realclean` through the shared build-system workflow.
 
-The build regressions can also run without Nextcloud after `make dev-setup-php`
+The PHPUnit build integration regressions can also run without Nextcloud
 (PHP's `intl` extension is required):
 
 ```sh
-vendor-bin/phpunit/vendor/bin/phpunit --no-configuration --no-coverage tests/phpunit/Unit/Build/ToolkitBuildTest.php
+make phpunitfilter PHPUNITTEST=ToolkitBuildTest PHPCOVERAGE=
 ```

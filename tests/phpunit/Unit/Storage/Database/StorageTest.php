@@ -29,10 +29,12 @@ use PHPUnit\Framework\TestCase;
 use OCP\Constants;
 use OCP\IL10N;
 
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumProjectTemporalType;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFile;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorage;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFolder;
+use OCA\CAFeVDBMembers\Database\ORM\Entities\Project;
 use OCA\CAFeVDBMembers\Database\ORM\Repositories\EntityRepository;
 use OCA\CAFeVDBMembers\Storage\Database\Storage;
 use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
@@ -41,6 +43,7 @@ use OCA\CAFeVDBMembers\Wrapped\Doctrine\Common\Collections\ArrayCollection;
 #[UsesClass(DatabaseStorage::class)]
 #[UsesClass(DatabaseStorageFile::class)]
 #[UsesClass(DatabaseStorageFolder::class)]
+#[UsesClass(Project::class)]
 class StorageTest extends TestCase
 {
   public function testSyntheticDirectoriesSupportMetadataAndTraversal(): void
@@ -52,7 +55,7 @@ class StorageTest extends TestCase
     ];
     $storage = $this->storageForSources($sources);
 
-    foreach (['Projects', 'Projects/ProjectName', 'Finance', 'Finance/Invoices'] as $path) {
+    foreach (['2051', '2051/ProjectName', 'Finance', 'Finance/Invoices'] as $path) {
       self::assertTrue($storage->file_exists($path), $path);
       self::assertTrue($storage->is_dir($path), $path);
       self::assertFalse($storage->is_file($path), $path);
@@ -63,14 +66,14 @@ class StorageTest extends TestCase
       self::assertSame(Constants::PERMISSION_READ, $storage->getPermissions($path));
     }
 
-    self::assertSame(['Finance', 'Projects'], $this->directoryNames($storage, ''));
-    self::assertSame(['ProjectName'], $this->directoryNames($storage, 'Projects'));
-    self::assertSame([], $this->directoryNames($storage, 'Projects/ProjectName'));
+    self::assertSame(['2051', 'Finance'], $this->directoryNames($storage, ''));
+    self::assertSame(['ProjectName'], $this->directoryNames($storage, '2051'));
+    self::assertSame([], $this->directoryNames($storage, '2051/ProjectName'));
     self::assertSame(['Invoices'], $this->directoryNames($storage, 'Finance'));
     self::assertSame([], $this->directoryNames($storage, 'Finance/Invoices'));
-    self::assertFalse($storage->fopen('Projects', 'rb'));
+    self::assertFalse($storage->fopen('2051', 'rb'));
 
-    foreach (['missing', 'Projects/UnknownProject', 'Projects/../Finance'] as $path) {
+    foreach (['missing', '2051/UnknownProject', '2051/../Finance'] as $path) {
       self::assertFalse($storage->file_exists($path), $path);
       self::assertFalse($storage->stat($path));
       self::assertFalse($storage->filesize($path));
@@ -87,12 +90,12 @@ class StorageTest extends TestCase
     ];
     $storage = $this->storageForSources($sources);
 
-    self::assertTrue($storage->file_exists('Projects'));
+    self::assertTrue($storage->file_exists('2051'));
     $sources = [];
     self::assertTrue($storage->hasUpdated('', 1));
-    self::assertFalse($storage->file_exists('Projects'));
-    self::assertFalse($storage->stat('Projects'));
-    self::assertFalse($storage->opendir('Projects'));
+    self::assertFalse($storage->file_exists('2051'));
+    self::assertFalse($storage->stat('2051'));
+    self::assertFalse($storage->opendir('2051'));
   }
 
   public function testEmptyRootRemainsListableAndDirectoriesAreRechecked(): void
@@ -108,12 +111,12 @@ class StorageTest extends TestCase
         ->setRoot(new DatabaseStorageFolder()),
     ];
     self::assertTrue($storage->hasUpdated('', 1));
-    self::assertSame(['Projects'], $this->directoryNames($storage, ''));
-    self::assertTrue($storage->hasUpdated('Projects', PHP_INT_MAX));
+    self::assertSame(['2051'], $this->directoryNames($storage, ''));
+    self::assertTrue($storage->hasUpdated('2051', PHP_INT_MAX));
     $sources = [];
     self::assertTrue($storage->hasUpdated('', 1));
     self::assertSame([], $this->directoryNames($storage, ''));
-    self::assertTrue($storage->hasUpdated('Projects', PHP_INT_MAX));
+    self::assertTrue($storage->hasUpdated('2051', PHP_INT_MAX));
   }
 
   public function testSourcesAreMemoizedUntilDirectoryChangeCheck(): void
@@ -180,7 +183,7 @@ class StorageTest extends TestCase
   }
 
   /** @param list<DatabaseStorage> $sources */
-  private function storageForSources(array &$sources, ?IL10N $l = null): Storage
+  private function storageForSources(array &$sources, ?IL10N $l = null, ?array $projects = null): Storage
   {
     $repository = $this->getMockBuilder(EntityRepository::class)
       ->disableOriginalConstructor()
@@ -190,14 +193,32 @@ class StorageTest extends TestCase
       return $sources;
     });
 
+    $projectRepository = $this->createStub(EntityRepository::class);
+    $projectRepository->method('findAll')->willReturn($projects ?? [
+      $this->project('ProjectName', EnumProjectTemporalType::TEMPORARY, 2051),
+      $this->project('Invoices', EnumProjectTemporalType::PERMANENT, 2051),
+    ]);
+
     $entityManager = $this->getMockBuilder(EntityManager::class)
       ->disableOriginalConstructor()
       ->onlyMethods(['getRepository', 'clear'])
       ->getMock();
     $entityManager->expects($this->atLeastOnce())->method('getRepository')
-      ->with(DatabaseStorage::class)->willReturn($repository);
+      ->willReturnCallback(static fn(string $class) => match ($class) {
+        DatabaseStorage::class => $repository,
+        Project::class => $projectRepository,
+      });
 
     return new Storage(['entityManager' => $entityManager, 'userId' => 'member-id', 'l10n' => $l ?? $this->translator()]);
+  }
+
+  private function project(string $name, EnumProjectTemporalType $type, int $year): Project
+  {
+    $project = $this->createStub(Project::class);
+    $project->method('getName')->willReturn($name);
+    $project->method('getType')->willReturn($type);
+    $project->method('getYear')->willReturn($year);
+    return $project;
   }
 
   private function translator(array $translations = []): IL10N
@@ -213,11 +234,10 @@ class StorageTest extends TestCase
       (new DatabaseStorage())->setStorageId('project/participant/Invoices/member-id/')
         ->setRoot((new DatabaseStorageFolder())->setUpdated(new \DateTimeImmutable('@1'))),
     ];
-    $storage = $this->storageForSources($sources, $this->translator(['Projects' => 'LocalizedProjects']));
-    self::assertSame(['LocalizedProjects'], $this->directoryNames($storage, ''));
-    self::assertSame(['Invoices'], $this->directoryNames($storage, 'LocalizedProjects'));
-    self::assertTrue($storage->is_dir('LocalizedProjects/Invoices'));
-    self::assertSame(0, $storage->filesize('LocalizedProjects'));
+    $storage = $this->storageForSources($sources, $this->translator(['Invoices' => 'LocalizedInvoices']));
+    self::assertSame(['Invoices'], $this->directoryNames($storage, ''));
+    self::assertTrue($storage->is_dir('Invoices'));
+    self::assertSame(0, $storage->filesize('Invoices'));
     self::assertFalse($storage->file_exists('Projects'));
 
     self::assertSame(
@@ -238,8 +258,8 @@ class StorageTest extends TestCase
   {
     $this->expectException(\RuntimeException::class);
     Storage::visiblePathForStorageId(
-      'project/participant/ProjectName/member-id/',
-      $this->translator(['Projects' => '../Private']),
+      'finance/invoices/',
+      $this->translator(['Finance' => '../Private']),
     );
   }
 
@@ -259,12 +279,84 @@ class StorageTest extends TestCase
     return $names;
   }
 
-  public function testParticipantStoragesAreFlattenedToTheirProjectName(): void
+  public function testParticipantProjectsUseTheirActualTypeAndYear(): void
   {
-    self::assertSame(
-      [ 'Projects', 'ProjectName' ],
-      Storage::visiblePathForStorageId('project/participant/ProjectName/member-id/', $this->translator()),
-    );
+    $file = $this->createStub(DatabaseStorageFile::class);
+    $file->method('getName')->willReturn('Document');
+    $root = $this->createStub(DatabaseStorageFolder::class);
+    $root->method('getDirectoryEntries')->willReturn(new ArrayCollection([$file]));
+    $sources = [
+      (new DatabaseStorage())->setStorageId('project/participant/Concert/member-id/')->setRoot($root),
+      (new DatabaseStorage())->setStorageId('project/participant/Board2051/member-id/')->setRoot(new DatabaseStorageFolder()),
+      (new DatabaseStorage())->setStorageId('project/participant/Another/member-id/')->setRoot(new DatabaseStorageFolder()),
+    ];
+    $storage = $this->storageForSources($sources, projects: [
+      $this->project('Concert', EnumProjectTemporalType::TEMPORARY, 2051),
+      $this->project('Board2051', EnumProjectTemporalType::PERMANENT, 2051),
+      $this->project('Another', EnumProjectTemporalType::TEMPORARY, 2052),
+    ]);
+    self::assertSame(['2051', '2052', 'Board2051'], $this->directoryNames($storage, ''));
+    self::assertSame(['Concert'], $this->directoryNames($storage, '2051'));
+    self::assertSame(['Document'], $this->directoryNames($storage, '2051/Concert'));
+    self::assertTrue($storage->is_dir('Board2051'));
+    self::assertTrue($storage->is_dir('2052/Another'));
+    self::assertFalse($storage->file_exists('Concert'));
+    self::assertFalse($storage->file_exists('Projects'));
+  }
+
+  public function testMissingProjectIsReported(): void
+  {
+    $sources = [
+      (new DatabaseStorage())->setStorageId('project/participant/Missing/member-id/')
+        ->setRoot(new DatabaseStorageFolder()),
+    ];
+    $storage = $this->storageForSources($sources, projects: []);
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('No project found for database storage: project/participant/Missing/member-id');
+    $storage->opendir('');
+  }
+
+  public function testProjectYearIsRefreshedAfterDirectoryChangeCheck(): void
+  {
+    $sources = [
+      (new DatabaseStorage())->setStorageId('project/participant/Concert/member-id/')
+        ->setRoot(new DatabaseStorageFolder()),
+    ];
+    $project = $this->project('Concert', EnumProjectTemporalType::TEMPORARY, 2051);
+    $storageRepository = $this->createStub(EntityRepository::class);
+    $storageRepository->method('findAll')->willReturn($sources);
+    $projectRepository = $this->createStub(EntityRepository::class);
+    $projectRepository->method('findAll')->willReturnCallback(static function() use (&$project): array {
+      return [$project];
+    });
+    $entityManager = $this->createStub(EntityManager::class);
+    $entityManager->method('getRepository')->willReturnCallback(static fn(string $class) => match ($class) {
+      DatabaseStorage::class => $storageRepository,
+      Project::class => $projectRepository,
+    });
+    $storage = new Storage(['entityManager' => $entityManager, 'userId' => 'member-id', 'l10n' => $this->translator()]);
+
+    self::assertTrue($storage->is_dir('2051/Concert'));
+    $project = $this->project('Concert', EnumProjectTemporalType::TEMPORARY, 2052);
+    self::assertTrue($storage->hasUpdated('', 1));
+    self::assertFalse($storage->file_exists('2051'));
+    self::assertTrue($storage->is_dir('2052/Concert'));
+  }
+
+  public function testUnsupportedProjectTypeIsReported(): void
+  {
+    $project = $this->project('Template', EnumProjectTemporalType::TEMPLATE, 2051);
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('Unsupported project type');
+    Storage::visiblePathForStorageId('project/participant/Template/member-id/', $this->translator(), ['Template' => $project]);
+  }
+
+  public function testInvalidTemporaryProjectYearIsReported(): void
+  {
+    $project = $this->project('Concert', EnumProjectTemporalType::TEMPORARY, 0);
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('Invalid project year');
+    Storage::visiblePathForStorageId('project/participant/Concert/member-id/', $this->translator(), ['Concert' => $project]);
   }
 
   public function testOtherStoragePathsArePreserved(): void
@@ -300,5 +392,6 @@ class StorageTest extends TestCase
   {
     self::assertFalse(Storage::visiblePathForStorageId('../private', $this->translator()));
     self::assertFalse(Storage::visiblePathForStorageId('finance//invoices', $this->translator()));
+    self::assertFalse(Storage::visiblePathForStorageId('project/participant/ProjectName', $this->translator()));
   }
 }

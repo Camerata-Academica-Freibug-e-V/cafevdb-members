@@ -30,11 +30,13 @@ use OCP\Constants;
 use OCP\IL10N;
 use OCP\Files\ForbiddenException;
 
+use OCA\CAFeVDBMembers\Database\DBAL\Types\EnumProjectTemporalType;
 use OCA\CAFeVDBMembers\Database\ORM\EntityManager;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorage;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageDirEntry;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFile;
 use OCA\CAFeVDBMembers\Database\ORM\Entities\DatabaseStorageFolder;
+use OCA\CAFeVDBMembers\Database\ORM\Entities\Project;
 
 /** Read-only aggregate view over authorized database storage roots. */
 class Storage extends AbstractStorage
@@ -81,6 +83,7 @@ class Storage extends AbstractStorage
     $this->entityManager->clear();
     $storages = $this->entityManager->getRepository(DatabaseStorage::class)->findAll();
     $sources = [];
+    $projects = null;
     foreach ($storages as $storage) {
       $root = $storage->getRoot();
       $storageId = trim((string)$storage->getStorageId(), '/');
@@ -88,7 +91,13 @@ class Storage extends AbstractStorage
         continue;
       }
 
-      $path = self::visiblePathForStorageId($storageId, $this->l);
+      if (str_starts_with($storageId, 'project/participant/') && $projects === null) {
+        $projects = [];
+        foreach ($this->entityManager->getRepository(Project::class)->findAll() as $project) {
+          $projects[$project->getName()] = $project;
+        }
+      }
+      $path = self::visiblePathForStorageId($storageId, $this->l, $projects ?? []);
       if (is_array($path) && $path !== []) {
         $sources[] = [ 'path' => $path, 'root' => $root ];
       }
@@ -97,19 +106,35 @@ class Storage extends AbstractStorage
     return $this->sources = $sources;
   }
 
-  /** @return list<string>|false */
-  public static function visiblePathForStorageId(string $storageId, IL10N $l): array|false
+  /**
+   * @param array<string, Project> $projects Projects indexed by their exact names.
+   *
+   * @return list<string>|false
+   */
+  public static function visiblePathForStorageId(string $storageId, IL10N $l, array $projects = []): array|false
   {
     $parts = explode('/', trim($storageId, '/'));
     if ($parts === [] || in_array('', $parts, true)
         || in_array('.', $parts, true) || in_array('..', $parts, true)) {
       return false;
     }
-    if (($parts[0] ?? null) === 'project'
-        && ($parts[1] ?? null) === 'participant'
-        && !empty($parts[2])) {
-      // TRANSLATORS: folder-name
-      return [ self::folderName($l->t('Projects')), $parts[2] ];
+    if (($parts[0] ?? null) === 'project' && ($parts[1] ?? null) === 'participant') {
+      if (count($parts) !== 4) {
+        return false;
+      }
+      $project = $projects[$parts[2]] ?? null;
+      if ($project === null) {
+        throw new RuntimeException('No project found for database storage: ' . $storageId);
+      }
+      if ($project->getType() === EnumProjectTemporalType::TEMPORARY
+          && ($project->getYear() < 1000 || $project->getYear() > 9999)) {
+        throw new RuntimeException('Invalid project year for database storage: ' . $storageId);
+      }
+      return match ($project->getType()) {
+        EnumProjectTemporalType::TEMPORARY => [ (string)$project->getYear(), $parts[2] ],
+        EnumProjectTemporalType::PERMANENT => [ $parts[2] ],
+        default => throw new RuntimeException('Unsupported project type for database storage: ' . $storageId),
+      };
     }
     $path = $parts;
     foreach ($parts as $index => $part) {

@@ -22,8 +22,10 @@ Database-backed files initially appear under the movable
 `MEMBER_ROOT_FOLDER/USER_ID/` mount in the member's Files area, where
 `MEMBER_ROOT_FOLDER` is the configured member-data team-folder (for example,
 `orchestra-members`). Project participant storage roots are presented as
-`MEMBER_ROOT_FOLDER/USER_ID/Projects/PROJECT_NAME/` before localization; other
-database storage identifiers retain their hierarchy beneath the mount. The
+`MEMBER_ROOT_FOLDER/USER_ID/YEAR/PROJECT_NAME/` for temporary projects and
+`MEMBER_ROOT_FOLDER/USER_ID/PROJECT_NAME/` for permanent projects. The year
+comes from the project record, not its name. Other database storage identifiers
+retain their hierarchy beneath the mount. The
 member root folder must be configured and accessible to the user. The view is
 read-only and uses the personalized database views to limit entries to those
 authorized for the logged-in member. A user-moved mount keeps its saved path.
@@ -31,6 +33,10 @@ Generated folder labels, such as `Projects` and `Finance`, are translatable
 through the Members catalogue using the orchestra's configured language.
 Project names, database directory-entry names, and the mount path are not
 translated.
+
+After this layout changes, authenticated scans remove the old `Projects/`
+paths and discover the new ones. Cached file IDs and links to the old project
+paths may therefore change.
 
 While authenticated, database-storage sources are cached for the lifetime of a
 storage instance and refreshed whenever Nextcloud checks a directory for

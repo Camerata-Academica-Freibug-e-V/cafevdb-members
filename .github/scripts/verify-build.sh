@@ -21,6 +21,7 @@ if (realpath($service::getAppFolderPath()) !== realpath(getcwd())
 '
 
 echo "Restoring wrapped build prerequisites after archive packaging"
+composer install --prefer-dist --no-interaction
 make --no-print-directory vendor-wrapped
 echo "Checking wrapped dependency freshness"
 if ! make --no-print-directory --question vendor-wrapped; then

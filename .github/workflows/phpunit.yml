@@ -101,6 +101,9 @@ jobs:
           tools: composer:v2
           ini-values: apc.enable_cli=1, memory_limit=1G
 
+      - name: Configure Composer
+        run: composer config --global use-github-api false
+
       - name: Install Nextcloud (${{ matrix.database }})
         working-directory: server
         env:

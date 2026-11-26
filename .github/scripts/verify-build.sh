@@ -20,8 +20,14 @@ if (realpath($service::getAppFolderPath()) !== realpath(getcwd())
 }
 '
 
+echo "Restoring wrapped build prerequisites after archive packaging"
+make --no-print-directory vendor-wrapped
 echo "Checking wrapped dependency freshness"
-make --no-print-directory --question vendor-wrapped
+if ! make --no-print-directory --question vendor-wrapped; then
+  echo "Wrapped dependencies are not up to date" >&2
+  make --no-print-directory --dry-run vendor-wrapped >&2
+  exit 1
+fi
 
 echo "Checking archive contents"
 tar -taf "$ARCHIVE" > "$tmpdir/archive"

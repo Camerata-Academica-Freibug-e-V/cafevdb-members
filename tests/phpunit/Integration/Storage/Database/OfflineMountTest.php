@@ -40,6 +40,7 @@ use OCP\L10N\IFactory;
 use OCP\Server;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -61,6 +62,10 @@ use OCA\Files\BackgroundJob\ScanFiles;
 #[CoversClass(MountProvider::class)]
 #[CoversClass(UnavailableMount::class)]
 #[CoversClass(Storage::class)]
+#[UsesClass(\OCA\CAFeVDBMembers\AppInfo\Application::class)]
+#[UsesClass(DatabaseStorage::class)]
+#[UsesClass(DatabaseStorageFolder::class)]
+#[UsesClass(\OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\AppInfo\AbstractApplication::class)]
 class OfflineMountTest extends TestCase
 {
   private IDBConnection $connection;

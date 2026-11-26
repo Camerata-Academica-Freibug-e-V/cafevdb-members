@@ -25,3 +25,12 @@
 ## Branching
 
 - Base branches and pull requests must target the repository's remote default branch (check with `gh repo view --repo OWNER/REPO --json defaultBranchRef`), not a possibly stale local branch or saved project metadata, unless the user explicitly specifies another. Fetch it before branching.
+
+## Shared PHPUnit helpers
+
+- Before changing code inside a git subrepo, read its `.gitrepo` to identify the boundary and upstream. Treat its contents as reusable upstream code, not app-local code; never edit `.gitrepo` manually.
+- `OCA\RotDrop\Tests\` is provided by the `rotdrop/nextcloud-app-phpunit` Composer development dependency in `vendor-bin/phpunit`, not by app-local source or the namespace-scoped production dependencies. Follow that package's README for dependency setup and helper integration.
+- Keep shared helpers consumer-neutral: do not hard-code either `OCA\CAFEVDB\Wrapped\OCA\RotDrop\Toolkit` or `OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit` in DTO superclasses, traits, or constructor types. Select the toolkit using `PHPUNIT_NC_APP_NAMESPACE`, preserve DTO inheritance and logger behavior, and make the neutral finder resolve to the consuming app's existing scoped service instance while retaining concrete finder typing.
+- Before resolving the shared provider, initialize Nextcloud, load the PHPUnit bin-project, app and scoped autoloaders, define the app constants, and load the app so its services are registered.
+- PHP code also pass cleanly through PHP Mess Detector and PHP_CodeSniffer, using the tools installed under `vendor-bin/` and the rules defined in `.phpmd.xml` and `.phpcs.xml`. Use the same rules locally and in CI, without extra workflow-only exclusions or ignored warnings for tests.
+- PHPUnit tests should also pass cleanly through PHP Mess Detector and PHP_CodeSniffer, using the tools installed under `vendor-bin/` and the rules defined in `.phpmd.xml` and `.phpcs.xml`. Use the same rules locally and in CI, without extra workflow-only exclusions or ignored warnings for tests.

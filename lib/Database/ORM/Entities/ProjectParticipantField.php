@@ -39,7 +39,7 @@ use OCA\CAFeVDBMembers\Wrapped\Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Table(name: 'PersonalizedProjectParticipantFieldsView')]
 #[ORM\Entity]
 #[Gedmo\TranslationEntity(class: 'TableFieldTranslation')]
-class ProjectParticipantField implements \ArrayAccess
+class ProjectParticipantField implements \ArrayAccess, \JsonSerializable
 {
   use CAFEVDB\Traits\ArrayTrait;
   use \OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Traits\DateTimeTrait;
@@ -393,5 +393,14 @@ class ProjectParticipantField implements \ArrayAccess
   public function getProjectEvent():?ProjectEvent
   {
     return $this->projectEvent;
+  }
+
+  /** {@inheritdoc} */
+  public function jsonSerialize(): array
+  {
+    return [
+      'untranslatedName' => $this->getUntranslatedName(),
+      'untranslatedTab' => $this->getUntranslatedTab(),
+    ];
   }
 }

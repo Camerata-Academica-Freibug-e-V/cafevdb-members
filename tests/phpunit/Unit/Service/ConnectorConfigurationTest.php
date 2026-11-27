@@ -12,12 +12,14 @@ use OCP\IConfig;
 use OCP\IL10N;
 use OCP\Security\ICrypto;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 use OCA\CAFeVDBMembers\Service\ConnectorConfiguration;
 use OCA\CAFeVDBMembers\Settings\ConfigConstants;
 
 #[CoversClass(ConnectorConfiguration::class)]
+#[UsesClass(\OCA\CAFeVDBMembers\AppInfo\Application::class)]
 class ConnectorConfigurationTest extends TestCase
 {
   public function testLegacyViewsPasswordIsReadForUpgradeCompatibility(): void

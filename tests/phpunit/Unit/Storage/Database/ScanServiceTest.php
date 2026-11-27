@@ -29,6 +29,7 @@ use OCA\CAFeVDBMembers\Storage\Database\Storage;
 
 #[CoversClass(ScanService::class)]
 #[UsesClass(Storage::class)]
+#[UsesClass(\OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\AppInfo\AbstractApplication::class)]
 class ScanServiceTest extends TestCase
 {
   private const UID = 'scan-service-test-user-with-a-long-id';

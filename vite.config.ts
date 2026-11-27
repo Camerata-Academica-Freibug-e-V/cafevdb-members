@@ -101,6 +101,7 @@ function postBuildHook(): Plugin {
 }
 
 const overrides = defineConfig(({ mode }) => ({
+  tsconfig: path.resolve(import.meta.dirname, 'tsconfig.json'),
   define: {
     APP_NAME: JSON.stringify(appName),
     __VUE_PROD_DEVTOOLS__: mode === 'development',

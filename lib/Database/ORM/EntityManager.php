@@ -21,6 +21,8 @@
 namespace OCA\CAFeVDBMembers\Database\ORM;
 
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use SensitiveParameter;
 use Throwable;
 
 use Psr\Container\ContainerInterface;
@@ -116,8 +118,8 @@ class EntityManager extends AbstractEntityManager
       parent::__construct($this->getEntityManager(
         $databaseServerVersion === null ? [] : ['serverVersion' => $databaseServerVersion],
       ));
-    } catch (Throwable) {
-      throw new \RuntimeException('Unable to configure the personalized views database. Check the connector settings.');
+    } catch (Throwable $t) {
+      throw new RuntimeException('Unable to configure the personalized views database. Check the connector settings.', previous: $t);
     }
     $this->entityManager = $this->wrapped;
     // An explicit platform allows metadata and type registration without connecting.
@@ -193,10 +195,6 @@ class EntityManager extends AbstractEntityManager
     Gedmo\DoctrineExtensions::registerAbstractMappingIntoDriverChainORM(
       $driverChain, // our metadata driver chain, to hook into
     );
-    //<<< Further annotations can go here
-    MediaMonks\Doctrine\DoctrineExtensions::registerAnnotations();
-    // CJH\Setup::registerAnnotations();
-    //>>>
 
     // now we want to register our application entities,
     // for that we need another metadata driver used for Entity namespace
@@ -290,7 +288,7 @@ class EntityManager extends AbstractEntityManager
       $descriptor = $connectorConfiguration->resolve()['descriptor'];
       $account = $descriptor['account'] ?? null;
       if (!is_array($account) || !is_string($account['user'] ?? null) || $account['user'] === '') {
-        throw new \RuntimeException('CafeVDB connector account metadata is unavailable.');
+        throw new RuntimeException('CafeVDB connector account metadata is unavailable.');
       }
       $connectionParams = $this->legacyConnectionParameters($encrypted);
       unset($connectionParams['dbname']);
@@ -317,7 +315,7 @@ class EntityManager extends AbstractEntityManager
    *
    * @return array Producer credentials or the Nextcloud database connection.
    */
-  private function legacyConnectionParameters(#[\SensitiveParameter] string $encrypted): array
+  private function legacyConnectionParameters(#[SensitiveParameter] string $encrypted): array
   {
     if ($encrypted !== '') {
       $credentials = json_decode($this->appContainer->get(ICrypto::class)->decrypt($encrypted), true, flags: JSON_THROW_ON_ERROR);
@@ -346,32 +344,32 @@ class EntityManager extends AbstractEntityManager
    *
    * @return void
    */
-  private function validateConnectorCredentials(#[\SensitiveParameter] mixed $credentials): void
+  private function validateConnectorCredentials(#[SensitiveParameter] mixed $credentials): void
   {
     if (!is_array($credentials)) {
-      throw new \RuntimeException('Invalid connector credentials.');
+      throw new RuntimeException('Invalid connector credentials.');
     }
     if (!is_string($credentials['user'] ?? null) || $credentials['user'] === '') {
-      throw new \RuntimeException('Invalid connector credentials.');
+      throw new RuntimeException('Invalid connector credentials.');
     }
     if (!is_string($credentials['password'] ?? null)) {
-      throw new \RuntimeException('Invalid connector credentials.');
+      throw new RuntimeException('Invalid connector credentials.');
     }
     if (isset($credentials['port'])) {
       $port = $credentials['port'];
       if ((!is_int($port) && !(is_string($port) && ctype_digit($port)))
           || (int)$port < 1 || (int)$port > 65535) {
-        throw new \RuntimeException('Invalid connector credentials.');
+        throw new RuntimeException('Invalid connector credentials.');
       }
     }
     if (isset($credentials['unix_socket']) && (!is_string($credentials['unix_socket']) || $credentials['unix_socket'] === '')) {
-      throw new \RuntimeException('Invalid connector credentials.');
+      throw new RuntimeException('Invalid connector credentials.');
     }
     if (isset($credentials['host']) && (!is_string($credentials['host']) || $credentials['host'] === '')) {
-      throw new \RuntimeException('Invalid connector credentials.');
+      throw new RuntimeException('Invalid connector credentials.');
     }
     if (!isset($credentials['host']) && !isset($credentials['unix_socket'])) {
-      throw new \RuntimeException('Invalid connector credentials.');
+      throw new RuntimeException('Invalid connector credentials.');
     }
   }
 

@@ -19,9 +19,7 @@
          testdox="true"
 >
   <testsuites>
-    <testsuite name="standalone">
-      <directory>tests/phpunit/Unit/Build</directory>
-    </testsuite>
+    <testsuite name="standalone"/>
   </testsuites>
   <source ignoreIndirectDeprecations="true" restrictNotices="true" restrictWarnings="true">
     <include>

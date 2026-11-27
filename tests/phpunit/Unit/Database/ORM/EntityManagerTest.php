@@ -50,6 +50,7 @@ use OCA\RotDrop\Tests\EnumDatabasePurpose;
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\L10N\OrchestraTranslator::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Database\ORM\Listeners\GedmoTranslatableListener::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Database\ORM\Repositories\EntityRepository::class)]
+#[Attributes\UsesClass(\OCA\CAFeVDBMembers\Service\ConnectorConfiguration::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\AppInfo\AbstractApplication::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\DBAL\Types\AbstractDecimalRationalType::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\DBAL\Types\ArrayType::class)]

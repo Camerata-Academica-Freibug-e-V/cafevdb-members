@@ -53,9 +53,6 @@
 
 <script setup lang="ts">
 import type {
-  Project,
-} from '../../stores/appData.ts'
-import type {
   ProjectParticipant,
 } from '../../stores/memberData.ts'
 
@@ -73,7 +70,7 @@ const props = defineProps<{
 
 logger.info('PROPS', { props })
 
-const projectPath = (project: Project) => {
+const projectPath = (project: ProjectParticipant['project']) => {
   const components = [
     props.memberRootFolder,
   ]
@@ -85,7 +82,7 @@ const projectPath = (project: Project) => {
   return '/' + components.join('/')
 }
 
-const projectPathUrl = (project: Project) => {
+const projectPathUrl = (project: ProjectParticipant['project']) => {
   const path = projectPath(project)
   return generateUrl('apps/files') + '?dir=' + path
 }

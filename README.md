@@ -146,8 +146,8 @@ The Makefile requires PHP, Composer, npm and `xpath` (provided by
 `libxml-xpath-perl` on Debian/Ubuntu). PHP dependencies are installed with:
 
 ```
-make dev-setup-php
-make phpunit
+make composer
+make phpunit-server
 ```
 
 The PHPUnit workflow runs the server suite with Nextcloud backed by SQLite,
@@ -176,6 +176,19 @@ connection. It still requires an installed Nextcloud instance for the console
 bootstrap, but does not change its database settings or require a running
 MySQL/MariaDB server.
 
+Member views load entities through the OCS `v1/entities/{entityName}/{depth}`
+API and the toolkit's entity repository client. `src/services/member-data.ts`
+adapts the entity associations to the member/registration store, expanding
+only the required branches rather than fetching binary file contents.
+The API requires a row-access token; database views continue to restrict
+results to the logged-in member. Supporting documents are downloaded separately
+through `/download/member/{optionKey}`.
+After generating the TypeScript modules and installing npm dependencies,
+`npm run test:member-data` exercises the OCS response hydration and member view
+models with Node's built-in test runner.
+`npm run test:build-config` verifies that Vite uses the app's TypeScript
+configuration even inside a Nextcloud checkout without server npm dependencies.
+
 Run `make l10n-sources` before updating POT files and commit the generated
 catalogues in `l10n-sources/`. `toolkit-strings.php` exposes the Composer
 toolkit's strings to the translation tool, which cannot scan vendor trees.
@@ -183,18 +196,17 @@ toolkit's strings to the translation tool, which cannot scan vendor trees.
 strings. Neither catalogue is executed, and `l10n-sources/` is excluded from
 release archives.
 
-The tests run inside a Nextcloud server checkout, see
-`.github/workflows/ci.yml` for the exact setup. CI also runs `make build` with
-Node.js 24 to generate the PHP-derived TypeScript modules and build production
-frontend assets with Vite before running the test suites.
-CI installs JavaScript dependencies with `npm ci` and checks `make realclean`
-on both a bare checkout and after the full build and tests, including repeated
-cleanup. Cleanup preserves the tracked `package-lock.json`.
-CI also runs the frontend Vitest suite independently of the Nextcloud build.
+The server tests run inside a Nextcloud checkout; see
+`.github/workflows/phpunit.yml` for the setup. CI also builds the frontend
+with Node.js 24, runs the frontend tests independently, and checks
+`make realclean` through the shared build-system workflow.
 
-The build regressions can also run without Nextcloud after `make dev-setup-php`
-(PHP's `intl` extension is required):
+The shared CI archive build runs `.github/scripts/verify-build.sh` once after
+building the app. It checks the archive contents, toolkit build and translation
+catalogue, generated TypeScript module, and Vite configuration isolation.
+After a full `make appstore APPSTORE_SIGN=0` build, the checks can also be run
+locally with the archive path:
 
 ```sh
-vendor-bin/phpunit/vendor/bin/phpunit --no-configuration --no-coverage tests/phpunit/Unit/Build/ToolkitBuildTest.php
+APP_ID=cafevdbmembers ARCHIVE="$PWD/path/to/archive.tar.gz" bash .github/scripts/verify-build.sh
 ```

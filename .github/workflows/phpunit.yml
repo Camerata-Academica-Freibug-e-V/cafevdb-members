@@ -101,6 +101,9 @@ jobs:
           tools: composer:v2
           ini-values: apc.enable_cli=1, memory_limit=1G
 
+      - name: Configure Composer
+        run: composer config --global use-github-api false
+
       - name: Install Nextcloud (${{ matrix.database }})
         working-directory: server
         env:
@@ -146,13 +149,9 @@ jobs:
         working-directory: server/apps/${{ env.APP_NAME }}
         run: make build
 
-      - name: Run PHPUnit standalone suite
+      - name: Run PHPUnit server suite with coverage
         working-directory: server/apps/${{ env.APP_NAME }}
-        run: make phpunit PHPCOVERAGE='-d xdebug.mode=coverage'
-
-      - name: Run PHPUnit server suite with real database
-        working-directory: server/apps/${{ env.APP_NAME }}
-        run: make phpunit-server
+        run: make phpunit PHPUNIT_CONFIG=phpunit.server.xml PHPCOVERAGE='-d xdebug.mode=coverage'
 
       - name: Upload PHPUnit coverage report
         uses: actions/upload-artifact@v4

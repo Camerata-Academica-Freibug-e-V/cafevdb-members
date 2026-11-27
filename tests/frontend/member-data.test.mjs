@@ -65,10 +65,15 @@ const response = async (name, ids, depth) => {
     for (const [fieldName, field] of Object.entries(await metadata(name))) {
       const value = dto[fieldName];
       if (field.mapping === 'to-one' && value) {
-        await visit(value.entityClassName, value.flatIdentifier, depth - 1);
+        if (!['File', 'EncryptedFile', 'Image'].includes(value.entityClassName)) {
+          await visit(value.entityClassName, value.flatIdentifier, depth - 1);
+        }
       } else if (field.mapping === 'to-many') {
         for (const valueReference of Object.values(value.entities)) {
-          await visit(valueReference.entityClassName ?? value.entityClassName, valueReference.flatIdentifier, depth - 1);
+          const target = valueReference.entityClassName ?? value.entityClassName;
+          if (!['File', 'EncryptedFile', 'Image'].includes(target)) {
+            await visit(target, valueReference.flatIdentifier, depth - 1);
+          }
         }
       }
     }
@@ -130,7 +135,7 @@ mock.module('../../src/logger.ts', {
 mock.module('../../src/toolkit/util/initial-state.ts', {
   defaultExport: () => null,
 });
-mock.module('../../src/toolkit/util/toasts.ts', {
+mock.module('@nextcloud/dialogs', {
   namedExports: {
     showError: (message) => toastMessages.push(message),
     TOAST_PERMANENT_TIMEOUT: -1,
@@ -309,6 +314,7 @@ test('loads the OCS mesh, resolving composite associations and adapting all memb
   assert.equal(field.fieldData['datum-uuid'].payments[0].compositePayment.sepaDebitMandate, 'mandate-reference');
   assert.ok(requests.filter(({ criteria }) => criteria.musician !== undefined).every(({ criteria }) => criteria.musician === 1));
   assert.ok(requests.every(({ depth }) => depth <= 2));
+  assert.ok(requests.every(({ name }) => !['File', 'EncryptedFile', 'Image', 'FileData', 'EncryptedFileData', 'ImageFileData'].includes(name)));
   assert.doesNotThrow(() => JSON.stringify(member));
 });
 

@@ -210,10 +210,10 @@ class EntitySerializerTest extends TestCase
   }
 
   /** @return void */
-  public function testMemberEndpointDoesNotLoadFileDataThroughAssociations(): void
+  public function testFileTraversalExcludesBlobs(): void
   {
     $queries = [];
-    $sqlLogger = $this->createMock(CloudLogger::class);
+    $sqlLogger = $this->createStub(CloudLogger::class);
     $sqlLogger->method('startQuery')->willReturnCallback(
       static function(string $sql) use (&$queries): void {
         $queries[] = $sql;

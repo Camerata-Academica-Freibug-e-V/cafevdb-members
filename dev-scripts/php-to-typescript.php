@@ -87,6 +87,5 @@ try {
     output: \OCP\Server::get(ConsoleOutput::class),
   );
 } catch (Throwable $t) {
-  fwrite(STDERR, 'Dependency injection not set up: ' . $t->getMessage() . PHP_EOL . print_r($t->getTrace(), true) . PHP_EOL);
-  exit(1);
+  throw new RuntimeException('Dependency injection not set up(?).', previous: $t);
 }

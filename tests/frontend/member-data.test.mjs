@@ -377,7 +377,10 @@ test('concurrent store initializations share handled errors and preserve recrypt
 
 test('empty recryption requests clear a pending request without logging an error', async () => {
   const store = useMemberDataStore();
-  failure = new Error('Member data unavailable');
+  failure = Object.assign(new Error('Forbidden'), {
+    isAxiosError: true,
+    response: { data: { ocs: { meta: { message: 'Member data unavailable' } } } },
+  });
   await store.initialize(true);
   assert.equal(store.initialized.recryptRequest, 123);
   recryptResponse = { requests: [], messages: ['No pending request'] };
@@ -389,7 +392,10 @@ test('empty recryption requests clear a pending request without logging an error
 
 test('recryption lookup failures and incompatible responses are logged', async () => {
   const store = useMemberDataStore();
-  failure = new Error('Member data unavailable');
+  failure = Object.assign(new Error('Forbidden'), {
+    isAxiosError: true,
+    response: { data: { ocs: { meta: { message: 'Member data unavailable' } } } },
+  });
   recryptFailure = new Error('Recryption lookup failed');
   await store.initialize(true);
   assert.equal(store.initialized.recryptRequest, null);

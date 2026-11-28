@@ -50,7 +50,6 @@ vue-components-l10n: node_modules
 
 OPENAPI_EXTRACTOR = vendor-bin/openapi-extractor/vendor/bin/generate-spec
 
-#@private
 $(OPENAPI_EXTRACTOR): vendor-bin/openapi-extractor/composer.json
 	$(COMPOSER) bin openapi-extractor install
 
@@ -58,8 +57,7 @@ $(OPENAPI_EXTRACTOR): vendor-bin/openapi-extractor/composer.json
 # non-OCS web controllers. Therefore it is run on a scratch app directory
 # with an empty route list; the routes are found from the route attributes of
 # the controllers which carry an OpenAPI attribute.
-#@@ Generates openapi.json from the annotated controllers
-openapi: $(OPENAPI_EXTRACTOR) $(SCOPED_VENDOR_DIR)/autoload.php
+openapi: $(OPENAPI_EXTRACTOR) $(SCOPED_VENDOR_DIR)/autoload.php ## Generates openapi.json from the annotated controllers
 	tmpdir=$$(mktemp -d) && trap 'rm -rf "$$tmpdir"' EXIT \
 	&& mkdir "$$tmpdir/appinfo" \
 	&& cp $(ABSSRCDIR)/appinfo/info.xml "$$tmpdir/appinfo/" \
@@ -73,8 +71,7 @@ openapi: $(OPENAPI_EXTRACTOR) $(SCOPED_VENDOR_DIR)/autoload.php
 
 OPENAPI_BRANCH ?= chore/update-openapi
 
-#@@ Regenerates openapi.json and opens a draft pull request (no-op if unchanged)
-commit-openapi: openapi
+commit-openapi: openapi ## Regenerates openapi.json and opens a draft pull request (no-op if unchanged)
 	if git diff --quiet HEAD -- openapi.json; then\
 	  echo "openapi.json is unchanged, nothing to do.";\
 	else\
@@ -94,22 +91,19 @@ commit-openapi: openapi
 #
 # PHPUnit
 
-#@private
 vendor-bin/phpunit/composer.lock: vendor-bin/phpunit/composer.json
 	$(COMPOSER) bin phpunit update
 
 $(PHING) $(PHPUNIT): composer.lock vendor-bin/phpunit/composer.lock
 	$(COMPOSER) bin phpunit install
 
-#@@ Runs the PHP tests which need a Nextcloud server (database and app container)
-phpunit-server: $(PHPUNIT_DEPS)
+phpunit-server: $(PHPUNIT_DEPS) ## Runs the PHP tests which need a Nextcloud server (database and app container)
 	$(PHP) $(PHPCOVERAGE) $(PHPUNIT) -c phpunit.server.xml --no-coverage --display-all-issues
 .PHONY: phpunit-server
 
 # The phpunitfilter target comes from phpunit.mk. Use
 # PHPUNIT_CONFIG=phpunit.server.xml for the tests needing a server.
 
-#@private
 orm-clear-cache: $(ABSSRCDIR)/vendor
 	$(ORM_CLI) orm:clear-cache:metadata
 .PHONY: orm-clear-cache
@@ -132,6 +126,5 @@ PHPDOC_PLANTUML_TIMEOUT_SECONDS = 120
 PHPDOC_GRAPHS = true
 PHPDOC_PREREQ_TARGET = composer
 
-#@@ Build the documentation. May take a long time
-doc: phpdoc # doxygen jsdoc
+doc: phpdoc ## Build the documentation. May take a long time
 .PHONY: doc

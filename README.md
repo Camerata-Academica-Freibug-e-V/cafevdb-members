@@ -186,6 +186,9 @@ remain serializable; collection iteration can still load file metadata.
 The API requires a row-access token; database views continue to restrict
 results to the logged-in member. Supporting documents are downloaded separately
 through `/download/member/{optionKey}`.
+The recryption-request lookup expects the CafeVDB API response with a
+`requests` list; deploy it together with CafeVDB containing
+Camerata-Academica-Freibug-e-V/cafevdb#189. The old response is incompatible.
 After generating the TypeScript modules and installing npm dependencies,
 `npm run test:member-data` exercises the OCS response hydration and member view
 models with Node's built-in test runner.

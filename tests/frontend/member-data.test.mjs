@@ -37,6 +37,9 @@ let graph;
 let requests;
 let failure;
 let toastMessages;
+let recryptResponse;
+let recryptFailure;
+let logErrors;
 
 const add = async (name, id, fields) => {
   const defaults = Object.fromEntries(Object.entries(await metadata(name)).map(([key, field]) =>
@@ -88,7 +91,10 @@ mock.module('@nextcloud/axios', {
   defaultExport: {
     get: async (url, { params } = {}) => {
       if (url.includes('maintenance/encryption/recrypt')) {
-        return { data: { ocs: { data: { request: 'pending-recryption' } } } };
+        if (recryptFailure) {
+          throw recryptFailure;
+        }
+        return { data: { ocs: { data: recryptResponse } } };
       }
       if (failure) {
         throw failure;
@@ -130,7 +136,7 @@ mock.module('@nextcloud/router', {
   namedExports: { generateOcsUrl: (url) => url },
 });
 mock.module('../../src/logger.ts', {
-  defaultExport: { info: () => {}, error: () => {} },
+  defaultExport: { info: () => {}, error: (...args) => logErrors.push(args) },
 });
 mock.module('../../src/toolkit/util/initial-state.ts', {
   defaultExport: () => null,
@@ -154,6 +160,9 @@ beforeEach(async () => {
   requests = [];
   failure = null;
   toastMessages = [];
+  recryptResponse = { requests: [{ userId: 'cloud-user', timeStamp: 123 }], messages: [] };
+  recryptFailure = null;
+  logErrors = [];
   setActivePinia(createPinia());
   for (const name of Object.keys(repositories)) {
     delete repositories[name];
@@ -356,13 +365,43 @@ test('concurrent store initializations share handled errors and preserve recrypt
   assert.equal(store.initialized.error, 'No row-access token');
   assert.equal(store.initialized.loaded, false);
   assert.equal(store.initialized.promise, null);
-  assert.equal(store.initialized.recryptRequest, 'pending-recryption');
+  assert.equal(store.initialized.recryptRequest, 123);
+  assert.ok(!logErrors.some(([message]) => message === 'Error retrieving recryption request'));
   assert.equal(toastMessages.length, 1);
   failure = null;
   await store.initialize(true);
   assert.equal(store.initialized.error, null);
   assert.equal(store.initialized.loaded, true);
   assert.equal(store.personalPublicName, 'Nick Member');
+});
+
+test('empty recryption requests clear a pending request without logging an error', async () => {
+  const store = useMemberDataStore();
+  failure = new Error('Member data unavailable');
+  await store.initialize(true);
+  assert.equal(store.initialized.recryptRequest, 123);
+  recryptResponse = { requests: [], messages: ['No pending request'] };
+  await store.initialize(true);
+  assert.equal(store.initialized.recryptRequest, null);
+  assert.equal(store.initialized.error, 'Member data unavailable');
+  assert.ok(!logErrors.some(([message]) => message === 'Error retrieving recryption request'));
+});
+
+test('recryption lookup failures and incompatible responses are logged', async () => {
+  const store = useMemberDataStore();
+  failure = new Error('Member data unavailable');
+  recryptFailure = new Error('Recryption lookup failed');
+  await store.initialize(true);
+  assert.equal(store.initialized.recryptRequest, null);
+  assert.equal(store.initialized.error, 'Member data unavailable');
+  assert.ok(logErrors.some(([message, details]) => message === 'Error retrieving recryption request' && details.e === recryptFailure));
+
+  recryptFailure = null;
+  recryptResponse = { request: 123, userId: 'cloud-user' };
+  logErrors = [];
+  await store.initialize(true);
+  assert.equal(store.initialized.recryptRequest, null);
+  assert.ok(logErrors.some(([message, details]) => message === 'Error retrieving recryption request' && details.e instanceof TypeError));
 });
 
 test('store refreshes clear derived view flags and do not mutate the reset snapshot', async () => {

@@ -7,7 +7,11 @@ import { translate as t } from '@nextcloud/l10n';
 import { appName } from '../config.ts';
 import { isAxiosErrorResponse } from '../toolkit/types/axios-type-guards.ts';
 
-/** Extract a user-facing error without exposing exception traces. */
+/**
+ * Extract a user-facing error without exposing exception traces.
+ *
+ * @param error The caught request or application error.
+ */
 export const accessErrorMessage = (error: unknown): string => {
   const seen = new Set<unknown>();
   let current = error;

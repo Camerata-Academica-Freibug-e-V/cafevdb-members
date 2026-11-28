@@ -386,6 +386,7 @@ test('empty recryption requests clear a pending request without logging an error
   recryptResponse = { requests: [], messages: ['No pending request'] };
   await store.initialize(true);
   assert.equal(store.initialized.recryptRequest, null);
+  assert.equal(store.initialized.recryptRequestError, null);
   assert.equal(store.initialized.error, 'Member data unavailable');
   assert.ok(!logErrors.some(([message]) => message === 'Error retrieving recryption request'));
 });
@@ -399,6 +400,7 @@ test('recryption lookup failures and incompatible responses are logged', async (
   recryptFailure = new Error('Recryption lookup failed');
   await store.initialize(true);
   assert.equal(store.initialized.recryptRequest, null);
+  assert.equal(store.initialized.recryptRequestError, 'Recryption lookup failed');
   assert.equal(store.initialized.error, 'Member data unavailable');
   assert.ok(logErrors.some(([message, details]) => message === 'Error retrieving recryption request' && details.e === recryptFailure));
 

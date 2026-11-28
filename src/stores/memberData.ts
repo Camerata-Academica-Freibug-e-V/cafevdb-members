@@ -19,6 +19,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import type { OCSResponse } from '@nextcloud/typings/ocs';
 import type { EnumParticipantFieldMultiplicity } from '../../build/ts-types/php-modules/Database/DBAL/Types.ts';
 import type { Instrument, Project } from './appData.ts';
 
@@ -37,8 +38,8 @@ import {
 import { deepCopy } from 'walkjs';
 import { appName as appId } from '../config.ts';
 import logger from '../logger.ts';
+import { accessErrorMessage } from '../services/access-error.ts';
 import { loadMemberData } from '../services/member-data.ts';
-import { isAxiosErrorResponse } from '../toolkit/types/axios-type-guards.ts';
 import getInitialState from '../toolkit/util/initial-state.ts';
 import { useAppDataStore } from './appData.ts';
 
@@ -198,6 +199,20 @@ export interface ApplicationData {
 const initialApplicationData = getInitialState<ApplicationData>({ section: 'applicationData', defaults: null });
 const initialToken = getInitialState({ section: 'token', defaults: null });
 
+const recryptRequestTimeStamp = (requests: { userId: string; timeStamp: number }[], userId: string): null|number => {
+  if (!Array.isArray(requests) || requests.length > 1) {
+    throw new TypeError('Invalid recryption request response.');
+  }
+  if (requests.length === 0) {
+    return null;
+  }
+  const request = requests[0];
+  if (!request || request.userId !== userId || !Number.isFinite(request.timeStamp)) {
+    throw new TypeError('Invalid recryption request response.');
+  }
+  return request.timeStamp;
+};
+
 logger.info('INITIAL APPLICATION DATA', {
   initialApplicationData,
   initialToken,
@@ -217,7 +232,8 @@ export const useMemberDataStore = defineStore('member-data', () => {
       loaded: false,
       promise: null as null|Promise<void>,
       error: null as null|string,
-      recryptRequest: null,
+      recryptRequest: null as null|number,
+      recryptRequestError: null as null|string,
       registration: undefined as undefined|boolean,
     }),
     instrumentInsurances: ref([] as InstrumentInsurance[]),
@@ -277,32 +293,23 @@ export const useMemberDataStore = defineStore('member-data', () => {
         initialized.loaded = true;
       } catch (e) {
         logger.error('ERROR', { e });
-        let message = t(appId, 'general failure');
-        const cause = e instanceof Error && e.cause ? e.cause : e;
-        if (isAxiosErrorResponse(cause) && cause.response.data) {
-          const { messages, ocs } = cause.response.data as { messages?: string[]; ocs?: { meta?: { message?: string } } };
-          if (Array.isArray(messages)) {
-            message = messages.join(' ');
-          } else if (ocs?.meta?.message) {
-            message = ocs.meta.message;
-          }
-        } else if (e instanceof Error) {
-          message = e.message;
-        }
+        const message = accessErrorMessage(e);
         initialized.error = message;
         if (!silent) {
           showError(t(appId, 'Could not fetch musician(s): {message}', { message }), { timeout: TOAST_PERMANENT_TIMEOUT });
         }
         const cloudUser = getCurrentUser();
         initialized.recryptRequest = null;
+        initialized.recryptRequestError = null;
         if (cloudUser?.uid) {
           try {
             const url = generateOcsUrl('apps/cafevdb/api/v1/maintenance/encryption/recrypt/{userId}', {
               userId: cloudUser.uid,
             });
-            const response = await axios.get(url + '?format=json');
-            initialized.recryptRequest = response.data.ocs.data.request;
+            const response = await axios.get<OCSResponse<{ requests: { userId: string; timeStamp: number }[] }>>(url + '?format=json');
+            initialized.recryptRequest = recryptRequestTimeStamp(response.data.ocs.data.requests, cloudUser.uid);
           } catch (e) {
+            initialized.recryptRequestError = accessErrorMessage(e);
             logger.error('Error retrieving recryption request', { e });
           }
         }

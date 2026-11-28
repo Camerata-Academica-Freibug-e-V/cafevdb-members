@@ -20,6 +20,7 @@ use Psr\Log\LoggerInterface;
 
 use OCA\CAFeVDBMembers\Controller\EntityRepositoryController;
 use OCA\CAFeVDBMembers\Controller\EntityRepositoryControllerBase;
+use OCA\CAFeVDBMembers\Database\ORM\Entities\File;
 use OCA\CAFeVDBMembers\Exceptions\RowAccessTokenMissingException;
 use OCA\CAFeVDBMembers\Service\AuthenticationService;
 use OCA\CAFeVDBMembers\Wrapped\Doctrine\ORM\EntityRepository;
@@ -40,6 +41,7 @@ class EntityRepositoryControllerTest extends TestCase
     $entityManager = $this->createMock(AbstractEntityManager::class);
     $entityManager->expects($this->never())->method('getRepository');
     $serializer = $this->createMock(EntitySerializer::class);
+    $serializer->expects($this->once())->method('setExcludedClasses')->with([File::class]);
     $serializer->expects($this->never())->method('reset');
     $authentication = $this->createMock(AuthenticationService::class);
     $failure = new RowAccessTokenMissingException('Missing token');
@@ -76,6 +78,7 @@ class EntityRepositoryControllerTest extends TestCase
     $entityManager->method('getEntityNamespace')->willReturn('MemberEntities');
     $entityManager->expects($this->once())->method('getRepository')->with('MemberEntities\\Musician')->willReturn($repository);
     $serializer = $this->createMock(EntitySerializer::class);
+    $serializer->expects($this->once())->method('setExcludedClasses')->with([File::class]);
     $serializer->expects($this->once())->method('reset');
     $serializer->expects($this->once())->method('setCommonPrefix')->with('MemberEntities');
     $export = new EntityResponse([], []);

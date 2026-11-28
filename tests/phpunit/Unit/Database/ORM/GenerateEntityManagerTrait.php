@@ -48,11 +48,16 @@ trait GenerateEntityManagerTrait
    * @param string $token
    * @param bool $independent Use the CafeVDB connector credentials.
    * @param bool $allowView Grant access to the personalized musician view.
+   * @param ?CloudLogger $sqlLogger Optional query logger.
    *
    * @return void
    */
-  private function generateEntityManager(string $token, bool $independent = false, bool $allowView = true): void
-  {
+  private function generateEntityManager(
+    string $token,
+    bool $independent = false,
+    bool $allowView = true,
+    ?CloudLogger $sqlLogger = null,
+  ): void {
     $this->mockProvider = $this->mockProvider ?? MockProvider::create($this);
 
     // Do not depend on a possibly installed orchestra app and the login session.
@@ -123,7 +128,7 @@ trait GenerateEntityManagerTrait
       l: $this->mockProvider->getL10N(),
       logger: $this->mockProvider->getLoggerInterface(),
       session: $this->mockProvider->getSession(),
-      sqlLogger: $appContainer->get(CloudLogger::class),
+      sqlLogger: $sqlLogger ?? $appContainer->get(CloudLogger::class),
       userId: MockProvider::CLOUD_USER_UID,
     );
   }

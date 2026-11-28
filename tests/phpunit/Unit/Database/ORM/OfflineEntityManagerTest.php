@@ -244,19 +244,20 @@ class OfflineEntityManagerTest extends TestCase
   }
 
   /** @return void */
-  public function testInvalidCredentialsDoNotFallBackOrExposeSecrets(): void
+  public function testInvalidCredentialsPreserveCause(): void
   {
     try {
       $this->createEntityManager('11.7.0-MariaDB', ['password' => 'connector-secret'], viewsPassword: 'local-secret');
       self::fail('Invalid credentials must be rejected');
     } catch (\RuntimeException $exception) {
       self::assertSame('Unable to configure the personalized views database. Check the connector settings.', $exception->getMessage());
-      self::assertNull($exception->getPrevious());
+      self::assertInstanceOf(\RuntimeException::class, $exception->getPrevious());
+      self::assertSame('Invalid connector credentials.', $exception->getPrevious()->getMessage());
     }
   }
 
   /** @return void */
-  public function testConstructorDoesNotExposeOriginalCause(): void
+  public function testConstructorPreservesOriginalCause(): void
   {
     $cause = new \TypeError('connector-secret');
     try {
@@ -264,7 +265,7 @@ class OfflineEntityManagerTest extends TestCase
       self::fail('The original failure must be propagated as a cause');
     } catch (\RuntimeException $exception) {
       self::assertSame('Unable to configure the personalized views database. Check the connector settings.', $exception->getMessage());
-      self::assertNull($exception->getPrevious());
+      self::assertSame($cause, $exception->getPrevious());
     }
   }
 

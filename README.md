@@ -179,10 +179,16 @@ MySQL/MariaDB server.
 Member views load entities through the OCS `v1/entities/{entityName}/{depth}`
 API and the toolkit's entity repository client. `src/services/member-data.ts`
 adapts the entity associations to the member/registration store, expanding
-only the required branches rather than fetching binary file contents.
+only the required branches. The repository serializer excludes `File` and its
+subclasses from association traversal, leaving references without fetching
+their file-data collections. Explicitly requested file or file-data roots
+remain serializable; collection iteration can still load file metadata.
 The API requires a row-access token; database views continue to restrict
 results to the logged-in member. Supporting documents are downloaded separately
 through `/download/member/{optionKey}`.
+The recryption-request lookup expects the CafeVDB API response with a
+`requests` list; deploy it together with CafeVDB containing
+Camerata-Academica-Freibug-e-V/cafevdb#189. The old response is incompatible.
 After generating the TypeScript modules and installing npm dependencies,
 `npm run test:member-data` exercises the OCS response hydration and member view
 models with Node's built-in test runner.

@@ -14,6 +14,7 @@ use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
+use OCA\CAFeVDBMembers\Database\ORM\Entities\File;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\AbstractEntityManager;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\EntitySerializer\EntitySerializer;
 
@@ -35,6 +36,7 @@ abstract class EntityRepositoryControllerBase extends OCSController
     protected LoggerInterface $logger,
   ) {
     parent::__construct($appName, $request);
+    $this->entitySerializer->setExcludedClasses([File::class]);
   }
   // phpcs:enable
 }

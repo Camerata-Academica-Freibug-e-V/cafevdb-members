@@ -58,3 +58,6 @@ grep -Fq "build/ts-types/$module" src/toolkit/services/entity-repository.ts
 
 echo "Checking Vite configuration isolation"
 npm run test:build-config
+
+echo "Checking member data and recryption response handling"
+npm run test:member-data

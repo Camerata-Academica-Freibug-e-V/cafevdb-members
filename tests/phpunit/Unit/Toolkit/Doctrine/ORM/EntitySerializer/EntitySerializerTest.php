@@ -30,7 +30,13 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 use Doctrine\Common\Collections\Collection;
 
+use OCP\IRequest;
+
+use OCA\CAFeVDBMembers\Controller\EntityRepositoryController;
+use OCA\CAFeVDBMembers\Controller\EntityRepositoryControllerBase;
+use OCA\CAFeVDBMembers\Database\DBAL\Logging\CloudLogger;
 use OCA\CAFeVDBMembers\Database\ORM\Entities;
+use OCA\CAFeVDBMembers\Service\AuthenticationService;
 use OCA\CAFeVDBMembers\Tests\MockProvider;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\EntitySerializer;
 use OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Doctrine\ORM\EntitySerializer\EntitySerializer as TestedClass;
@@ -43,6 +49,9 @@ use OCA\RotDrop\Tests\DeprecationException;
 #[Attributes\CoversClass(EntitySerializer\EntityResponse::class)]
 #[Attributes\CoversClass(TestedClass::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\AppInfo\Application::class)]
+#[Attributes\UsesClass(EntityRepositoryController::class)]
+#[Attributes\UsesClass(EntityRepositoryControllerBase::class)]
+#[Attributes\UsesTrait(\OCA\CAFeVDBMembers\Wrapped\OCA\RotDrop\Toolkit\Controller\EntityRepositoryControllerTrait::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Database\DBAL\Logging\CloudLogger::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Database\ORM\Connection::class)]
 #[Attributes\UsesClass(\OCA\CAFeVDBMembers\Database\ORM\Entities\Musician::class)]
@@ -198,5 +207,64 @@ class EntitySerializerTest extends TestCase
     $this->assertArrayHasKey(Entities\SepaBankAccount::class, $exportData->repositories);
     $this->assertArrayHasKey(Entities\MusicianEmailAddress::class, $exportData->repositories);
     // $json = json_encode($exportData, JSON_PRETTY_PRINT);
+  }
+
+  /** @return void */
+  public function testFileTraversalExcludesBlobs(): void
+  {
+    $queries = [];
+    $sqlLogger = $this->createStub(CloudLogger::class);
+    $sqlLogger->method('startQuery')->willReturnCallback(
+      static function(string $sql) use (&$queries): void {
+        $queries[] = $sql;
+      },
+    );
+    $token = $this->mockProvider->getRowAccessTokens()[MockProvider::CLOUD_USER_UID]['access_token_hash'];
+    $this->generateEntityManager($token, sqlLogger: $sqlLogger);
+
+    $serializer = new TestedClass(
+      entityManager: $this->entityManager,
+      l: $this->mockProvider->getL10N(),
+      logger: $this->mockProvider->getLoggerInterface(),
+    );
+    $authentication = $this->createStub(AuthenticationService::class);
+    $authentication->method('getRowAccessToken')->willReturn($token);
+    $controller = new EntityRepositoryController(
+      $this->mockProvider->appName,
+      $this->createStub(IRequest::class),
+      $this->entityManager,
+      $serializer,
+      $this->mockProvider->getL10N(),
+      $this->mockProvider->getLoggerInterface(),
+      $authentication,
+    );
+
+    foreach ([1, 2] as $depth) {
+      $this->entityManager->clear();
+      $queries = [];
+      $response = $controller->getEntities('Musician', findBy: base64_encode('{}'), depth: $depth)->getData();
+      $musician = $response->repositories['Musician']['1'];
+      $this->assertCount(1, $musician['encryptedFiles']->entities);
+      $this->assertSame('1', $musician['encryptedFiles']->entities[1]->flatIdentifier);
+      $this->assertArrayNotHasKey('EncryptedFile', $response->repositories);
+      $this->assertArrayNotHasKey('EncryptedFileData', $response->repositories);
+      $this->assertSame([], array_values(array_filter(
+        $queries,
+        static fn(string $sql): bool => stripos($sql, 'PersonalizedFileDataView') !== false,
+      )));
+    }
+
+    $this->entityManager->clear();
+    $queries = [];
+    $response = $controller->getEntities('File', findBy: base64_encode('{}'))->getData();
+    $this->assertArrayHasKey('EncryptedFile', $response->repositories);
+    $this->assertNotEmpty(array_filter(
+      $queries,
+      static fn(string $sql): bool => stripos($sql, 'PersonalizedFileDataView') !== false,
+    ));
+
+    $this->entityManager->clear();
+    $response = $controller->getEntities('FileData', findBy: base64_encode('{}'))->getData();
+    $this->assertArrayHasKey('EncryptedFileData', $response->repositories);
   }
 }

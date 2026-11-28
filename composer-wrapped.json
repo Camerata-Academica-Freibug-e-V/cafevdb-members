@@ -29,7 +29,7 @@
     "nesbot/carbon": "^2.46",
     "ramsey/uuid": "^4",
     "ramsey/uuid-doctrine": "^2.0",
-    "rotdrop/nextcloud-app-toolkit": "dev-main",
+    "rotdrop/nextcloud-app-toolkit": "dev-main#529b042254460547d4bd4daf66e40c35c2b414c7",
     "symfony/cache": "^6",
     "symfony/string": "*"
   },
